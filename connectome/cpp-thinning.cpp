@@ -497,14 +497,21 @@ void CppUpdateResolution(float input_resolution[3])
     resolution[OR_X] = input_resolution[OR_X];
 }
 
+void CppUpdateGridsize(float inp_grid_size[3])
+{
+    grid_size[OR_Z] = inp_grid_size[OR_Z] + 2;
+    grid_size[OR_Y] = inp_grid_size[OR_Y] + 2;
+    grid_size[OR_X] = inp_grid_size[OR_X] + 2;
 
+    input_grid_size[OR_Z] = inp_grid_size[OR_Z];
+    input_grid_size[OR_Y] = inp_grid_size[OR_Y];
+    input_grid_size[OR_X] = inp_grid_size[OR_X];
+}
 
 void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
 {
     // start timing statistics
     clock_t start_time = clock();
-
-    std::cout << labels[0] << std::endl << std::flush;
 
     // create (and clear) the global variables
     segment = std::unordered_map<long, char>(10000000);
@@ -517,7 +524,7 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
     std::cout << "Initialized LUT"  << std::endl << std::flush;
 
     // populate the point clouds with segment voxels and anchor points
-    CppPopulatePointCloud(prefix, "segmentations", label);
+    CppPopulatePointCloudFromH5(label, labels);
     CppPopulatePointCloud(prefix, "synapses", label);
     CppPopulatePointCloud(prefix,  "somae", label);
 

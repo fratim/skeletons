@@ -8,6 +8,7 @@
 
 // set default values
 long grid_size[3] = { -1, -1, -1 };
+long input_grid_size[3] = { -1, -1, -1 };
 long nentries = -1;
 long sheet_size = -1;
 long row_size = -1;
@@ -25,12 +26,57 @@ std::unordered_set<long> synapses = std::unordered_set<long>();
 ///////////////////////////////////////
 
 /* conventient I/O function */
+void CppPopulatePointCloudFromH5(long label, long *labels) {
+
+    std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
+    std::unordered_set<long> synapses;
+
+    // set global indexing parameters (do here since for loop calls IndicesToIndex)
+    nentries = grid_size[OR_Z] * grid_size[OR_Y] * grid_size[OR_X];
+    sheet_size = grid_size[OR_Y] * grid_size[OR_X];
+    row_size = grid_size[OR_X];
+    infinity = grid_size[OR_Z] * grid_size[OR_Z] + grid_size[OR_Y] * grid_size[OR_Y] + grid_size[OR_X] * grid_size[OR_X];
+
+    long n_points = input_grid_size[0]*input_grid_size[1]*input_grid_size[2];
+
+    std::cout << "n_points is: " << n_points << std::endl << std::flush;
+
+    for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
+
+      long iz = voxel_index / (input_grid_size[OR_Y] * input_grid_size[OR_X]);
+      long iy = (voxel_index - iz * (input_grid_size[OR_Y] * input_grid_size[OR_X])) / input_grid_size[OR_X];
+      long ix = voxel_index % input_grid_size[OR_X];
+
+      //  pad the location by one
+      iz += 1; iy += 1; ix += 1;
+
+      // find the new voxel index
+      long iv = IndicesToIndex(ix, iy, iz);
+
+      long curr_label = labels[voxel_index];
+
+      if (curr_label!=0){
+
+        if (Pointclouds.find(curr_label) == Pointclouds.end()) {
+          Pointclouds[curr_label] = std::unordered_map<long,char>();
+          std::cout << "New label detected: " << curr_label << std::endl << std::flush;
+        }
+
+        Pointclouds[curr_label][iv] = 1;
+      }
+    }
+
+    segment = Pointclouds[label];
+
+}
+
+/* conventient I/O function */
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) {
 
     std::cout << "Next: Populate Point Cloud" << std::endl << std::flush;
     // read in the point cloud for this label
     char filename[4096];
-    sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, label);
+    sprintf(filename, "%s/%s/syn_%04ld.txt", dataset, prefix, label);
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }

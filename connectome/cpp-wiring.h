@@ -11,9 +11,11 @@
 // function calls across cpp files
 
 void CppUpdateResolution(float resolution[3]);
+void CppUpdateGridsize(float gridsize[3]);
 void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels);
 void CppSkeletonRefinement(const char *prefix, long label, double resolution[3]);
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label);
+void CppPopulatePointCloudFromH5(long label, long *labels);
 
 
 
@@ -27,6 +29,7 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label);
 // global variables
 
 extern long grid_size[3];
+extern long input_grid_size[3];
 extern long nentries;
 extern long sheet_size;
 extern long row_size;
