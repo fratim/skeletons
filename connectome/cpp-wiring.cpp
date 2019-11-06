@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "cpp-wiring.h"
+#include <iostream>
 
 
 
@@ -25,6 +26,8 @@ std::unordered_set<long> synapses = std::unordered_set<long>();
 
 /* conventient I/O function */
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) {
+
+    std::cout << "Next: Populate Point Cloud" << std::endl << std::flush;
     // read in the point cloud for this label
     char filename[4096];
     sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, label);
@@ -43,7 +46,7 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
     grid_size[OR_Z] = input_grid_size[OR_Z] + 2;
     grid_size[OR_Y] = input_grid_size[OR_Y] + 2;
     grid_size[OR_X] = input_grid_size[OR_X] + 2;
-    
+
     // set global indexing parameters (do here since for loop calls IndicesToIndex)
     nentries = grid_size[OR_Z] * grid_size[OR_Y] * grid_size[OR_X];
     sheet_size = grid_size[OR_Y] * grid_size[OR_X];

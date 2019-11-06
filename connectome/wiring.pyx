@@ -26,7 +26,6 @@ def GenerateSkeleton(prefix, label):
 
     # generate the widths
     cdef np.ndarray[float, ndim=1, mode='c'] cpp_resolution = np.ascontiguousarray(dataIO.Resolution(prefix)).astype(np.float32)
-    print(cpp_resolution)
     CppUpdateResolution(&(cpp_resolution[0]))
 
     # the look up table is in the synapseaware/connectome folder
