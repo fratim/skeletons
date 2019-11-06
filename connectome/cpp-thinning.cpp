@@ -499,10 +499,12 @@ void CppUpdateResolution(float input_resolution[3])
 
 
 
-void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory)
+void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
 {
     // start timing statistics
     clock_t start_time = clock();
+
+    std::cout << labels[0] << std::endl << std::flush;
 
     // create (and clear) the global variables
     segment = std::unordered_map<long, char>(10000000);
