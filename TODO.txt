@@ -6,3 +6,4 @@ TODO:
 2. Move CppUpdateGridsize and CppUpdateResolution to cpp-wiring (currently cpp-thinning)
 3. Decide on how to name, segments, input labels and so on
 4. Always pass block of data as first argument, later the longs
+5. Adjust meta file to store values that we discussed
