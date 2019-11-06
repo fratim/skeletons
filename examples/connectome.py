@@ -9,7 +9,7 @@ prefix = 'Zebrafinch'
 block_z = 0
 block_y = 0
 block_x = 0
-label = 55
+label = 25
 
 # topological_thinning.TopologicalThinning(prefix, label)
 # teaser.TEASER(prefix, label)

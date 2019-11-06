@@ -555,7 +555,7 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
     sprintf(output_filename, "skeletons/%s/%06ld.pts", prefix, label);
 
     FILE *wfp = fopen(output_filename, "wb");
-    if (!wfp) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
 
     // unpad the grid size
     grid_size[OR_Z] -= 2;
