@@ -525,8 +525,11 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
 
     // populate the point clouds with segment voxels and anchor points
     CppPopulatePointCloudFromH5(label, labels);
-    CppPopulatePointCloud(prefix, "synapses", label);
-    CppPopulatePointCloud(prefix,  "somae", label);
+    // CppPopulatePointCloud(prefix, "synapses", label);
+    // CppPopulatePointCloud(prefix,  "somae", label);
+
+    // add fake somae
+    segment[10]=4;
 
     // get the number of points
     long initial_points = segment.size();

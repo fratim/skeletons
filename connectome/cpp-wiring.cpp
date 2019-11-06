@@ -62,6 +62,12 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
           std::cout << "New label detected: " << curr_label << std::endl << std::flush;
         }
 
+        if (iv%1000000==0){
+            synapses.insert(iv);
+            Pointclouds[curr_label][iv] = 3;
+            std::cout << "Random Synapse: " << iv << std::endl;
+        }
+
         Pointclouds[curr_label][iv] = 1;
       }
     }
@@ -76,7 +82,8 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
     std::cout << "Next: Populate Point Cloud" << std::endl << std::flush;
     // read in the point cloud for this label
     char filename[4096];
-    sprintf(filename, "%s/%s/syn_%04ld.txt", dataset, prefix, label);
+    sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, label);
+    // sprintf(filename, "/home/frtim/Documents/Code/skeletons/examples/synapses/Zebrafinch/syn_0055.txt", dataset, prefix, label);
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }

@@ -1,0 +1,3 @@
+Questions:
+
+Does the input grid size change for different neurons? How is this defined?
