@@ -15,7 +15,7 @@ from skeletons.utilities import dataIO
 
 cdef extern from 'cpp-wiring.h':
     void CppUpdateResolution(float resolution[3])
-    void CppUpdateGridsize(float gridsize[3])
+    void CppUpdateGridsize(long gridsize[3])
     void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
     void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
 
@@ -37,7 +37,10 @@ def GenerateSkeleton(prefix, label, block_z, block_y, block_x):
     gridsize = dataIO.GridSize(prefix)
     if data.shape[0]!=gridsize[0] or data.shape[1]!=gridsize[1] or data.shape[2]!=gridsize[2]:
         raise ValueError("Data chunk size not equal to size specified in meta file!")
-    cdef np.ndarray[float, ndim=1, mode='c'] cpp_gridsize = np.ascontiguousarray(gridsize).astype(np.float32)
+    #cdef np.ndarray[float, ndim=1, mode='c'] cpp_gridsize = np.ascontiguousarray(gridsize).astype(np.float32)
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_gridsize = np.ascontiguousarray(data.shape, dtype=ctypes.c_int64)
+    # change to float to long
+
     CppUpdateGridsize(&(cpp_gridsize[0]))
 
     # the look up table is in the synapseaware/connectome folder

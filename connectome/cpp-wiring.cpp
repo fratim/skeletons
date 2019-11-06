@@ -55,21 +55,21 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
 
       long curr_label = labels[voxel_index];
 
-      if (curr_label!=0){
+      if (!curr_label) continue;
 
-        if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-          Pointclouds[curr_label] = std::unordered_map<long,char>();
-          std::cout << "New label detected: " << curr_label << std::endl << std::flush;
-        }
-
-        if (iv%1000000==0){
-            synapses.insert(iv);
-            Pointclouds[curr_label][iv] = 3;
-            std::cout << "Random Synapse: " << iv << ", ID: " << curr_label << std::endl;
-        }
-
-        Pointclouds[curr_label][iv] = 1;
+      if (Pointclouds.find(curr_label) == Pointclouds.end()) {
+        Pointclouds[curr_label] = std::unordered_map<long,char>();
+        std::cout << "New label detected: " << curr_label << std::endl << std::flush;
       }
+
+      Pointclouds[curr_label][iv] = 1;
+
+      if (iv%1000000==0){
+          synapses.insert(iv);
+          Pointclouds[curr_label][iv] = 3;
+          std::cout << "Random Synapse: " << iv << ", ID: " << curr_label << std::endl;
+      }
+
     }
 
     segment = Pointclouds[label];

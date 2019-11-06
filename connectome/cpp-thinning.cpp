@@ -497,7 +497,7 @@ void CppUpdateResolution(float input_resolution[3])
     resolution[OR_X] = input_resolution[OR_X];
 }
 
-void CppUpdateGridsize(float inp_grid_size[3])
+void CppUpdateGridsize(long inp_grid_size[3])
 {
     grid_size[OR_Z] = inp_grid_size[OR_Z] + 2;
     grid_size[OR_Y] = inp_grid_size[OR_Y] + 2;

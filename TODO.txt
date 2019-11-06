@@ -1,3 +1,11 @@
 Questions:
 
 Does the input grid size change for different neurons? How is this defined?
+Change input_grid_size from float to long
+VolumeSize and BlockSizeInp and BlockSizePadded
+
+I would move CppUpdateGridsize and CppUpdateResolution to cpp-wiring (currently cpp-thinning)
+
+How to name segements and labels
+
+block first then index/label
