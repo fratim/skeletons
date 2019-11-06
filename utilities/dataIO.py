@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 
-from synapseaware.data_structures import meta_data
+from skeletons.data_structures import meta_data
 
 
 def GridSize(prefix):
@@ -67,7 +67,7 @@ def ReadPoints(prefix, label, dataset):
 
 def ReadAllPoints(prefix, dataset):
     labels = [int(label[:-4]) for label in sorted(os.listdir('{}/{}'.format(dataset, prefix)))]
-    
+
     point_clouds = {}
 
     # read all individual point clouds

@@ -1,6 +1,6 @@
 # from synapseaware.isthmus import topological_thinning
 # from synapseaware.teaser import teaser
-from synapseaware.connectome import wiring
+from skeletons.connectome import wiring
 
 
 

@@ -1,6 +1,6 @@
 import sys
 
-from synapseaware.utilities.constants import *
+from skeletons.utilities.constants import *
 
 
 class MetaData:
