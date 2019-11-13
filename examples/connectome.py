@@ -6,10 +6,10 @@ from skeletons.connectome import wiring
 
 
 prefix = 'Zebrafinch'
-block_z = 0
-block_y = 0
-block_x = 0
-label = 25
+block_z = 10
+block_y = 1
+block_x = 1
+label = 255
 
 # topological_thinning.TopologicalThinning(prefix, label)
 # teaser.TEASER(prefix, label)

@@ -133,8 +133,8 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
     if (fread(&npoints, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
 
     //
-    std::cout<<"Volume size readin: "<<read_volumesize[0]<<","<<read_volumesize[1]<<","<<read_volumesize[2]<<","<<std::endl<<std::flush;
-    std::cout<<"npoints: "<<npoints<<","<<std::endl<<std::flush;
+    std::cout<<"Volume size read in: "<<read_volumesize[0]<<","<<read_volumesize[1]<<","<<read_volumesize[2]<<","<<std::endl<<std::flush;
+    std::cout<<"npoints: "<<npoints<<std::endl<<std::flush;
 
     if (read_volumesize[0]!=volumesize[0] || read_volumesize[1]!=volumesize[1] || read_volumesize[2]!=volumesize[2]) {
         throw std::invalid_argument("read_volumesize not equal to volumesize");
@@ -159,11 +159,13 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
         iy -= block_y * input_blocksize[OR_Y];
         ix -= block_x * input_blocksize[OR_X];
 
+        // skip point if not within block
+        if (iz<0 || iy<0 || ix<0 || iz>=input_blocksize[OR_Z] ||  iy>=input_blocksize[OR_Y] || ix>=input_blocksize[OR_X]) continue;
+
         //  pad the location by one
         iz += 1; iy += 1; ix += 1;
 
         std::cout << "synapse added at: "<<iz<<","<<iy<<","<<ix<< std::endl << std::flush;
-
 
         // find the new voxel index
         long iv = IndicesToIndex(ix, iy, iz);
