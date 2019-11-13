@@ -1784,11 +1784,11 @@ static const char __pyx_k_c_int64[] = "c_int64";
 static const char __pyx_k_dirname[] = "dirname";
 static const char __pyx_k_float32[] = "float32";
 static const char __pyx_k_fileName[] = "fileName";
-static const char __pyx_k_BlockSize[] = "BlockSize";
+static const char __pyx_k_Blocksize[] = "Blocksize";
 static const char __pyx_k_ReadH5File[] = "ReadH5File";
 static const char __pyx_k_Resolution[] = "Resolution";
 static const char __pyx_k_ValueError[] = "ValueError";
-static const char __pyx_k_VolumeSize[] = "VolumeSize";
+static const char __pyx_k_Volumesize[] = "Volumesize";
 static const char __pyx_k_cpp_labels[] = "cpp_labels";
 static const char __pyx_k_start_time[] = "start_time";
 static const char __pyx_k_wiring_pyx[] = "wiring.pyx";
@@ -1816,7 +1816,7 @@ static const char __pyx_k_ndarray_is_not_Fortran_contiguou[] = "ndarray is not F
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
 static const char __pyx_k_Format_string_allocated_too_shor_2[] = "Format string allocated too short.";
 static PyObject *__pyx_kp_s_;
-static PyObject *__pyx_n_s_BlockSize;
+static PyObject *__pyx_n_s_Blocksize;
 static PyObject *__pyx_kp_s_Data_chunk_size;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor_2;
@@ -1828,7 +1828,7 @@ static PyObject *__pyx_n_s_ReadH5File;
 static PyObject *__pyx_n_s_Resolution;
 static PyObject *__pyx_n_s_RuntimeError;
 static PyObject *__pyx_n_s_ValueError;
-static PyObject *__pyx_n_s_VolumeSize;
+static PyObject *__pyx_n_s_Volumesize;
 static PyObject *__pyx_n_s_ascontiguousarray;
 static PyObject *__pyx_n_s_astype;
 static PyObject *__pyx_n_s_block_x;
@@ -2374,13 +2374,13 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   /* "wiring.pyx":38
  * 
  *     # get, check and set grid size from meta file
- *     blocksize_inp = dataIO.BlockSize(prefix)             # <<<<<<<<<<<<<<
+ *     blocksize_inp = dataIO.Blocksize(prefix)             # <<<<<<<<<<<<<<
  *     if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:
  *         raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")
  */
   __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_dataIO); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_BlockSize); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_Blocksize); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -2403,7 +2403,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
 
   /* "wiring.pyx":39
  *     # get, check and set grid size from meta file
- *     blocksize_inp = dataIO.BlockSize(prefix)
+ *     blocksize_inp = dataIO.Blocksize(prefix)
  *     if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:             # <<<<<<<<<<<<<<
  *         raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")
  *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize_inp = np.ascontiguousarray(blocksize_inp, dtype=ctypes.c_int64)
@@ -2459,7 +2459,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   if (unlikely(__pyx_t_11)) {
 
     /* "wiring.pyx":40
- *     blocksize_inp = dataIO.BlockSize(prefix)
+ *     blocksize_inp = dataIO.Blocksize(prefix)
  *     if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:
  *         raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize_inp = np.ascontiguousarray(blocksize_inp, dtype=ctypes.c_int64)
@@ -2494,7 +2494,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
 
     /* "wiring.pyx":39
  *     # get, check and set grid size from meta file
- *     blocksize_inp = dataIO.BlockSize(prefix)
+ *     blocksize_inp = dataIO.Blocksize(prefix)
  *     if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:             # <<<<<<<<<<<<<<
  *         raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")
  *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize_inp = np.ascontiguousarray(blocksize_inp, dtype=ctypes.c_int64)
@@ -2568,7 +2568,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   /* "wiring.pyx":45
  * 
  *     # set volumesize
- *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.VolumeSize(prefix), dtype=ctypes.c_int64)             # <<<<<<<<<<<<<<
+ *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.Volumesize(prefix), dtype=ctypes.c_int64)             # <<<<<<<<<<<<<<
  *     # change to float to long
  *     CppUpdateVolumesize(&(cpp_volumesize[0]))
  */
@@ -2579,7 +2579,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_dataIO); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_VolumeSize); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_Volumesize); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -2631,7 +2631,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   __pyx_t_3 = 0;
 
   /* "wiring.pyx":47
- *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.VolumeSize(prefix), dtype=ctypes.c_int64)
+ *     cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.Volumesize(prefix), dtype=ctypes.c_int64)
  *     # change to float to long
  *     CppUpdateVolumesize(&(cpp_volumesize[0]))             # <<<<<<<<<<<<<<
  * 
@@ -5329,7 +5329,7 @@ static struct PyModuleDef __pyx_moduledef = {
 
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_, __pyx_k_, sizeof(__pyx_k_), 0, 0, 1, 0},
-  {&__pyx_n_s_BlockSize, __pyx_k_BlockSize, sizeof(__pyx_k_BlockSize), 0, 0, 1, 1},
+  {&__pyx_n_s_Blocksize, __pyx_k_Blocksize, sizeof(__pyx_k_Blocksize), 0, 0, 1, 1},
   {&__pyx_kp_s_Data_chunk_size, __pyx_k_Data_chunk_size, sizeof(__pyx_k_Data_chunk_size), 0, 0, 1, 0},
   {&__pyx_kp_u_Format_string_allocated_too_shor, __pyx_k_Format_string_allocated_too_shor, sizeof(__pyx_k_Format_string_allocated_too_shor), 0, 1, 0, 0},
   {&__pyx_kp_u_Format_string_allocated_too_shor_2, __pyx_k_Format_string_allocated_too_shor_2, sizeof(__pyx_k_Format_string_allocated_too_shor_2), 0, 1, 0, 0},
@@ -5341,7 +5341,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Resolution, __pyx_k_Resolution, sizeof(__pyx_k_Resolution), 0, 0, 1, 1},
   {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
-  {&__pyx_n_s_VolumeSize, __pyx_k_VolumeSize, sizeof(__pyx_k_VolumeSize), 0, 0, 1, 1},
+  {&__pyx_n_s_Volumesize, __pyx_k_Volumesize, sizeof(__pyx_k_Volumesize), 0, 0, 1, 1},
   {&__pyx_n_s_ascontiguousarray, __pyx_k_ascontiguousarray, sizeof(__pyx_k_ascontiguousarray), 0, 0, 1, 1},
   {&__pyx_n_s_astype, __pyx_k_astype, sizeof(__pyx_k_astype), 0, 0, 1, 1},
   {&__pyx_n_s_block_x, __pyx_k_block_x, sizeof(__pyx_k_block_x), 0, 0, 1, 1},

@@ -35,14 +35,14 @@ def GenerateSkeleton(prefix, label, block_z, block_y, block_x):
     CppUpdateResolution(&(cpp_resolution[0]))
 
     # get, check and set grid size from meta file
-    blocksize_inp = dataIO.BlockSize(prefix)
+    blocksize_inp = dataIO.Blocksize(prefix)
     if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:
         raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize_inp = np.ascontiguousarray(blocksize_inp, dtype=ctypes.c_int64)
     CppUpdateBlocksize(&(cpp_blocksize_inp[0]))
 
     # set volumesize
-    cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.VolumeSize(prefix), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.Volumesize(prefix), dtype=ctypes.c_int64)
     # change to float to long
     CppUpdateVolumesize(&(cpp_volumesize[0]))
 

@@ -40,10 +40,10 @@ class MetaData:
     def Resolution(self):
         return self.resolution
 
-    def GridSize(self):
+    def Volumesize(self):
         return self.volume_size
 
-    def BlockSize(self):
+    def Blocksize(self):
         return self.block_size
 
     def BlocksFilepath(self):

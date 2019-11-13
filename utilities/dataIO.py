@@ -14,13 +14,13 @@ def Resolution(prefix):
     # return the resolution for this prefix
     return meta_data.MetaData(prefix).Resolution()
 
-def BlockSize(prefix):
+def Blocksize(prefix):
     # return the blocksize for this prefix
-    return meta_data.MetaData(prefix).BlockSize()
+    return meta_data.MetaData(prefix).Blocksize()
 
-def VolumeSize(prefix):
+def Volumesize(prefix):
     # return the volumesize for this prefix
-    return meta_data.MetaData(prefix).VolumeSize()
+    return meta_data.MetaData(prefix).Volumesize()
 
 def SegmentationsFilepath(prefix):
     # return the filepath to the segmented blocks
