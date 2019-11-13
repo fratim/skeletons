@@ -4,6 +4,9 @@ examples/somae
 examples/surfaces
 examples/synapses
 examples/volumetric_somae
+examples/skeletons
+examples/running_times
+examples/widths
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
