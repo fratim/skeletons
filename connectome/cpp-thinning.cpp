@@ -491,8 +491,10 @@ static void SequentialThinning(const char *prefix, long label)
     do {
         changed = ThinningIterationStep();
         iteration++;
-        printf("  Iteration %d deleted %ld points\n", iteration, changed);
+        // printf("  Iteration %d deleted %ld points\n", iteration, changed);
     } while (changed);
+    printf("Needed %d iterations\n", iteration);
+
 }
 
 
@@ -527,7 +529,15 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
       // set label to current ID
       label = *itr;
-      std::cout << "Processing label " << label << "..." << std::endl;
+
+      std::cout << "-----------------------------------" << std::endl;
+      std::cout << "Processing label " << label << std::endl;
+
+      if (label == 280 || label == 324){
+        std::cout << "SKIPPING " << std::endl;
+        itr++;
+        continue;
+      }
 
       // set segment to the pointcloud of current label
       segment = Pointclouds[label];
@@ -583,7 +593,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
       if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-      printf("  Remaining voxels: %ld\n", num);
+      printf("Remaining voxels: %ld\n", num);
 
       while (surface_voxels.first != NULL) {
           // get the surface voxels

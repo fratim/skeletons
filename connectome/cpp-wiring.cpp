@@ -161,7 +161,7 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
         //  pad the location by one
         iz += 1; iy += 1; ix += 1;
 
-        std::cout << "synapse added at: "<<iz<<","<<iy<<","<<ix<< std::endl << std::flush;
+        // std::cout << "synapse added at: "<<iz<<","<<iy<<","<<ix<< std::endl << std::flush;
 
         // find the new voxel index
         long iv = IndicesToIndex(ix, iy, iz);
