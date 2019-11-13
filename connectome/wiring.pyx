@@ -15,7 +15,9 @@ from skeletons.utilities import dataIO
 
 cdef extern from 'cpp-wiring.h':
     void CppUpdateResolution(float resolution[3])
-    void CppUpdateGridsize(long gridsize[3])
+    void CppUpdateBlocksize(long blocksize_inp[3])
+    void CppUpdateVolumesize(long volumesize[3])
+    void CppUpdateBlockindices(long block_z, long block_y, long block_x)
     void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
 
 # extract the wiring diagram for this prefix and label
@@ -33,14 +35,19 @@ def GenerateSkeleton(prefix, label, block_z, block_y, block_x):
     CppUpdateResolution(&(cpp_resolution[0]))
 
     # get, check and set grid size from meta file
-    gridsize = dataIO.BlockSize(prefix)
-    if data.shape[0]!=gridsize[0] or data.shape[1]!=gridsize[1] or data.shape[2]!=gridsize[2]:
-        raise ValueError("Data chunk size not equal to size specified in meta file!")
-    #cdef np.ndarray[float, ndim=1, mode='c'] cpp_gridsize = np.ascontiguousarray(gridsize).astype(np.float32)
-    cdef np.ndarray[long, ndim=1, mode='c'] cpp_gridsize = np.ascontiguousarray(data.shape, dtype=ctypes.c_int64)
-    # change to float to long
+    blocksize_inp = dataIO.BlockSize(prefix)
+    if data.shape[0]!=blocksize_inp[0] or data.shape[1]!=blocksize_inp[1] or data.shape[2]!=blocksize_inp[2]:
+        raise ValueError("Data chunk size ("+str(data.shape)+") not equal to size specified in meta file"+str(blocksize_inp)+"!")
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize_inp = np.ascontiguousarray(blocksize_inp, dtype=ctypes.c_int64)
+    CppUpdateBlocksize(&(cpp_blocksize_inp[0]))
 
-    CppUpdateGridsize(&(cpp_gridsize[0]))
+    # set volumesize
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_volumesize = np.ascontiguousarray(dataIO.VolumeSize(prefix), dtype=ctypes.c_int64)
+    # change to float to long
+    CppUpdateVolumesize(&(cpp_volumesize[0]))
+
+    # set block indices of the current block
+    CppUpdateBlockindices(block_z, block_y, block_x)
 
     # the look up table is in the synapseaware/connectome folder
     lut_directory = os.path.dirname(__file__)

@@ -4,6 +4,8 @@
 #include "cpp-wiring.h"
 
 
+// TODO fix this
+long grid_size[3] = {1,1,1};
 
 struct DijkstraData {
     long iv;
@@ -28,13 +30,13 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
     CppPopulatePointCloud(prefix, "skeletons", label);
     CppPopulatePointCloud(prefix, "synapses", label);
     CppPopulatePointCloud(prefix, "volumetric_somae/surfaces", label);
-    
+
     // get the number of elements in the skeleton
     long nelements = segment.size();
-    
+
     DijkstraData *voxel_data = new DijkstraData[nelements];
     if (!voxel_data) exit(-1);
-    
+
     // initialize the priority queue
     DijkstraData tmp;
     MinBinaryHeap<DijkstraData *> voxel_heap(&tmp, (&tmp.distance), segment.size());
@@ -57,7 +59,7 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
         }
     }
 
-    
+
     // visit all vertices
     long voxel_index;
     while (!voxel_heap.IsEmpty()) {
@@ -108,7 +110,7 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
             }
         }
     }
-  
+
     std::unordered_set<long> wiring_diagram = std::unordered_set<long>();
 
     // go through all of the synapses and add all of the skeleton points to the source
@@ -136,13 +138,13 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
             data = data->prev;
         }
     }
-    
+
     char wiring_filename[4096];
     sprintf(wiring_filename, "connectomes/%s/%06ld.pts", prefix, label);
     char distance_filename[4096];
     sprintf(distance_filename, "distances/%s/%06ld.pts", prefix, label);
 
-    FILE *wfp = fopen(wiring_filename, "wb"); 
+    FILE *wfp = fopen(wiring_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     FILE *dfp = fopen(distance_filename, "wb");
     if (!dfp) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
@@ -152,7 +154,7 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
     grid_size[OR_Y] -= 2;
     grid_size[OR_X] -= 2;
 
-    long nskeleton_points = wiring_diagram.size();    
+    long nskeleton_points = wiring_diagram.size();
     if (fwrite(&(grid_size[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     if (fwrite(&(grid_size[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     if (fwrite(&(grid_size[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
@@ -189,7 +191,7 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
         if (fwrite(&voxel_index, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
         if (fwrite(&distance, sizeof(double), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     }
-    
+
     fclose(wfp);
     fclose(dfp);
 

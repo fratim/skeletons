@@ -10,48 +10,46 @@ from PIL import Image
 from skeletons.data_structures import meta_data
 
 
-def GridSize(prefix):
-    # return the size of the grid for this prefix
-    return meta_data.MetaData(prefix).GridSize()
-
-
-
 def Resolution(prefix):
     # return the resolution for this prefix
     return meta_data.MetaData(prefix).Resolution()
 
+def BlockSize(prefix):
+    # return the blocksize for this prefix
+    return meta_data.MetaData(prefix).BlockSize()
 
+def VolumeSize(prefix):
+    # return the volumesize for this prefix
+    return meta_data.MetaData(prefix).VolumeSize()
+
+def SegmentationsFilepath(prefix):
+    # return the filepath to the segmented blocks
+    return meta_data.MetaData(prefix).SegmentationsFilepath()
+
+def SynapsesFilepath(prefix):
+    # return the filepath to the synapses (of each Neuron)
+    return meta_data.MetaData(prefix).SynapsesFilepath()
 
 def ReadImage(filename):
     # return the image corresponding to this file
     im = np.array(Image.open(filename))
-
     return im
-
-
 
 def ReadH5File(filename):
     # return the first h5 dataset from this file
     with h5py.File(filename, 'r') as hf:
         keys = [key for key in hf.keys()]
         data = np.array(hf[keys[0]])
-
     return data
-
-
 
 def WriteH5File(data, filename, dataset):
     with h5py.File(filename, 'w') as hf:
         # should cover all cases of affinities/images
         hf.create_dataset(dataset, data=data, compression='gzip')
 
-
-
-
 def ReadPoints(prefix, label, dataset):
     # get the filename for the segmentation
     point_cloud_filename = '{}/{}/{:06d}.pts'.format(dataset, prefix, label)
-
     prefix_zres, prefix_yres, prefix_xres = GridSize(prefix)
 
     with open(point_cloud_filename, 'rb') as fd:
@@ -63,8 +61,6 @@ def ReadPoints(prefix, label, dataset):
 
     return point_cloud
 
-
-
 def ReadAllPoints(prefix, dataset):
     labels = [int(label[:-4]) for label in sorted(os.listdir('{}/{}'.format(dataset, prefix)))]
 
@@ -75,8 +71,6 @@ def ReadAllPoints(prefix, dataset):
         point_clouds[label] = ReadPoints(prefix, label, dataset)
 
     return point_clouds
-
-
 
 def ReadWidths(prefix, label):
     # get the filename with all of the widths

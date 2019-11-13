@@ -9,8 +9,14 @@
 // constant variables
 
 static const int lookup_table_size = 1 << 23;
-static float resolution[3] = { -1, -1, -1 };
 
+// float resolution[3] = {-1,-1,-1};
+// long input_blocksize[3] = {-1,-1,-1};
+// long padded_blocksize[3] = {-1,-1,-1};
+// long volumesize[3] = {-1,-1,-1};
+// long block_z = -1;
+// long block_y = -1;
+// long block_x = -1;
 
 // DO NOT CHANGE THIS ORDERING
 static const int NTHINNING_DIRECTIONS = 6;
@@ -85,41 +91,41 @@ static void set_char_mask(void)
 
 static void PopulateOffsets(void)
 {
-    n26_offsets[0] = -1 * grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X] - 1;
-    n26_offsets[1] = -1 * grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X];
-    n26_offsets[2] = -1 * grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X] + 1;
-    n26_offsets[3] = -1 * grid_size[OR_Y] * grid_size[OR_X] - 1;
-    n26_offsets[4] = -1 * grid_size[OR_Y] * grid_size[OR_X];
-    n26_offsets[5] = -1 * grid_size[OR_Y] * grid_size[OR_X] + 1;
-    n26_offsets[6] = -1 * grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X] - 1;
-    n26_offsets[7] = -1 * grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X];
-    n26_offsets[8] = -1 * grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X] + 1;
+    n26_offsets[0] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X] - 1;
+    n26_offsets[1] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X];
+    n26_offsets[2] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X] + 1;
+    n26_offsets[3] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] - 1;
+    n26_offsets[4] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+    n26_offsets[5] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] + 1;
+    n26_offsets[6] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X] - 1;
+    n26_offsets[7] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X];
+    n26_offsets[8] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X] + 1;
 
-    n26_offsets[9] = -1 * grid_size[OR_X] - 1;
-    n26_offsets[10] = -1 * grid_size[OR_X];
-    n26_offsets[11] = -1 * grid_size[OR_X] + 1;
+    n26_offsets[9] = -1 * padded_blocksize[OR_X] - 1;
+    n26_offsets[10] = -1 * padded_blocksize[OR_X];
+    n26_offsets[11] = -1 * padded_blocksize[OR_X] + 1;
     n26_offsets[12] = -1;
     n26_offsets[13] = +1;
-    n26_offsets[14] = grid_size[OR_X] - 1;
-    n26_offsets[15] = grid_size[OR_X];
-    n26_offsets[16] = grid_size[OR_X] + 1;
+    n26_offsets[14] = padded_blocksize[OR_X] - 1;
+    n26_offsets[15] = padded_blocksize[OR_X];
+    n26_offsets[16] = padded_blocksize[OR_X] + 1;
 
-    n26_offsets[17] = grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X] - 1;
-    n26_offsets[18] = grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X];
-    n26_offsets[19] = grid_size[OR_Y] * grid_size[OR_X] - grid_size[OR_X] + 1;
-    n26_offsets[20] = grid_size[OR_Y] * grid_size[OR_X] - 1;
-    n26_offsets[21] = grid_size[OR_Y] * grid_size[OR_X];
-    n26_offsets[22] = grid_size[OR_Y] * grid_size[OR_X] + 1;
-    n26_offsets[23] = grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X] - 1;
-    n26_offsets[24] = grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X];
-    n26_offsets[25] = grid_size[OR_Y] * grid_size[OR_X] + grid_size[OR_X] + 1;
+    n26_offsets[17] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X] - 1;
+    n26_offsets[18] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X];
+    n26_offsets[19] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] - padded_blocksize[OR_X] + 1;
+    n26_offsets[20] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] - 1;
+    n26_offsets[21] = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+    n26_offsets[22] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] + 1;
+    n26_offsets[23] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X] - 1;
+    n26_offsets[24] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X];
+    n26_offsets[25] = padded_blocksize[OR_Y] * padded_blocksize[OR_X] + padded_blocksize[OR_X] + 1;
 
     // use this order to go UP, DOWN, NORTH, SOUTH, EAST, WEST
     // DO NOT CHANGE THIS ORDERING
-    n6_offsets[0] = -1 * grid_size[OR_X];
-    n6_offsets[1] = grid_size[OR_X];
-    n6_offsets[2] = -1 * grid_size[OR_Y] * grid_size[OR_X];
-    n6_offsets[3] = grid_size[OR_Y] * grid_size[OR_X];
+    n6_offsets[0] = -1 * padded_blocksize[OR_X];
+    n6_offsets[1] = padded_blocksize[OR_X];
+    n6_offsets[2] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+    n6_offsets[3] = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
     n6_offsets[4] = +1;
     n6_offsets[5] = -1;
 }
@@ -311,9 +317,9 @@ static void CollectSurfaceVoxels(void)
             IndexToIndices(neighbor_index, ii, ij, ik);
 
             // skip the fake boundary elements
-            if ((ii == 0) or (ii == grid_size[OR_X] - 1)) continue;
-            if ((ij == 0) or (ij == grid_size[OR_Y] - 1)) continue;
-            if ((ik == 0) or (ik == grid_size[OR_Z] - 1)) continue;
+            if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
+            if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
+            if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
 
             if (segment.find(neighbor_index) == segment.end()) {
                 // this location is a boundary so create a surface voxel and break
@@ -489,25 +495,6 @@ static void SequentialThinning(const char *prefix, long label)
 }
 
 
-
-void CppUpdateResolution(float input_resolution[3])
-{
-    resolution[OR_Z] = input_resolution[OR_Z];
-    resolution[OR_Y] = input_resolution[OR_Y];
-    resolution[OR_X] = input_resolution[OR_X];
-}
-
-void CppUpdateGridsize(long inp_grid_size[3])
-{
-    grid_size[OR_Z] = inp_grid_size[OR_Z] + 2;
-    grid_size[OR_Y] = inp_grid_size[OR_Y] + 2;
-    grid_size[OR_X] = inp_grid_size[OR_X] + 2;
-
-    input_grid_size[OR_Z] = inp_grid_size[OR_Z];
-    input_grid_size[OR_Y] = inp_grid_size[OR_Y];
-    input_grid_size[OR_X] = inp_grid_size[OR_X];
-}
-
 void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
 {
     // start timing statistics
@@ -527,9 +514,6 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
     CppPopulatePointCloudFromH5(label, labels);
     // CppPopulatePointCloud(prefix, "synapses", label);
     // CppPopulatePointCloud(prefix,  "somae", label);
-
-    // add fake somae
-    segment[10]=4;
 
     // get the number of points
     long initial_points = segment.size();
@@ -557,15 +541,10 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
     FILE *wfp = fopen(output_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
 
-    // unpad the grid size
-    grid_size[OR_Z] -= 2;
-    grid_size[OR_Y] -= 2;
-    grid_size[OR_X] -= 2;
-
     // write the number of elements
-    if (fwrite(&(grid_size[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(grid_size[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(grid_size[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
     // write the widths to file
@@ -576,9 +555,9 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
     if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
     // write the number of elements
-    if (fwrite(&(grid_size[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-    if (fwrite(&(grid_size[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-    if (fwrite(&(grid_size[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+    if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
     if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
     printf("  Remaining voxels: %ld\n", num);
@@ -590,13 +569,15 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
         long index = LE->iv;
         float width = widths[index];
 
-        // get the coordinates for this skeleton point in the non-cropped segmentation
-        long iz = LE->iz - 1;
-        long iy = LE->iy - 1;
-        long ix = LE->ix - 1;
-        long iv = iz * grid_size[OR_X] * grid_size[OR_Y] + iy * grid_size[OR_X] + ix;
+        // get the coordinates for this skeleton point in the global frame
+        long iz = LE->iz - 1 + block_z*input_blocksize[OR_Z];
+        long iy = LE->iy - 1 + block_y*input_blocksize[OR_Y];
+        long ix = LE->ix - 1 + block_x*input_blocksize[OR_X];
 
-        if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+        // TODO: transform to global frame here
+        long iv = iz * volumesize[OR_X] * volumesize[OR_Y] + iy * volumesize[OR_X] + ix;
+
+        if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         if (fwrite(&iv, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
         if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 

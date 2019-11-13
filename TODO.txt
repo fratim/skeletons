@@ -8,6 +8,9 @@ TODO:
 4. Always pass block of data as first argument, later the longs
 5. Adjust meta file to store values that we discussed
 6. Pad blocks on edges to have them all the same size
+7. How to save/read synapses?
+8. Update meta gridsize - need to update indexing of synapses also
+9. Set data paths from meta file (pass to c++)
 
 COMMENTS:
 1. Do we have a second monitor anywhere?
@@ -15,3 +18,7 @@ COMMENTS:
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark biorder components
    in advance (then check both LUT on iteration step)
+
+QUESTIONS:
+1. Mistake in source code? Line 585 cpp-thinning:
+  if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); } should be wfp
