@@ -16,7 +16,7 @@ void CppUpdateVolumesize(long volumesize[3]);
 void CppUpdateBlockindices(long block_z, long block_y, long block_x);
 
 void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels);
-void CppSkeletonRefinement(const char *prefix, long label, double resolution[3]);
+// void CppSkeletonRefinement(const char *prefix, long label, double resolution[3]);
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label);
 void CppPopulatePointCloudFromH5(long label, long *labels);
 

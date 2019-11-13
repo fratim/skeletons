@@ -5,7 +5,6 @@
 
 
 // TODO fix this
-long grid_size[3] = {1,1,1};
 
 struct DijkstraData {
     long iv;
