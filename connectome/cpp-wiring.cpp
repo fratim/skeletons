@@ -106,12 +106,6 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
       // add index to pointcloud
       Pointclouds[curr_label][iv] = 1;
 
-      if (iv%1000000==0){
-          synapses.insert(iv);
-          Pointclouds[curr_label][iv] = 3;
-          std::cout << "Random Synapse: " << iv << ", ID: " << curr_label << std::endl;
-      }
-
     }
 
     // save segment as the pointcloud for a specific label TODO: remove this and return array of labels to be iterated over
@@ -140,6 +134,8 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
 
     //
     std::cout<<"Volume size readin: "<<read_volumesize[0]<<","<<read_volumesize[1]<<","<<read_volumesize[2]<<","<<std::endl<<std::flush;
+    std::cout<<"npoints: "<<npoints<<","<<std::endl<<std::flush;
+
     if (read_volumesize[0]!=volumesize[0] || read_volumesize[1]!=volumesize[1] || read_volumesize[2]!=volumesize[2]) {
         throw std::invalid_argument("read_volumesize not equal to volumesize");
     }
@@ -165,6 +161,9 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
 
         //  pad the location by one
         iz += 1; iy += 1; ix += 1;
+
+        std::cout << "synapse added at: "<<iz<<","<<iy<<","<<ix<< std::endl << std::flush;
+
 
         // find the new voxel index
         long iv = IndicesToIndex(ix, iy, iz);
