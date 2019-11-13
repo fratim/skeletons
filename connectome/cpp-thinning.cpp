@@ -3,6 +3,7 @@
 #include <limits>
 #include "cpp-wiring.h"
 #include <iostream>
+#include <stdexcept>
 
 
 
@@ -573,6 +574,11 @@ void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_ta
         long iz = LE->iz - 1 + block_z*input_blocksize[OR_Z];
         long iy = LE->iy - 1 + block_y*input_blocksize[OR_Y];
         long ix = LE->ix - 1 + block_x*input_blocksize[OR_X];
+
+        // check that indices are not out of volume size
+        if (iz>=volumesize[OR_Z] ||  iy>=volumesize[OR_Y] || ix>=volumesize[OR_X]){
+          throw std::invalid_argument("Output global indices outside of volumesize!");
+        }
 
         // TODO: transform to global frame here
         long iv = iz * volumesize[OR_X] * volumesize[OR_Y] + iy * volumesize[OR_X] + ix;

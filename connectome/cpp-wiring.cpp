@@ -21,9 +21,10 @@ long sheet_size = -1;
 long row_size = -1;
 long infinity = -1;
 
-// create new default variables (will be overwritten)
+// create new default variables (will be overwritten) TODO> do I really need these declarations?
 std::unordered_map<long, char> segment = std::unordered_map<long, char>();
 std::unordered_set<long> synapses = std::unordered_set<long>();
+std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
 
 
 void CppUpdateResolution(float input_resolution[3])
@@ -69,6 +70,7 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
 
     std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
     std::unordered_set<long> synapses;
+    std::unordered_set<long> IDs_in_block;
 
     // indexing parameters for indexing within current block
     nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
@@ -100,7 +102,8 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
       // check if pointcloud of this label already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
         Pointclouds[curr_label] = std::unordered_map<long,char>();
-        std::cout << "New label detected: " << curr_label << std::endl << std::flush;
+        // std::cout << "New label detected: " << curr_label << std::endl << std::flush;
+        IDs_in_block.insert(curr_label);
       }
 
       // add index to pointcloud
@@ -110,6 +113,19 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
 
     // save segment as the pointcloud for a specific label TODO: remove this and return array of labels to be iterated over
     segment = Pointclouds[label];
+
+    std::cout << "Printing all IDs in this block" <<std::endl<<std::flush;
+
+    // iterate over set to print all components
+    std::unordered_set<long>::iterator it = IDs_in_block.begin();
+    while (it != IDs_in_block.end())
+    {
+      std::cout << *it << ",";
+    	it++;
+    }
+
+    std::cout << std::endl << "Printed all IDS and created map of pointclouds" << std::endl << std::flush;
+
 
 }
 

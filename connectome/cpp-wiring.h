@@ -44,6 +44,7 @@ extern long row_size;
 extern long infinity;
 extern std::unordered_map<long, char> segment;
 extern std::unordered_set<long> synapses;
+extern std::unordered_set<long> IDs_in_block;
 
 
 
