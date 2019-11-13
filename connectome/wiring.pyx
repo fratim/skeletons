@@ -18,10 +18,10 @@ cdef extern from 'cpp-wiring.h':
     void CppUpdateBlocksize(long blocksize_inp[3])
     void CppUpdateVolumesize(long volumesize[3])
     void CppUpdateBlockindices(long block_z, long block_y, long block_x)
-    void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
+    void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels)
 
 # extract the wiring diagram for this prefix and label
-def GenerateSkeleton(prefix, label, block_z, block_y, block_x):
+def GenerateSkeleton(prefix, block_z, block_y, block_x):
     # start running time statistics
     start_time = time.time()
 
@@ -53,7 +53,7 @@ def GenerateSkeleton(prefix, label, block_z, block_y, block_x):
     lut_directory = os.path.dirname(__file__)
 
     # call the topological skeleton algorithm
-    CppSkeletonGeneration(prefix.encode('utf-8'), label, lut_directory.encode('utf-8'), &(cpp_labels[0,0,0]))
+    CppSkeletonGeneration(prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_labels[0,0,0]))
 
     # print out statistics for wiring extraction
     print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))

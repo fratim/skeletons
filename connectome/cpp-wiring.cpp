@@ -21,10 +21,11 @@ long sheet_size = -1;
 long row_size = -1;
 long infinity = -1;
 
-// create new default variables (will be overwritten) TODO> do I really need these declarations?
+// create new default variables (will be overwritten) TODO: do I really need these declarations?
 std::unordered_map<long, char> segment = std::unordered_map<long, char>();
 std::unordered_set<long> synapses = std::unordered_set<long>();
 std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
+std::unordered_map<long, std::unordered_map<long,char>> Pointclouds = std::unordered_map<long, std::unordered_map<long,char>>();
 
 
 void CppUpdateResolution(float input_resolution[3])
@@ -66,11 +67,11 @@ void CppUpdateBlockindices(long inp_block_z, long inp_block_y, long inp_block_x)
 ///////////////////////////////////////
 
 /* conventient I/O function */
-void CppPopulatePointCloudFromH5(long label, long *labels) {
+void CppPopulatePointCloudFromH5(long *labels) {
 
-    std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
-    std::unordered_set<long> synapses;
-    std::unordered_set<long> IDs_in_block;
+    // std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
+    // std::unordered_set<long> synapses;
+    // std::unordered_set<long> IDs_in_block;
 
     // indexing parameters for indexing within current block
     nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
@@ -111,28 +112,11 @@ void CppPopulatePointCloudFromH5(long label, long *labels) {
 
     }
 
-    // save segment as the pointcloud for a specific label TODO: remove this and return array of labels to be iterated over
-    segment = Pointclouds[label];
-
-    std::cout << "Printing all IDs in this block" <<std::endl<<std::flush;
-
-    // iterate over set to print all components
-    std::unordered_set<long>::iterator it = IDs_in_block.begin();
-    while (it != IDs_in_block.end())
-    {
-      std::cout << *it << ",";
-    	it++;
-    }
-
-    std::cout << std::endl << "Printed all IDS and created map of pointclouds" << std::endl << std::flush;
-
-
 }
 
 /* conventient I/O function */
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) {
 
-    std::cout << "Next: Populate Point Cloud" << std::endl << std::flush;
     // read in the point cloud for this label
     char filename[4096];
     sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, label);
@@ -147,10 +131,6 @@ void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) 
     if (fread(&(read_volumesize[OR_Y]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
     if (fread(&(read_volumesize[OR_X]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
     if (fread(&npoints, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-
-    //
-    std::cout<<"Volume size read in: "<<read_volumesize[0]<<","<<read_volumesize[1]<<","<<read_volumesize[2]<<","<<std::endl<<std::flush;
-    std::cout<<"npoints: "<<npoints<<std::endl<<std::flush;
 
     if (read_volumesize[0]!=volumesize[0] || read_volumesize[1]!=volumesize[1] || read_volumesize[2]!=volumesize[2]) {
         throw std::invalid_argument("read_volumesize not equal to volumesize");

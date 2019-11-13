@@ -496,119 +496,147 @@ static void SequentialThinning(const char *prefix, long label)
 }
 
 
-void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels)
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels)
 {
     // start timing statistics
     clock_t start_time = clock();
 
-    // create (and clear) the global variables
-    segment = std::unordered_map<long, char>(10000000);
-    // not needed here but for refinement so need to initialize anyway
-    synapses = std::unordered_set<long>();
-    widths = std::unordered_map<long, float>(10000000);
+    // initialize and clear set to hold all IDs that are present in this block
+    IDs_in_block = std::unordered_set<long>();
+
+    // retrive points clouds from h5 file
+    CppPopulatePointCloudFromH5(labels);
 
     // initialize all of the lookup tables
     InitializeLookupTables(lookup_table_directory);
-    std::cout << "Initialized LUT"  << std::endl << std::flush;
 
-    // populate the point clouds with segment voxels and anchor points
-    CppPopulatePointCloudFromH5(label, labels);
-    CppPopulatePointCloud(prefix, "synapses", label);
-    // CppPopulatePointCloud(prefix,  "somae", label);
+    // initialize variable label, that holds the label which is currently processed
+    long label;
 
-    // get the number of points
-    long initial_points = segment.size();
-    printf("Label %ld initial points: %ld\n", label, initial_points);
+    // create iterator over set
+    std::unordered_set<long>::iterator itr = IDs_in_block.begin();
 
-    // can  use offsets since all paramters are offset by 1
-    // needs to happen after PopulatePointCloud()
-    PopulateOffsets();
+    // iterate over all elements in this set and compute and save their skeletons
+    while (itr != IDs_in_block.end())
+    {
 
-    // call the sequential thinning algorithm
-    SequentialThinning(prefix, label);
+      // create (and clear) the global variables
+      segment = std::unordered_map<long, char>();
+      synapses = std::unordered_set<long>();
+      widths = std::unordered_map<long, float>();
 
-    // count the number of remaining points
-    long num = 0;
-    ListElement *LE = (ListElement *) surface_voxels.first;
-    while (LE != NULL) {
-        num++;
-        LE = (ListElement *)LE->next;
+      // set label to current ID
+      label = *itr;
+      std::cout << "Processing label " << label << "..." << std::endl;
+
+      // set segment to the pointcloud of current label
+      segment = Pointclouds[label];
+
+      // get synapses and (potentially) somae
+      CppPopulatePointCloud(prefix, "synapses", label);
+      // CppPopulatePointCloud(prefix,  "somae", label);
+
+      // print number of synapses in this pointcloud
+      std::cout << "Synapses: " << synapses.size() << std::endl;
+
+      // get the number of points
+      long initial_points = segment.size();
+      printf("Label %ld initial points: %ld\n", label, initial_points);
+
+      // needs to happen after PopulatePointCloud()
+      PopulateOffsets();
+
+      // call the sequential thinning algorithm
+      SequentialThinning(prefix, label);
+
+      // count the number of remaining points
+      long num = 0;
+      ListElement *LE = (ListElement *) surface_voxels.first;
+      while (LE != NULL) {
+          num++;
+          LE = (ListElement *)LE->next;
+      }
+
+      // create an output file for the points
+      char output_filename[4096];
+      sprintf(output_filename, "skeletons/%s/%06ld.pts", prefix, label);
+
+      FILE *wfp = fopen(output_filename, "wb");
+      if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+      // write the number of elements
+      if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+      // write the widths to file
+      char widths_filename[4096];
+      sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, label);
+
+      FILE *width_fp = fopen(widths_filename, "wb");
+      if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+      // write the number of elements
+      if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+      if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+      if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+      if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+      printf("  Remaining voxels: %ld\n", num);
+
+      while (surface_voxels.first != NULL) {
+          // get the surface voxels
+          ListElement *LE = (ListElement *) surface_voxels.first;
+
+          long index = LE->iv;
+          float width = widths[index];
+
+          // get the coordinates for this skeleton point in the global frame
+          long iz = LE->iz - 1 + block_z*input_blocksize[OR_Z];
+          long iy = LE->iy - 1 + block_y*input_blocksize[OR_Y];
+          long ix = LE->ix - 1 + block_x*input_blocksize[OR_X];
+
+          // check that indices are not out of volume size
+          if (iz>=volumesize[OR_Z] ||  iy>=volumesize[OR_Y] || ix>=volumesize[OR_X]){
+            throw std::invalid_argument("Output global indices outside of volumesize!");
+          }
+
+          // TODO: transform to global frame here
+          long iv = iz * volumesize[OR_X] * volumesize[OR_Y] + iy * volumesize[OR_X] + ix;
+
+          if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&iv, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+          // remove this voxel
+          RemoveSurfaceVoxel(LE);
+      }
+
+      // close the I/O files
+      fclose(wfp);
+      fclose(width_fp);
+
+      double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
+
+      char time_filename[4096];
+      sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, label);
+
+      FILE *tfp = fopen(time_filename, "wb");
+      if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+
+      // write the number of points and the total time to file
+      if (fwrite(&initial_points, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+      if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+
+      // close file
+      fclose(tfp);
+
+      // increment iterator
+      itr++;
+
     }
-
-    // create an output file for the points
-    char output_filename[4096];
-    sprintf(output_filename, "skeletons/%s/%06ld.pts", prefix, label);
-
-    FILE *wfp = fopen(output_filename, "wb");
-    if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
-
-    // write the number of elements
-    if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-    if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
-    // write the widths to file
-    char widths_filename[4096];
-    sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, label);
-
-    FILE *width_fp = fopen(widths_filename, "wb");
-    if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-
-    // write the number of elements
-    if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-    if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-    if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-    if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-
-    printf("  Remaining voxels: %ld\n", num);
-
-    while (surface_voxels.first != NULL) {
-        // get the surface voxels
-        ListElement *LE = (ListElement *) surface_voxels.first;
-
-        long index = LE->iv;
-        float width = widths[index];
-
-        // get the coordinates for this skeleton point in the global frame
-        long iz = LE->iz - 1 + block_z*input_blocksize[OR_Z];
-        long iy = LE->iy - 1 + block_y*input_blocksize[OR_Y];
-        long ix = LE->ix - 1 + block_x*input_blocksize[OR_X];
-
-        // check that indices are not out of volume size
-        if (iz>=volumesize[OR_Z] ||  iy>=volumesize[OR_Y] || ix>=volumesize[OR_X]){
-          throw std::invalid_argument("Output global indices outside of volumesize!");
-        }
-
-        // TODO: transform to global frame here
-        long iv = iz * volumesize[OR_X] * volumesize[OR_Y] + iy * volumesize[OR_X] + ix;
-
-        if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&iv, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-        if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-
-        // remove this voxel
-        RemoveSurfaceVoxel(LE);
-    }
-
-    // close the I/O files
-    fclose(wfp);
-    fclose(width_fp);
 
     delete[] lut_simple;
 
-    double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
-
-    char time_filename[4096];
-    sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, label);
-
-    FILE *tfp = fopen(time_filename, "wb");
-    if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-
-    // write the number of points and the total time to file
-    if (fwrite(&initial_points, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-    if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-
-    // close file
-    fclose(tfp);
 }

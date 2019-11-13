@@ -9,9 +9,8 @@ prefix = 'Zebrafinch'
 block_z = 10
 block_y = 1
 block_x = 1
-label = 255
 
 # topological_thinning.TopologicalThinning(prefix, label)
 # teaser.TEASER(prefix, label)
-wiring.GenerateSkeleton(prefix, label, block_z, block_y, block_x)
+wiring.GenerateSkeleton(prefix, block_z, block_y, block_x)
 # wiring.RefineSkeleton(prefix, label)

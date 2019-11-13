@@ -15,10 +15,10 @@ void CppUpdateBlocksize(long inp_blocksize[3]);
 void CppUpdateVolumesize(long volumesize[3]);
 void CppUpdateBlockindices(long block_z, long block_y, long block_x);
 
-void CppSkeletonGeneration(const char *prefix, long label, const char *lookup_table_directory, long *labels);
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels);
 // void CppSkeletonRefinement(const char *prefix, long label, double resolution[3]);
 void CppPopulatePointCloud(const char *prefix, const char *dataset, long label);
-void CppPopulatePointCloudFromH5(long label, long *labels);
+void CppPopulatePointCloudFromH5(long *labels);
 
 
 
@@ -45,6 +45,7 @@ extern long infinity;
 extern std::unordered_map<long, char> segment;
 extern std::unordered_set<long> synapses;
 extern std::unordered_set<long> IDs_in_block;
+extern std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
 
 
 

@@ -11,6 +11,7 @@ TODO:
 7. How to save/read synapses?
 8. Update meta gridsize - need to update indexing of synapses also
 9. Set data paths from meta file (pass to c++)
+10. Initialize maps with specific size?
 
 COMMENTS:
 1. Do we have a second monitor anywhere?
