@@ -4,7 +4,11 @@
 5332x5456x5700
 # block size
 2048x2048x256
-# segmentations directory
+# input_labels directory
 /home/frtim/Documents/Code/skeletons/examples/segmentations/
-# pointclouds directory
-/home/frtim/Documents/Code/skeletons/examples/
+# synapses directory
+/home/frtim/Documents/Code/skeletons/examples/synapses/
+# somae directory
+/home/frtim/Documents/Code/skeletons/examples/somae/
+# skeleton directory
+/home/frtim/Documents/Code/skeletons/examples/skeleton/

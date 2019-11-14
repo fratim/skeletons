@@ -463,8 +463,6 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
     char output_filename[4096];
     sprintf(output_filename, "skeletons/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", prefix, prefix, block_z, block_y, block_x ,segment_ID);
 
-    std::cout << output_filename << std::endl;
-
     FILE *wfp = fopen(output_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
 
@@ -540,7 +538,7 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
     }
 
     for (int j=0; j<num; j++){
-        if (fwrite(&index_local[num], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     }
 
     // close the I/O files
@@ -585,7 +583,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     // iterate over all elements in this set and compute and save their skeletons
     long loop_executions = 0;
 
-    while (itr != IDs_in_block.end())
+    while (itr != IDs_in_block.end() && loop_executions<5)
     {
       // create (and clear) the global variables
       segment = std::unordered_map<long, char>();
