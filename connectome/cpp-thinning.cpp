@@ -585,6 +585,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
         std::cout << "SKIPPING " << std::endl;
         itr++;
         loop_executions += 1;
+        infile.close();
         continue;
       }
       infile.close();
