@@ -26,11 +26,11 @@ def GenerateSkeleton(prefix, block_z, block_y, block_x):
     start_time = time.time()
 
     #set directory of synapses
-    synapses_filepath = dataIO.SynapsesFilepath(prefix)
+    pointclouds_directory = dataIO.PointcloudsDirectory(prefix)
 
 
     # everything needs to be long ints to work with c++
-    fileName = dataIO.SegmentationsFilepath(prefix)+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.SegmentationsDirectory(prefix)+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 
@@ -57,7 +57,7 @@ def GenerateSkeleton(prefix, block_z, block_y, block_x):
     lut_directory = os.path.dirname(__file__)
 
     # call the topological skeleton algorithm
-    CppSkeletonGeneration(prefix.encode('utf-8'), lut_directory.encode('utf-8'), synapses_filepath.encode('utf-8'), &(cpp_inp_labels[0,0,0]))
+    CppSkeletonGeneration(prefix.encode('utf-8'), lut_directory.encode('utf-8'), pointclouds_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]))
 
     # print out statistics for wiring extraction
     print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))

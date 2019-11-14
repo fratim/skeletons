@@ -22,13 +22,13 @@ def Volumesize(prefix):
     # return the volumesize for this prefix
     return meta_data.MetaData(prefix).Volumesize()
 
-def SegmentationsFilepath(prefix):
+def SegmentationsDirectory(prefix):
     # return the filepath to the segmented blocks
-    return meta_data.MetaData(prefix).SegmentationsFilepath()
+    return meta_data.MetaData(prefix).SegmentationsDirectory()
 
-def SynapsesFilepath(prefix):
+def PointcloudsDirectory(prefix):
     # return the filepath to the synapses (of each Neuron)
-    return meta_data.MetaData(prefix).SynapsesFilepath()
+    return meta_data.MetaData(prefix).PointcloudsDirectory()
 
 def ReadImage(filename):
     # return the image corresponding to this file
