@@ -1,12 +1,7 @@
-Questions:
-
-
 TODO:
-3. Decide on how to name, segments, input labels and so on
 6. Pad blocks on edges to have them all the same size
 7. How to save/read synapses?
 8. Update meta gridsize - need to update indexing of synapses also
-9. Set data paths from meta file (pass to c++)
 10. Initialize maps with specific size?
 
 COMMENTS:
@@ -18,7 +13,7 @@ COMMENTS:
     - Pointclouds: pointclouds (2D map)
 
 IDEAS:
-1. Generate 2nd LUT for border component configurations and mark biorder components
+1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
 
 QUESTIONS:

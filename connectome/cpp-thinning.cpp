@@ -3,6 +3,7 @@
 #include "cpp-wiring.h"
 #include <iostream>
 #include <stdexcept>
+#include <fstream>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -228,7 +229,8 @@ static Voxel GetFromList(PointList *s, ListElement **ptr)
     }
 }
 
-static void DestroyPointList(PointList *s) {
+static void DestroyPointList(PointList *s)
+{
     ListElement *ptr;
     while (s->length) GetFromList(s, &ptr);
 }
@@ -555,7 +557,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     // iterate over all elements in this set and compute and save their skeletons
     long loop_executions = 0;
 
-    while (itr != IDs_in_block.end() && loop_executions<5)
+    while (itr != IDs_in_block.end())
     {
       // create (and clear) the global variables
       segment = std::unordered_map<long, char>();
@@ -575,13 +577,17 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
-      // skip segment IDS that have errors/missing files
-      if (segment_ID == 280 || segment_ID == 324){
+      // skip segment IDS that dont have a synapses file
+      char filename[4096];
+      snprintf(filename, 4096, "%s/%s/%s/%06ld.pts", synapses_directory, "synapses", prefix, segment_ID);
+      std::ifstream infile(filename);
+      if (!infile.good()){
         std::cout << "SKIPPING " << std::endl;
         itr++;
         loop_executions += 1;
         continue;
       }
+      infile.close();
 
       // set segment to the pointcloud of current segment_ID
       segment = Pointclouds[segment_ID];
