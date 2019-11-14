@@ -535,7 +535,7 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
 
 }
 
-void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, const char *synapses_directory, long *inp_labels)
 {
     // initialize and clear set to hold all IDs that are present in this block
     IDs_in_block = std::unordered_set<long>();
@@ -557,7 +557,6 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
     while (itr != IDs_in_block.end() && loop_executions<5)
     {
-
       // create (and clear) the global variables
       segment = std::unordered_map<long, char>();
       synapses = std::unordered_set<long>();
@@ -576,6 +575,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
+      // skip segment IDS that have errors/missing files
       if (segment_ID == 280 || segment_ID == 324){
         std::cout << "SKIPPING " << std::endl;
         itr++;
@@ -587,7 +587,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       segment = Pointclouds[segment_ID];
 
       // get synapses and (potentially) somae
-      CppPopulatePointCloud(prefix, "synapses", segment_ID);
+      CppPopulatePointCloud(prefix, "synapses", synapses_directory, segment_ID);
       // CppPopulatePointCloud(prefix,  "somae", segment_ID);
 
       // print number of synapses in this pointcloud

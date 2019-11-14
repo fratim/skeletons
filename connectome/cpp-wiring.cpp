@@ -111,12 +111,13 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 }
 
 /* conventient I/O function */
-void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {
+void CppPopulatePointCloud(const char *prefix, const char *dataset, const char *synapses_directory, long segment_ID) {
+
+    std::cout << &synapses_directory << std::endl;
 
     // read in the point cloud for this segment_ID
     char filename[4096];
-    sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, segment_ID);
-    // sprintf(filename, "/home/frtim/Documents/Code/skeletons/examples/synapses/Zebrafinch/syn_0055.txt", dataset, prefix, segment_ID);
+    sprintf(filename, synapses_directory, dataset, prefix, segment_ID);
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
