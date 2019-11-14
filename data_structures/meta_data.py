@@ -30,10 +30,14 @@ class MetaData:
                     samples = value.split('x')
                     # need to use 2, 1, and 0 here since the outward facing convention is x,y,z, not z, y, x
                     self.block_size = (int(samples[2]), int(samples[1]), int(samples[0]))
-                elif comment == '# segmentations directory':
-                    self.segmentations_directory = str(value)
-                elif comment == '# pointclouds directory':
-                    self.pointclouds_directory = str(value)
+                elif comment == '# input_labels directory':
+                    self.input_labels_directory = str(value)
+                elif comment == '# synapses directory':
+                    self.synapses_directory = str(value)
+                elif comment == '# somae directory':
+                    self.somae_directory = str(value)
+                elif comment == '# skeleton directory':
+                    self.skeleton_directory = str(value)
                 else:
                     raise ValueError("Unknown keyword in metafile")
 
@@ -46,8 +50,14 @@ class MetaData:
     def Blocksize(self):
         return self.block_size
 
-    def SegmentationsDirectory(self):
-        return self.segmentations_directory
+    def InputlabelsDirectory(self):
+        return self.input_labels_directory
 
-    def PointcloudsDirectory(self):
-        return self.pointclouds_directory
+    def SynapsesDirectory(self):
+        return self.synapses_directory
+
+    def SomaeDirectory(self):
+        return self.somae_directory
+
+    def SkeletonDirectory(self):
+        return self.skeleton_directory

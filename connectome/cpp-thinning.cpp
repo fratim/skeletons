@@ -461,7 +461,7 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
 
     // create an output file for the points
     char output_filename[4096];
-    sprintf(output_filename, "skeletons/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", prefix, prefix, block_z, block_y, block_x ,segment_ID);
+    sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x ,segment_ID);
 
     FILE *wfp = fopen(output_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -563,7 +563,7 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
 
 }
 
-void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, const char *synapses_directory, long *inp_labels)
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
 {
     // initialize and clear set to hold all IDs that are present in this block
     IDs_in_block = std::unordered_set<long>();
@@ -605,7 +605,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
       // skip segment IDS that dont have a synapses file
       char filename[4096];
-      snprintf(filename, 4096, "%s/%s/%s/%06ld.pts", synapses_directory, "synapses", prefix, segment_ID);
+      snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
       std::ifstream infile(filename);
       if (!infile.good()){
         std::cout << "SKIPPING " << std::endl;
@@ -620,7 +620,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       segment = Pointclouds[segment_ID];
 
       // get synapses and (potentially) somae
-      CppPopulatePointCloud(prefix, "synapses", synapses_directory, segment_ID);
+      CppPopulatePointCloud(prefix, "synapses", segment_ID);
       // CppPopulatePointCloud(prefix,  "somae", segment_ID);
 
       // print number of synapses in this pointcloud

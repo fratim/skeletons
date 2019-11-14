@@ -3,6 +3,7 @@ TODO:
 7. How to save/read synapses?
 8. Update meta gridsize - need to update indexing of synapses also
 10. Initialize maps with specific size?
+11. Make variables const if possible
 
 COMMENTS:
 1. Do we have a second monitor anywhere?

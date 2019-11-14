@@ -28,6 +28,10 @@ std::unordered_set<long> synapses = std::unordered_set<long>();
 std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
 std::unordered_map<long, std::unordered_map<long,char>> Pointclouds = std::unordered_map<long, std::unordered_map<long,char>>();
 
+const char *synapses_directory;
+const char *somae_directory;
+const char *skeleton_directory;
+
 
 void CppUpdateResolution(float input_resolution[3])
 {
@@ -61,6 +65,13 @@ void CppUpdateBlockindices(long inp_block_z, long inp_block_y, long inp_block_x)
     block_z = inp_block_z;
     block_y = inp_block_y;
     block_x = inp_block_x;
+}
+
+void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir)
+{
+    synapses_directory = synapses_dir;
+    somae_directory = somae_dir;
+    skeleton_directory = skeleton_dir;
 }
 
 ///////////////////////////////////////
@@ -112,10 +123,12 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 }
 
 /* conventient I/O function */
-void CppPopulatePointCloud(const char *prefix, const char *dataset, const char *synapses_directory, long segment_ID) {
+void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {
 
     char filename[4096];
-    snprintf(filename, 4096, "%s/%s/%s/%06ld.pts", synapses_directory, dataset, prefix, segment_ID);
+    snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
+
+    std::cout << filename << std::endl;
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }

@@ -14,11 +14,13 @@ void CppUpdateResolution(float resolution[3]);
 void CppUpdateBlocksize(long inp_blocksize[3]);
 void CppUpdateVolumesize(long volumesize[3]);
 void CppUpdateBlockindices(long block_z, long block_y, long block_x);
+void CppUpdateDirectories(char* synapses_dir, char* somae_dir, char* skeleton_dir);
 
-void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, const char *synapses_directory, long *inp_labels);
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels);
 // void CppSkeletonRefinement(const char *prefix, long segment_ID, double resolution[3]);
-void CppPopulatePointCloud(const char *prefix, const char *dataset, const char *synapses_directory, long segment_ID);
+void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID);
 void CppPopulatePointCloudFromH5(long *inp_labels);
+void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir);
 
 
 
@@ -46,6 +48,9 @@ extern std::unordered_map<long, char> segment;
 extern std::unordered_set<long> synapses;
 extern std::unordered_set<long> IDs_in_block;
 extern std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
+extern const char *synapses_directory;
+extern const char *somae_directory;
+extern const char *skeleton_directory;
 
 
 
