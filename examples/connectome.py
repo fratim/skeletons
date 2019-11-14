@@ -3,8 +3,6 @@
 from skeletons.connectome import wiring
 
 
-
-
 prefix = 'Zebrafinch'
 block_z = 10
 block_y = 1

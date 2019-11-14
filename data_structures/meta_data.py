@@ -30,8 +30,8 @@ class MetaData:
                     samples = value.split('x')
                     # need to use 2, 1, and 0 here since the outward facing convention is x,y,z, not z, y, x
                     self.block_size = (int(samples[2]), int(samples[1]), int(samples[0]))
-                elif comment == '# blocks filepath':
-                    self.blocks_filepath = str(value)
+                elif comment == '# segmentations filepath':
+                    self.segmentations_filepath = str(value)
                 elif comment == '# synapses filepath':
                     self.synapses_filepath = str(value)
                 else:
@@ -46,8 +46,8 @@ class MetaData:
     def Blocksize(self):
         return self.block_size
 
-    def BlocksFilepath(self):
-        return self.blocks_filepath
+    def SegmentationsFilepath(self):
+        return self.segmentations_filepath
 
     def SynapsesFilepath(self):
         return self.synapses_filepath

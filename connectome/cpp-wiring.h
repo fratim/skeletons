@@ -15,10 +15,10 @@ void CppUpdateBlocksize(long inp_blocksize[3]);
 void CppUpdateVolumesize(long volumesize[3]);
 void CppUpdateBlockindices(long block_z, long block_y, long block_x);
 
-void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels);
-// void CppSkeletonRefinement(const char *prefix, long label, double resolution[3]);
-void CppPopulatePointCloud(const char *prefix, const char *dataset, long label);
-void CppPopulatePointCloudFromH5(long *labels);
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels);
+// void CppSkeletonRefinement(const char *prefix, long segment_ID, double resolution[3]);
+void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID);
+void CppPopulatePointCloudFromH5(long *inp_labels);
 
 
 

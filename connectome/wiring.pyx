@@ -18,15 +18,15 @@ cdef extern from 'cpp-wiring.h':
     void CppUpdateBlocksize(long blocksize_inp[3])
     void CppUpdateVolumesize(long volumesize[3])
     void CppUpdateBlockindices(long block_z, long block_y, long block_x)
-    void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels)
+    void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
 
-# extract the wiring diagram for this prefix and label
+# extract the wiring diagram for this prefix and segment_ID
 def GenerateSkeleton(prefix, block_z, block_y, block_x):
     # start running time statistics
     start_time = time.time()
 
     # everything needs to be long ints to work with c++
-    fileName = "segmentations/"+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.SegmentationsFilepath(prefix)+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 

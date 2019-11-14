@@ -482,7 +482,7 @@ static long ThinningIterationStep(void)
 
 
 
-static void SequentialThinning(const char *prefix, long label)
+static void SequentialThinning(const char *prefix, long segment_ID)
 {
     // create a vector of surface voxels
     CollectSurfaceVoxels();
@@ -498,7 +498,7 @@ static void SequentialThinning(const char *prefix, long label)
 }
 
 
-void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *labels)
+void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
 {
     // start timing statistics
     clock_t start_time = clock();
@@ -507,57 +507,59 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     IDs_in_block = std::unordered_set<long>();
 
     // retrive points clouds from h5 file
-    CppPopulatePointCloudFromH5(labels);
+    CppPopulatePointCloudFromH5(inp_labels);
 
     // initialize all of the lookup tables
     InitializeLookupTables(lookup_table_directory);
 
-    // initialize variable label, that holds the label which is currently processed
-    long label;
+    // initialize variable segment_ID, that holds the segment_ID which is currently processed
+    long segment_ID;
 
     // create iterator over set
     std::unordered_set<long>::iterator itr = IDs_in_block.begin();
 
     // iterate over all elements in this set and compute and save their skeletons
-    while (itr != IDs_in_block.end())
-    {
+    long loop_executions = 0;
 
+    while (itr != IDs_in_block.end() && loop_executions<5)
+    {
       // create (and clear) the global variables
       segment = std::unordered_map<long, char>();
       synapses = std::unordered_set<long>();
       widths = std::unordered_map<long, float>();
 
-      // set label to current ID
-      label = *itr;
+      // set segment_ID to current ID
+      segment_ID = *itr;
 
       std::cout << "-----------------------------------" << std::endl;
-      std::cout << "Processing label " << label << std::endl;
+      std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
-      if (label == 280 || label == 324){
+      if (segment_ID == 280 || segment_ID == 324){
         std::cout << "SKIPPING " << std::endl;
         itr++;
+        loop_executions += 1;
         continue;
       }
 
-      // set segment to the pointcloud of current label
-      segment = Pointclouds[label];
+      // set segment to the pointcloud of current segment_ID
+      segment = Pointclouds[segment_ID];
 
       // get synapses and (potentially) somae
-      CppPopulatePointCloud(prefix, "synapses", label);
-      // CppPopulatePointCloud(prefix,  "somae", label);
+      CppPopulatePointCloud(prefix, "synapses", segment_ID);
+      // CppPopulatePointCloud(prefix,  "somae", segment_ID);
 
       // print number of synapses in this pointcloud
       std::cout << "Synapses: " << synapses.size() << std::endl;
 
       // get the number of points
       long initial_points = segment.size();
-      printf("Label %ld initial points: %ld\n", label, initial_points);
+      printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
 
       // needs to happen after PopulatePointCloud()
       PopulateOffsets();
 
       // call the sequential thinning algorithm
-      SequentialThinning(prefix, label);
+      SequentialThinning(prefix, segment_ID);
 
       // count the number of remaining points
       long num = 0;
@@ -569,7 +571,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
       // create an output file for the points
       char output_filename[4096];
-      sprintf(output_filename, "skeletons/%s/%06ld.pts", prefix, label);
+      sprintf(output_filename, "skeletons/%s/%06ld.pts", prefix, segment_ID);
 
       FILE *wfp = fopen(output_filename, "wb");
       if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -582,7 +584,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
       // write the widths to file
       char widths_filename[4096];
-      sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, label);
+      sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
 
       FILE *width_fp = fopen(widths_filename, "wb");
       if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
@@ -630,7 +632,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
 
       char time_filename[4096];
-      sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, label);
+      sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, segment_ID);
 
       FILE *tfp = fopen(time_filename, "wb");
       if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
@@ -644,6 +646,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
       // increment iterator
       itr++;
+      loop_executions += 1;
 
     }
 

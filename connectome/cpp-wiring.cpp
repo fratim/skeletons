@@ -67,11 +67,7 @@ void CppUpdateBlockindices(long inp_block_z, long inp_block_y, long inp_block_x)
 ///////////////////////////////////////
 
 /* conventient I/O function */
-void CppPopulatePointCloudFromH5(long *labels) {
-
-    // std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
-    // std::unordered_set<long> synapses;
-    // std::unordered_set<long> IDs_in_block;
+void CppPopulatePointCloudFromH5(long *inp_labels) {
 
     // indexing parameters for indexing within current block
     nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
@@ -85,8 +81,8 @@ void CppPopulatePointCloudFromH5(long *labels) {
 
     for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
 
-      // get label of current index and skip if is zero
-      long curr_label = labels[voxel_index];
+      // get segment_ID of current index and skip if is zero
+      long curr_label = inp_labels[voxel_index];
       if (!curr_label) continue;
 
       // find coordinates of this voxel_index
@@ -100,10 +96,10 @@ void CppPopulatePointCloudFromH5(long *labels) {
       // find the new voxel index
       long iv = IndicesToIndex(ix, iy, iz);
 
-      // check if pointcloud of this label already exists, otherwise add new pointcloud
+      // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
         Pointclouds[curr_label] = std::unordered_map<long,char>();
-        // std::cout << "New label detected: " << curr_label << std::endl << std::flush;
+        // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
         IDs_in_block.insert(curr_label);
       }
 
@@ -115,12 +111,12 @@ void CppPopulatePointCloudFromH5(long *labels) {
 }
 
 /* conventient I/O function */
-void CppPopulatePointCloud(const char *prefix, const char *dataset, long label) {
+void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {
 
-    // read in the point cloud for this label
+    // read in the point cloud for this segment_ID
     char filename[4096];
-    sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, label);
-    // sprintf(filename, "/home/frtim/Documents/Code/skeletons/examples/synapses/Zebrafinch/syn_0055.txt", dataset, prefix, label);
+    sprintf(filename, "%s/%s/%06ld.pts", dataset, prefix, segment_ID);
+    // sprintf(filename, "/home/frtim/Documents/Code/skeletons/examples/synapses/Zebrafinch/syn_0055.txt", dataset, prefix, segment_ID);
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }

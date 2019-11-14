@@ -2,11 +2,7 @@ Questions:
 
 
 TODO:
-1. Implement VolumeSize and BlockSizeInp and BlockSizePadded
-2. Move CppUpdateGridsize and CppUpdateResolution to cpp-wiring (currently cpp-thinning)
 3. Decide on how to name, segments, input labels and so on
-4. Always pass block of data as first argument, later the longs
-5. Adjust meta file to store values that we discussed
 6. Pad blocks on edges to have them all the same size
 7. How to save/read synapses?
 8. Update meta gridsize - need to update indexing of synapses also
@@ -15,6 +11,11 @@ TODO:
 
 COMMENTS:
 1. Do we have a second monitor anywhere?
+2. Name specifications:
+    - input labels: labels_inp
+    - segment: point cloud of one ID in a blocks
+    - segment_ID: ID of the pointcloud (label)
+    - Pointclouds: pointclouds (2D map)
 
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark biorder components
