@@ -114,20 +114,8 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 /* conventient I/O function */
 void CppPopulatePointCloud(const char *prefix, const char *dataset, const char *synapses_directory, long segment_ID) {
 
-    // read in the point cloud for this segment_ID
-    char encoding[4096];
-    sprintf(encoding, "%s/%s/%06ld.pts", dataset, prefix, segment_ID);
-
-    std::string directory = synapses_directory;
-    directory.append(encoding);
-
-    const char *filename = directory.c_str();
-
-    // char filename[4096];
-    // sprintf(filename, directory);
-
-
-    std::cout << synapses_directory << std::endl;
+    char filename[4096];
+    snprintf(filename, 4096, "%s/%s/%s/%06ld.pts", synapses_directory, dataset, prefix, segment_ID);
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
