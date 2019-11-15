@@ -1,9 +1,9 @@
 TODO:
 6. Pad blocks on edges to have them all the same size
-7. How to save/read synapses?
 8. Update meta gridsize - need to update indexing of synapses also
 10. Initialize maps with specific size?
 11. Make variables const if possible
+12. Project synapses on surface
 
 COMMENTS:
 1. Do we have a second monitor anywhere?
@@ -20,3 +20,7 @@ IDEAS:
 QUESTIONS:
 1. Mistake in source code? Line 585 cpp-thinning:
   if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); } should be wfp
+
+NOTES:
+1. Interesting Neurons:
+   - 73, 103, 143

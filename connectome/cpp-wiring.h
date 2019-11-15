@@ -45,7 +45,7 @@ extern long sheet_size;
 extern long row_size;
 extern long infinity;
 extern std::unordered_map<long, char> segment;
-extern std::unordered_set<long> synapses;
+// extern std::unordered_map<long, std::unordered_set<long> > synapses_cloud;
 extern std::unordered_set<long> IDs_in_block;
 extern std::unordered_map<long, std::unordered_map<long,char>> Pointclouds;
 extern const char *synapses_directory;

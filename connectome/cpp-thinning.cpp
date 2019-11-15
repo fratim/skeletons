@@ -563,6 +563,87 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
 
 }
 
+static int ReadSynapses(const char *prefix)
+{
+
+  // read the synapses
+  char synapse_filename[4096];
+  snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04dz-%04dy-%04dx.pts", synapses_directory, prefix, prefix, block_z, block_y, block_x);
+
+  FILE *fp = fopen(synapse_filename, "rb");
+  if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  long z_input_volume_size, y_input_volume_size, x_input_volume_size;
+  long z_input_block_size, y_input_block_size, x_input_block_size;
+
+  if (fread(&z_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (fread(&y_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (fread(&x_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  if (z_input_volume_size != volumesize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (y_input_volume_size != volumesize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (x_input_volume_size != volumesize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  if (fread(&z_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (fread(&y_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (fread(&x_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  if (z_input_block_size != input_blocksize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (y_input_block_size != input_blocksize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+  if (x_input_block_size != input_blocksize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  long nneurons;
+  if (fread(&nneurons, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+  for (long iv = 0; iv < nneurons; ++iv) {
+      // get the label and number of synapses
+      long segment_ID;
+      long nsynapses;
+
+      if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+      if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+      // synapses[segment_ID] = std::vector<long>();
+
+      // ignore the global coordinates
+      for (long is = 0; is < nsynapses; ++is) {
+          long dummy_index;
+          if (fread(&dummy_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+      }
+
+      // set block indexing parameters
+      nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+      sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+      row_size = padded_blocksize[OR_X];
+      infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
+
+      // add the local coordinates (offset by one in each direction)
+      for (long is = 0; is < nsynapses; ++is) {
+          long linear_index;
+          if (fread(&linear_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+
+          long iz = linear_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
+          long iy = (linear_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
+          long ix = linear_index % input_blocksize[OR_X];
+
+          //  pad the location by one
+          iz += 1; iy += 1; ix += 1;
+
+          // find the new voxel index
+          long iv = IndicesToIndex(ix, iy, iz);
+
+          Pointclouds[segment_ID][iv] = 3;
+      }
+
+  }
+
+  // close file
+  fclose(fp);
+
+  return 1;
+
+}
+
 void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
 {
     // initialize and clear set to hold all IDs that are present in this block
@@ -570,6 +651,9 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 
     // retrive points clouds from h5 file
     CppPopulatePointCloudFromH5(inp_labels);
+
+    // read all synapses for this block
+    if (!ReadSynapses(prefix)) exit(-1);
 
     // initialize all of the lookup tables
     InitializeLookupTables(lookup_table_directory);
@@ -583,11 +667,10 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     // iterate over all elements in this set and compute and save their skeletons
     long loop_executions = 0;
 
-    while (itr != IDs_in_block.end() && loop_executions<5)
+    while (itr != IDs_in_block.end())
     {
       // create (and clear) the global variables
       segment = std::unordered_map<long, char>();
-      synapses = std::unordered_set<long>();
       widths = std::unordered_map<long, float>();
 
       // Reset surface voxels list (TODO: is this correct?)
@@ -603,29 +686,11 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
-      // skip segment IDS that dont have a synapses file
-      char filename[4096];
-      snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
-
-      std::ifstream infile(filename);
-      if (!infile.good()){
-        std::cout << "SKIPPING " << std::endl;
-        itr++;
-        loop_executions += 1;
-        infile.close();
-        continue;
-      }
-      infile.close();
-
       // set segment to the pointcloud of current segment_ID
       segment = Pointclouds[segment_ID];
 
-      // get synapses and (potentially) somae
-      CppPopulatePointCloud(prefix, "synapses", segment_ID);
-      // CppPopulatePointCloud(prefix,  "somae", segment_ID);
-
       // print number of synapses in this pointcloud
-      std::cout << "Synapses: " << synapses.size() << std::endl;
+      // std::cout << "Synapses: " << synapses.size() << std::endl;
 
       // get the number of points
       long initial_points = segment.size();

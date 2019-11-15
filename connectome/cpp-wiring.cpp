@@ -24,7 +24,7 @@ long infinity = -1;
 
 // create new default variables (will be overwritten) TODO: do I really need these declarations?
 std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-std::unordered_set<long> synapses = std::unordered_set<long>();
+// std::unordered_map<long, std::vector<long> > synapses;
 std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
 std::unordered_map<long, std::unordered_map<long,char>> Pointclouds = std::unordered_map<long, std::unordered_map<long,char>>();
 
@@ -122,75 +122,75 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 
 }
 
-/* conventient I/O function */
-void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {
-
-    char filename[4096];
-    snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
-
-    std::cout << filename << std::endl;
-
-    FILE *fp = fopen(filename, "rb");
-    if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-
-    long read_volumesize[3];
-    long npoints;
-    if (fread(&(read_volumesize[OR_Z]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-    if (fread(&(read_volumesize[OR_Y]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-    if (fread(&(read_volumesize[OR_X]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-    if (fread(&npoints, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-
-    if (read_volumesize[0]!=volumesize[0] || read_volumesize[1]!=volumesize[1] || read_volumesize[2]!=volumesize[2]) {
-        throw std::invalid_argument("read_volumesize not equal to volumesize");
-    }
-
-    // set block indexing parameters
-    nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-    sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-    row_size = padded_blocksize[OR_X];
-    infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
-
-    for (long ip = 0; ip < npoints; ++ip) {
-        long voxel_index;
-        if (fread(&voxel_index, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
-
-        long iz = voxel_index / (volumesize[OR_Y] * volumesize[OR_X]);
-        long iy = (voxel_index - iz * (volumesize[OR_Y] * volumesize[OR_X])) / volumesize[OR_X];
-        long ix = voxel_index % volumesize[OR_X];
-
-        // offset indices according to current block position
-        iz -= block_z * input_blocksize[OR_Z];
-        iy -= block_y * input_blocksize[OR_Y];
-        ix -= block_x * input_blocksize[OR_X];
-
-        // skip point if not within block
-        if (iz<0 || iy<0 || ix<0 || iz>=input_blocksize[OR_Z] ||  iy>=input_blocksize[OR_Y] || ix>=input_blocksize[OR_X]) continue;
-
-        //  pad the location by one
-        iz += 1; iy += 1; ix += 1;
-
-        // find the new voxel index
-        long iv = IndicesToIndex(ix, iy, iz);
-
-        if (!strcmp(dataset, "segmentations")) {
-            segment[iv] = 1;
-        }
-        else if (!strcmp(dataset, "skeletons")) {
-            segment[iv] = 1;
-        }
-        else if (!strcmp(dataset, "synapses")) {
-            segment[iv] = 3;
-            synapses.insert(iv);
-        }
-        else if (!strcmp(dataset, "somae")) {
-            segment[iv] = 4;
-        }
-        else if (!strcmp(dataset, "volumetric_somae/surfaces")) {
-            segment[iv] = 4;
-        }
-        else { fprintf(stderr, "Unrecognized point cloud: %s.\n", dataset); exit(-1); }
-    }
-
-    // close file
-    fclose(fp);
-}
+// /* conventient I/O function */
+// void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {
+//
+//     char filename[4096];
+//     snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
+//
+//     std::cout << filename << std::endl;
+//
+//     FILE *fp = fopen(filename, "rb");
+//     if (!fp) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//
+//     long read_volumesize[3];
+//     long npoints;
+//     if (fread(&(read_volumesize[OR_Z]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//     if (fread(&(read_volumesize[OR_Y]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//     if (fread(&(read_volumesize[OR_X]), sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//     if (fread(&npoints, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//
+//     if (read_volumesize[0]!=volumesize[0] || read_volumesize[1]!=volumesize[1] || read_volumesize[2]!=volumesize[2]) {
+//         throw std::invalid_argument("read_volumesize not equal to volumesize");
+//     }
+//
+//     // set block indexing parameters
+//     nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+//     sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+//     row_size = padded_blocksize[OR_X];
+//     infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
+//
+//     for (long ip = 0; ip < npoints; ++ip) {
+//         long voxel_index;
+//         if (fread(&voxel_index, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", filename); exit(-1); }
+//
+//         long iz = voxel_index / (volumesize[OR_Y] * volumesize[OR_X]);
+//         long iy = (voxel_index - iz * (volumesize[OR_Y] * volumesize[OR_X])) / volumesize[OR_X];
+//         long ix = voxel_index % volumesize[OR_X];
+//
+//         // offset indices according to current block position
+//         iz -= block_z * input_blocksize[OR_Z];
+//         iy -= block_y * input_blocksize[OR_Y];
+//         ix -= block_x * input_blocksize[OR_X];
+//
+//         // skip point if not within block
+//         if (iz<0 || iy<0 || ix<0 || iz>=input_blocksize[OR_Z] ||  iy>=input_blocksize[OR_Y] || ix>=input_blocksize[OR_X]) continue;
+//
+//         //  pad the location by one
+//         iz += 1; iy += 1; ix += 1;
+//
+//         // find the new voxel index
+//         long iv = IndicesToIndex(ix, iy, iz);
+//
+//         if (!strcmp(dataset, "segmentations")) {
+//             segment[iv] = 1;
+//         }
+//         else if (!strcmp(dataset, "skeletons")) {
+//             segment[iv] = 1;
+//         }
+//         else if (!strcmp(dataset, "synapses")) {
+//             segment[iv] = 3;
+//             synapses.insert(iv);
+//         }
+//         else if (!strcmp(dataset, "somae")) {
+//             segment[iv] = 4;
+//         }
+//         else if (!strcmp(dataset, "volumetric_somae/surfaces")) {
+//             segment[iv] = 4;
+//         }
+//         else { fprintf(stderr, "Unrecognized point cloud: %s.\n", dataset); exit(-1); }
+//     }
+//
+//     // close file
+//     fclose(fp);
+// }
