@@ -27,7 +27,7 @@ def GenerateSkeleton(prefix, block_z, block_y, block_x):
     start_time = time.time()
 
     # everything needs to be long ints to work with c++
-    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 

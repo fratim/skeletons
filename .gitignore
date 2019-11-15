@@ -6,6 +6,8 @@ examples/volumetric_somae/
 examples/skeletons/
 examples/running_times/
 examples/widths/
+examples/synapses_old
+examples/synapses_new
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

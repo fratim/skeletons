@@ -606,6 +606,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       // skip segment IDS that dont have a synapses file
       char filename[4096];
       snprintf(filename, 4096, "%s/%s/%06ld.pts", synapses_directory, prefix, segment_ID);
+
       std::ifstream infile(filename);
       if (!infile.good()){
         std::cout << "SKIPPING " << std::endl;

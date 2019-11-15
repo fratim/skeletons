@@ -1787,7 +1787,6 @@ static const char __pyx_k_ReadH5File[] = "ReadH5File";
 static const char __pyx_k_Resolution[] = "Resolution";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_Volumesize[] = "Volumesize";
-static const char __pyx_k_Zebrafinch[] = "/Zebrafinch-";
 static const char __pyx_k_start_time[] = "start_time";
 static const char __pyx_k_wiring_pyx[] = "wiring.pyx";
 static const char __pyx_k_ImportError[] = "ImportError";
@@ -1807,6 +1806,7 @@ static const char __pyx_k_cpp_blocksize_inp[] = "cpp_blocksize_inp";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_skeletons_utilities[] = "skeletons.utilities";
 static const char __pyx_k_InputlabelsDirectory[] = "InputlabelsDirectory";
+static const char __pyx_k_Zebrafinch_input_labels[] = "/Zebrafinch-input_labels-";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_not_equal_to_size_specified_in[] = ") not equal to size specified in meta file";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
@@ -1835,7 +1835,7 @@ static PyObject *__pyx_n_s_SomaeDirectory;
 static PyObject *__pyx_n_s_SynapsesDirectory;
 static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_Volumesize;
-static PyObject *__pyx_kp_s_Zebrafinch;
+static PyObject *__pyx_kp_s_Zebrafinch_input_labels;
 static PyObject *__pyx_kp_s__2;
 static PyObject *__pyx_n_s_ascontiguousarray;
 static PyObject *__pyx_n_s_astype;
@@ -2096,7 +2096,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   /* "wiring.pyx":30
  * 
  *     # everything needs to be long ints to work with c++
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
  *     data = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
  */
@@ -2126,7 +2126,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   __pyx_t_1 = PyNumber_Add(__pyx_t_2, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch_input_labels); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_block_z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 30, __pyx_L1_error)
@@ -2218,7 +2218,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
 
   /* "wiring.pyx":31
  *     # everything needs to be long ints to work with c++
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
  * 
@@ -2247,7 +2247,7 @@ static PyObject *__pyx_pf_6wiring_GenerateSkeleton(CYTHON_UNUSED PyObject *__pyx
   __pyx_t_2 = 0;
 
   /* "wiring.pyx":32
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)             # <<<<<<<<<<<<<<
  * 
@@ -5499,7 +5499,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_SynapsesDirectory, __pyx_k_SynapsesDirectory, sizeof(__pyx_k_SynapsesDirectory), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
   {&__pyx_n_s_Volumesize, __pyx_k_Volumesize, sizeof(__pyx_k_Volumesize), 0, 0, 1, 1},
-  {&__pyx_kp_s_Zebrafinch, __pyx_k_Zebrafinch, sizeof(__pyx_k_Zebrafinch), 0, 0, 1, 0},
+  {&__pyx_kp_s_Zebrafinch_input_labels, __pyx_k_Zebrafinch_input_labels, sizeof(__pyx_k_Zebrafinch_input_labels), 0, 0, 1, 0},
   {&__pyx_kp_s__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 0, 1, 0},
   {&__pyx_n_s_ascontiguousarray, __pyx_k_ascontiguousarray, sizeof(__pyx_k_ascontiguousarray), 0, 0, 1, 1},
   {&__pyx_n_s_astype, __pyx_k_astype, sizeof(__pyx_k_astype), 0, 0, 1, 1},
