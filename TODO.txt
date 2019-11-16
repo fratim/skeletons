@@ -16,10 +16,12 @@ COMMENTS:
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
+2. Can we somehow tweak the bitwise comparison and get rid ogf the extra bordercomponent sets by simply changing the labels?
 
 QUESTIONS:
 1. Mistake in source code? Line 585 cpp-thinning:
   if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); } should be wfp
+
 
 NOTES:
 1. Interesting Neurons:

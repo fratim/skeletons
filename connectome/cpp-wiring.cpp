@@ -23,10 +23,12 @@ long row_size = -1;
 long infinity = -1;
 
 // create new default variables (will be overwritten) TODO: do I really need these declarations?
-std::unordered_map<long, char> segment = std::unordered_map<long, char>();
+std::unordered_map<long, short> segment = std::unordered_map<long, short>();
+std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>> borderpoints = std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>>();
+std::unordered_map<long,std::unordered_set<long>> borderpoints_segment = std::unordered_map<long,std::unordered_set<long>>();
 // std::unordered_map<long, std::vector<long> > synapses;
 std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
-std::unordered_map<long, std::unordered_map<long,char>> Pointclouds = std::unordered_map<long, std::unordered_map<long,char>>();
+std::unordered_map<long, std::unordered_map<long,short>> Pointclouds = std::unordered_map<long, std::unordered_map<long,short>>();
 
 const char *synapses_directory;
 const char *somae_directory;
@@ -114,16 +116,17 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 
       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-        Pointclouds[curr_label] = std::unordered_map<long,char>();
+        Pointclouds[curr_label] = std::unordered_map<long,short>();
         // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
         IDs_in_block.insert(curr_label);
       }
 
-      // add index to pointcloud (if on wall, put index of corresponding wall)
-      if (iz==0 || (iz==input_blocksize[OR_Z]-1)) Pointclouds[curr_label][iv] = 12;
-      else if (iy==0 || iy==(input_blocksize[OR_Y]-1)) Pointclouds[curr_label][iv] = 10;
-      else if (ix==0 || ix==(input_blocksize[OR_X]-1)) Pointclouds[curr_label][iv] = 14;
-      else Pointclouds[curr_label][iv] = 1;
+      Pointclouds[curr_label][iv] = 1;
+
+      // add index to borderpoints unordered_map
+      if (iz==0 || (iz==input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
+      else if (iy==0 || iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
+      else if (ix==0 || ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
 
     }
 
