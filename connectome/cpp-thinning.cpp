@@ -361,8 +361,6 @@ static long ThinningIterationStep(void)
 {
     long changed = 0;
 
-    std::cout << "value of segment 95 at 4218037 (Thinningiterationstep): " << segment[4218037] << std::endl;
-
     // iterate through every direction
     for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
         PointList deletable_points;
@@ -381,10 +379,7 @@ static long ThinningIterationStep(void)
 
             bool isAnchorPoint = 0;
 
-            // if (segment[index]==10 && (direction==0||direction==1)){
             if (borderpoints_segment[OR_Y].count(index)){
-
-                std::cout << "value of segment 95 at 4218037 (in index==10): " << segment[4218037] << std::endl;
 
                 long sum_of_neighbors = 0; //collect voxels of neighbors on x-z plane
                 sum_of_neighbors += segment[index+ n26_offsets[3]];
@@ -398,12 +393,7 @@ static long ThinningIterationStep(void)
 
                 if (sum_of_neighbors==0) isAnchorPoint = 1;
             }
-
-            // else if (segment[index]==12 && (direction==2||direction==3)){
             else if (borderpoints_segment[OR_Z].count(index)){
-
-
-                std::cout << "value of segment 95 at 4218037 (in index==12): " << segment[4218037] << std::endl;
 
                 long sum_of_neighbors = 0; //collect voxels of neighbors on x-y plane
                 sum_of_neighbors += segment[index+ n26_offsets[9]];
@@ -417,69 +407,8 @@ static long ThinningIterationStep(void)
 
                 if (sum_of_neighbors==0) isAnchorPoint = 1;
 
-                long iz, iy, ix, index_test;
-
-                iz = index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index % input_blocksize[OR_X];
-                std::cout << "in thinning step" << std::endl;
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[9];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[10];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[11];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[12];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[13];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[14];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[15];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-                index_test = index+ n26_offsets[16];
-                iz = index_test / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-                iy = (index_test - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-                ix = index_test % input_blocksize[OR_X];
-                std::cout << iz << "," << iy << "," << ix << std::endl;
-
-
             }
-
-            // else if (segment[index]==14 && (direction==4||direction==5)){
             else if (borderpoints_segment[OR_X].count(index)){
-
-                std::cout << "value of segment 95 at 4218037 (in index==14): " << segment[4218037] << std::endl;
 
                 long sum_of_neighbors = 0; //collect voxels of neighbors on y-z plane
                 sum_of_neighbors += segment[index+ n26_offsets[7]];
@@ -775,10 +704,10 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
 {
     // initialize and clear set to hold all IDs that are present in this block
     IDs_in_block = std::unordered_set<long>();
-    std::unordered_set<long> IDs_to_process;
+    // std::unordered_set<long> IDs_to_process;
 
     // insert IDs that should be processed
-    IDs_to_process.insert(94);
+    // IDs_to_process.insert(94);
 
     // retrive points clouds from h5 file
     CppPopulatePointCloudFromH5(inp_labels);
@@ -793,12 +722,12 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     long segment_ID;
 
     // create iterator over set
-    std::unordered_set<long>::iterator itr = IDs_to_process.begin();
+    std::unordered_set<long>::iterator itr = IDs_in_block.begin();
 
     // iterate over all elements in this set and compute and save their skeletons
     long loop_executions = 0;
 
-    while (itr != IDs_to_process.end())
+    while (itr != IDs_in_block.end())
     {
       // create (and clear) the global variables
       segment = std::unordered_map<long, short>();
@@ -822,7 +751,7 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       segment = Pointclouds[segment_ID];
       borderpoints_segment = borderpoints[segment_ID];
 
-      std::cout << "value of segment 95 at 4218037: " << segment[4218037] << std::endl;
+      // std::cout << "value of segment 95 at 4218037: " << segment[4218037] << std::endl;
 
       // print number of synapses in this pointcloud
       // std::cout << "Synapses: " << synapses.size() << std::endl;

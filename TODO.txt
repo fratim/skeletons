@@ -17,6 +17,7 @@ IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
 2. Can we somehow tweak the bitwise comparison and get rid ogf the extra bordercomponent sets by simply changing the labels?
+3. Remove the removed surface points from the border points sets to achieve speed up
 
 QUESTIONS:
 1. Mistake in source code? Line 585 cpp-thinning:
