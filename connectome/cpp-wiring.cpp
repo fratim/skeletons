@@ -102,11 +102,15 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
       long iy = (voxel_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
       long ix = voxel_index % input_blocksize[OR_X];
 
+      long iz_padded; long iy_padded; long ix_padded;
+
       //  pad the location by one
-      iz += 1; iy += 1; ix += 1;
+      iz_padded = iz + 1;
+      iy_padded = iy + 1;
+      ix_padded = ix + 1;
 
       // find the new voxel index
-      long iv = IndicesToIndex(ix, iy, iz);
+      long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded);
 
       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
@@ -115,8 +119,11 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
         IDs_in_block.insert(curr_label);
       }
 
-      // add index to pointcloud
-      Pointclouds[curr_label][iv] = 1;
+      // add index to pointcloud (if on wall, put index of corresponding wall)
+      if (iz==0 || (iz==input_blocksize[OR_Z]-1)) Pointclouds[curr_label][iv] = 12;
+      else if (iy==0 || iy==(input_blocksize[OR_Y]-1)) Pointclouds[curr_label][iv] = 10;
+      else if (ix==0 || ix==(input_blocksize[OR_X]-1)) Pointclouds[curr_label][iv] = 14;
+      else Pointclouds[curr_label][iv] = 1;
 
     }
 

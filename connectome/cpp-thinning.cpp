@@ -377,52 +377,106 @@ static long ThinningIterationStep(void)
             long iy = voxel.iy;
             long iz = voxel.iz;
 
-            unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
-            if (Simple26_6(neighbors)) {
-                // delete the simple point
-                segment[index] = 0;
+            bool isAnchorPoint = 0;
 
-                // add the new surface voxels
-                for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
-                    long neighbor_index = index + n6_offsets[ip];
+            if (segment[index]==10 && (direction==0||direction==1)){
+                long sum_of_neighbors = 0; //collect voxels of neighbors on x-z plane
+                sum_of_neighbors += segment[index+ n26_offsets[3]];
+                sum_of_neighbors += segment[index+ n26_offsets[4]];
+                sum_of_neighbors += segment[index+ n26_offsets[5]];
+                sum_of_neighbors += segment[index+ n26_offsets[12]];
+                sum_of_neighbors += segment[index+ n26_offsets[13]];
+                sum_of_neighbors += segment[index+ n26_offsets[20]];
+                sum_of_neighbors += segment[index+ n26_offsets[21]];
+                sum_of_neighbors += segment[index+ n26_offsets[22]];
 
-                    // previously not on the surface but is in the object
-                    // widths of voxels start at maximum and first updated when put on surface
-                    if (segment[neighbor_index] == 1) {
-                        long iu, iv, iw;
-                        IndexToIndices(neighbor_index, iu, iv, iw);
-                        NewSurfaceVoxel(neighbor_index, iu, iv, iw);
+                if (sum_of_neighbors==0) isAnchorPoint = 1;
+            }
 
-                        // convert to a surface point
-                        segment[neighbor_index] = 2;
-                    }
+            else if (segment[index]==12 && (direction==2||direction==3)){
+                long sum_of_neighbors = 0; //collect voxels of neighbors on x-y plane
+                sum_of_neighbors += segment[index+ n26_offsets[9]];
+                sum_of_neighbors += segment[index+ n26_offsets[10]];
+                sum_of_neighbors += segment[index+ n26_offsets[11]];
+                sum_of_neighbors += segment[index+ n26_offsets[12]];
+                sum_of_neighbors += segment[index+ n26_offsets[13]];
+                sum_of_neighbors += segment[index+ n26_offsets[14]];
+                sum_of_neighbors += segment[index+ n26_offsets[15]];
+                sum_of_neighbors += segment[index+ n26_offsets[16]];
+
+                if (sum_of_neighbors==0) isAnchorPoint = 1;
+            }
+
+            else if (segment[index]==14 && (direction==4||direction==5)){
+                long sum_of_neighbors = 0; //collect voxels of neighbors on y-z plane
+                sum_of_neighbors += segment[index+ n26_offsets[7]];
+                sum_of_neighbors += segment[index+ n26_offsets[4]];
+                sum_of_neighbors += segment[index+ n26_offsets[1]];
+                sum_of_neighbors += segment[index+ n26_offsets[10]];
+                sum_of_neighbors += segment[index+ n26_offsets[15]];
+                sum_of_neighbors += segment[index+ n26_offsets[24]];
+                sum_of_neighbors += segment[index+ n26_offsets[21]];
+                sum_of_neighbors += segment[index+ n26_offsets[18]];
+
+                if (sum_of_neighbors==0) isAnchorPoint = 1;
+            }
+
+            // if anchor point detected, fix it and do not check if simple
+            if (isAnchorPoint){
+              // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
+              segment[index]=3;
+            }
+
+            // otherise do normal procedure - hceck if simple, if so, delete it
+            else{
+
+              unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
+              if (Simple26_6(neighbors)) {
+                  // delete the simple point
+                  segment[index] = 0;
+
+                  // add the new surface voxels
+                  for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
+                      long neighbor_index = index + n6_offsets[ip];
+
+                      // previously not on the surface but is in the object
+                      // widths of voxels start at maximum and first updated when put on surface
+                      if (segment[neighbor_index] == 1) {
+                          long iu, iv, iw;
+                          IndexToIndices(neighbor_index, iu, iv, iw);
+                          NewSurfaceVoxel(neighbor_index, iu, iv, iw);
+
+                          // convert to a surface point
+                          segment[neighbor_index] = 2;
+                      }
+                  }
+
+                  // check all 26 neighbors to see if width is better going through this voxel
+                  for (long ip = 0; ip < 26; ++ip) {
+                      long neighbor_index = index + n26_offsets[ip];
+                      if (!segment[neighbor_index]) continue;
+
+                      // get this index in (x, y, z)
+                      long iu, iv, iw;
+                      IndexToIndices(neighbor_index, iu, iv, iw);
+
+                      // get the distance from the voxel to be deleted
+                      float diffx = resolution[OR_X] * (ix - iu);
+                      float diffy = resolution[OR_Y] * (iy - iv);
+                      float diffz = resolution[OR_Z] * (iz - iw);
+
+                      float distance = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+                      float current_width = widths[neighbor_index];
+
+                      if (widths[index] + distance < current_width) {
+                          widths[neighbor_index] = widths[index] + distance;
+                      }
+                  }
+
+                  // remove this from the surface voxels
+                  RemoveSurfaceVoxel(ptr);
+                  changed += 1;
                 }
-
-                // check all 26 neighbors to see if width is better going through this voxel
-                for (long ip = 0; ip < 26; ++ip) {
-                    long neighbor_index = index + n26_offsets[ip];
-                    if (!segment[neighbor_index]) continue;
-
-                    // get this index in (x, y, z)
-                    long iu, iv, iw;
-                    IndexToIndices(neighbor_index, iu, iv, iw);
-
-                    // get the distance from the voxel to be deleted
-                    float diffx = resolution[OR_X] * (ix - iu);
-                    float diffy = resolution[OR_Y] * (iy - iv);
-                    float diffz = resolution[OR_Z] * (iz - iw);
-
-                    float distance = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
-                    float current_width = widths[neighbor_index];
-
-                    if (widths[index] + distance < current_width) {
-                        widths[neighbor_index] = widths[index] + distance;
-                    }
-                }
-
-                // remove this from the surface voxels
-                RemoveSurfaceVoxel(ptr);
-                changed += 1;
             }
         }
         DestroyPointList(&deletable_points);
@@ -568,7 +622,7 @@ static int ReadSynapses(const char *prefix)
 
   // read the synapses
   char synapse_filename[4096];
-  snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04dz-%04dy-%04dx.pts", synapses_directory, prefix, prefix, block_z, block_y, block_x);
+  snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_z, block_y, block_x);
 
   FILE *fp = fopen(synapse_filename, "rb");
   if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
