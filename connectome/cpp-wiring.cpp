@@ -123,10 +123,10 @@ void CppPopulatePointCloudFromH5(long *inp_labels) {
 
       Pointclouds[curr_label][iv] = 1;
 
-      // add index to borderpoints unordered_map
-      if (iz==0 || (iz==input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
-      else if (iy==0 || iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
-      else if (ix==0 || ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
+      // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
+      if (iz==(input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
+      else if (iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
+      else if (ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
 
     }
 

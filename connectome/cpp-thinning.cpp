@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <vector>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -504,7 +505,7 @@ static void SequentialThinning(const char *prefix, long segment_ID)
 
 }
 
-static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_time, long initial_points)
+static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_time, long initial_points, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
 {
 
     // count the number of remaining points
@@ -526,13 +527,10 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
     if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
     if (fwrite(&(input_blocksize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     if (fwrite(&(input_blocksize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
     if (fwrite(&(input_blocksize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
     if (fwrite(&segment_ID, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
     if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
     // write the widths to file
@@ -582,6 +580,17 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
         long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
         long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
 
+        // write to zmax border file, if on border
+        if (iz_local==(input_blocksize[OR_Z]-1)){
+
+            zmax_iy_local.push_back(iy_local);
+            zmax_ix_local.push_back(ix_local);
+            zmax_segment_ID.push_back(segment_ID);
+
+            // std::cout << "added anchor point - iz_local, inp_blocksize[OR_Z]-1: " << iz_local << "," << (input_blocksize[OR_Z]-1) << std::endl;
+
+        }
+
         if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
         if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
@@ -613,10 +622,41 @@ static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_
     if (fwrite(&initial_points, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
     if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
 
+
     // close file
     fclose(tfp);
 
 
+}
+
+static void writeZmaxBlock (const char *prefix, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
+{
+
+  // write the zmax border points to a file (so far stored in vectors)
+  // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+  char output_filename_zmax[4096];
+  sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x);
+
+  FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+  if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+  if (!((zmax_iy_local.size()==zmax_ix_local.size())&&(zmax_ix_local.size()==zmax_segment_ID.size()))){
+    throw std::invalid_argument("z vectors not of same size!");
+  }
+
+  long n_points_zmax = zmax_iy_local.size();
+
+  std::cout << "Anchor points found: " << n_points_zmax << std::endl;
+
+  if (fwrite(&n_points_zmax, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+
+  for (int pos = 0; pos < n_points_zmax; pos++){
+    if (fwrite(&zmax_iy_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+    if (fwrite(&zmax_ix_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+    if (fwrite(&zmax_segment_ID[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+  }
+
+  fclose(zmaxfp);
 }
 
 static int ReadSynapses(const char *prefix)
@@ -700,20 +740,81 @@ static int ReadSynapses(const char *prefix)
 
 }
 
+static int ReadAnchorpoints(const char *prefix)
+{
+  // make filename of adjacent z lock (in negative direction)
+  char output_filename_zmax[4096];
+  sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z-1, block_y, block_x);
+
+  std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
+
+  FILE *fpzmax = fopen(output_filename_zmax, "rb");
+  if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+  long npoints;
+  if (fread(&npoints, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+  std::cout << "number of anchor points: " << npoints << std::endl;
+
+  for (long pos = 0; pos < npoints; pos++) {
+
+      // get the label and number of synapses
+      long iy_local;
+      long ix_local;
+      long segment_ID;
+
+      if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+      if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+      if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+      // populate offset
+      long iz_padded = 1;
+      long iy_padded = iy_local + 1;
+      long ix_padded = ix_local + 1;
+
+      nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+      sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+      row_size = padded_blocksize[OR_X];
+      infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
+
+      //  find the new voxel index
+      long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded);
+
+      Pointclouds[segment_ID][iv] = 3;
+
+      std::cout << "added anchor point at: " << iy_local << "," << ix_local << "segment ID: " << segment_ID << std::endl;
+
+  }
+
+  // close file
+  fclose(fpzmax);
+
+  return 1;
+
+}
+
 void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
 {
     // initialize and clear set to hold all IDs that are present in this block
     IDs_in_block = std::unordered_set<long>();
-    // std::unordered_set<long> IDs_to_process;
+    std::unordered_set<long> IDs_to_process;
 
     // insert IDs that should be processed
-    // IDs_to_process.insert(94);
+    IDs_to_process.insert({48,71,72,73,91,111,124,137,158,209});
+
+    // create vectors to store border points at zmax direction (size unknown so far)
+    std::vector<long> zmax_iy_local = std::vector<long>();
+    std::vector<long> zmax_ix_local = std::vector<long>();
+    std::vector<long> zmax_segment_ID = std::vector<long>();
 
     // retrive points clouds from h5 file
     CppPopulatePointCloudFromH5(inp_labels);
 
     // read all synapses for this block
     if (!ReadSynapses(prefix)) exit(-1);
+
+    // read all anchor points for this block
+    if (!ReadAnchorpoints(prefix)) exit(-1);
 
     // initialize all of the lookup tables
     InitializeLookupTables(lookup_table_directory);
@@ -722,12 +823,12 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
     long segment_ID;
 
     // create iterator over set
-    std::unordered_set<long>::iterator itr = IDs_in_block.begin();
+    std::unordered_set<long>::iterator itr = IDs_to_process.begin();
 
     // iterate over all elements in this set and compute and save their skeletons
     long loop_executions = 0;
 
-    while (itr != IDs_in_block.end())
+    while (itr != IDs_to_process.end())
     {
       // create (and clear) the global variables
       segment = std::unordered_map<long, short>();
@@ -767,13 +868,15 @@ void CppSkeletonGeneration(const char *prefix, const char *lookup_table_director
       SequentialThinning(prefix, segment_ID);
 
       // Write time, skeleton and width output files
-      WriteOutputfiles(prefix, segment_ID, start_time, initial_points);
+      WriteOutputfiles(prefix, segment_ID, start_time, initial_points, zmax_iy_local, zmax_ix_local, zmax_segment_ID);
 
       // increment iterator
       itr++;
       loop_executions += 1;
 
     }
+
+    writeZmaxBlock(prefix, zmax_iy_local, zmax_ix_local, zmax_segment_ID);
 
     delete[] lut_simple;
 
