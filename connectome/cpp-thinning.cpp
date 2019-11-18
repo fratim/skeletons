@@ -144,6 +144,16 @@ typedef struct {
     ListElement *last;
 } DoubleList;
 
+static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
+static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);
+static void CreatePointList(PointList *s);
+static void AddToList(PointList *s, Voxel e, ListElement *ptr);
+static Voxel GetFromList(PointList *s, ListElement **ptr);
+static void DestroyPointList(PointList *s);
+static void InitializeLookupTables(const char *lookup_table_directory);
+static bool Simple26_6(unsigned int neighbors);
+
+
 class DataBlock{
   public:
     float resolution_test[3];
@@ -455,97 +465,332 @@ class BlockSegment : public DataBlock{
 
     }
 
+    void CollectSurfaceVoxels(void)
+    {
+        // go through all voxels and check their six neighbors
+        for (std::unordered_map<long, short>::iterator it = segment.begin(); it != segment.end(); ++it) {
+            // all of these elements are either 1 or 3 and in the segment
+            long index = it->first;
+
+            // initialize widths to maximum float value
+            widths[index] = std::numeric_limits<float>::max();
+
+            long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+            long row_size = padded_blocksize[OR_X];
+
+            long ix, iy, iz;
+            IndexToIndices(index, ix, iy, iz, sheet_size, row_size);
+            // check the 6 neighbors
+            for (long iv = 0; iv < NTHINNING_DIRECTIONS; ++iv) {
+                long neighbor_index = index + n6_offsets[iv];
+
+                long ii, ij, ik;
+                IndexToIndices(neighbor_index, ii, ij, ik, sheet_size, row_size);
+
+                // skip the fake boundary elements
+                if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
+                if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
+                if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
+
+                if (segment.find(neighbor_index) == segment.end()) {
+                    // this location is a boundary so create a surface voxel and break
+                    // cannot update it->second if it is synapse so need this test!!
+                    if (it->second == 1) {
+                        it->second = 2;
+                        NewSurfaceVoxel(index, ix, iy, iz, surface_voxels);
+                    }
+
+                    // note this location as surface
+                    widths[index] = 0;
+
+                    break;
+                }
+            }
+        }
+    }
+
+    long ThinningIterationStep(void)
+    {
+        long changed = 0;
+
+        // iterate through every direction
+        for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
+            PointList deletable_points;
+            ListElement *ptr;
+
+            CreatePointList(&deletable_points);
+            DetectSimpleBorderPoints(&deletable_points, direction);
+
+            while (deletable_points.length) {
+                Voxel voxel = GetFromList(&deletable_points, &ptr);
+
+                long index = voxel.iv;
+                long ix = voxel.ix;
+                long iy = voxel.iy;
+                long iz = voxel.iz;
+
+                bool isAnchorPoint = 0;
+
+                if (borderpoints_segment[OR_Y].count(index)){
+
+                    long sum_of_neighbors = 0; //collect voxels of neighbors on x-z plane
+                    sum_of_neighbors += segment[index+ n26_offsets[3]];
+                    sum_of_neighbors += segment[index+ n26_offsets[4]];
+                    sum_of_neighbors += segment[index+ n26_offsets[5]];
+                    sum_of_neighbors += segment[index+ n26_offsets[12]];
+                    sum_of_neighbors += segment[index+ n26_offsets[13]];
+                    sum_of_neighbors += segment[index+ n26_offsets[20]];
+                    sum_of_neighbors += segment[index+ n26_offsets[21]];
+                    sum_of_neighbors += segment[index+ n26_offsets[22]];
+
+                    if (sum_of_neighbors==0) isAnchorPoint = 1;
+                }
+                else if (borderpoints_segment[OR_Z].count(index)){
+
+                    long sum_of_neighbors = 0; //collect voxels of neighbors on x-y plane
+                    sum_of_neighbors += segment[index+ n26_offsets[9]];
+                    sum_of_neighbors += segment[index+ n26_offsets[10]];
+                    sum_of_neighbors += segment[index+ n26_offsets[11]];
+                    sum_of_neighbors += segment[index+ n26_offsets[12]];
+                    sum_of_neighbors += segment[index+ n26_offsets[13]];
+                    sum_of_neighbors += segment[index+ n26_offsets[14]];
+                    sum_of_neighbors += segment[index+ n26_offsets[15]];
+                    sum_of_neighbors += segment[index+ n26_offsets[16]];
+
+                    if (sum_of_neighbors==0) isAnchorPoint = 1;
+
+                }
+                else if (borderpoints_segment[OR_X].count(index)){
+
+                    long sum_of_neighbors = 0; //collect voxels of neighbors on y-z plane
+                    sum_of_neighbors += segment[index+ n26_offsets[7]];
+                    sum_of_neighbors += segment[index+ n26_offsets[4]];
+                    sum_of_neighbors += segment[index+ n26_offsets[1]];
+                    sum_of_neighbors += segment[index+ n26_offsets[10]];
+                    sum_of_neighbors += segment[index+ n26_offsets[15]];
+                    sum_of_neighbors += segment[index+ n26_offsets[24]];
+                    sum_of_neighbors += segment[index+ n26_offsets[21]];
+                    sum_of_neighbors += segment[index+ n26_offsets[18]];
+
+                    if (sum_of_neighbors==0) isAnchorPoint = 1;
+                }
+
+                // if anchor point detected, fix it and do not check if simple
+                if (isAnchorPoint){
+                  // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
+                  segment[index]=3;
+                }
+
+                // otherise do normal procedure - hceck if simple, if so, delete it
+                else{
+
+                  long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+                  long row_size = padded_blocksize[OR_X];
+
+                  unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
+                  if (Simple26_6(neighbors)) {
+                      // delete the simple point
+                      segment[index] = 0;
+
+                      // add the new surface voxels
+                      for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
+                          long neighbor_index = index + n6_offsets[ip];
+
+                          // previously not on the surface but is in the object
+                          // widths of voxels start at maximum and first updated when put on surface
+                          if (segment[neighbor_index] == 1) {
+                              long iu, iv, iw;
+                              IndexToIndices(neighbor_index, iu, iv, iw, sheet_size, row_size);
+                              NewSurfaceVoxel(neighbor_index, iu, iv, iw, surface_voxels);
+
+                              // convert to a surface point
+                              segment[neighbor_index] = 2;
+                          }
+                      }
+
+                      // check all 26 neighbors to see if width is better going through this voxel
+                      for (long ip = 0; ip < 26; ++ip) {
+                          long neighbor_index = index + n26_offsets[ip];
+                          if (!segment[neighbor_index]) continue;
+
+                          // get this index in (x, y, z)
+                          long iu, iv, iw;
+                          IndexToIndices(neighbor_index, iu, iv, iw, sheet_size, row_size);
+
+                          // get the distance from the voxel to be deleted
+                          float diffx = resolution[OR_X] * (ix - iu);
+                          float diffy = resolution[OR_Y] * (iy - iv);
+                          float diffz = resolution[OR_Z] * (iz - iw);
+
+                          float distance = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+                          float current_width = widths[neighbor_index];
+
+                          if (widths[index] + distance < current_width) {
+                              widths[neighbor_index] = widths[index] + distance;
+                          }
+                      }
+
+                      // remove this from the surface voxels
+                      RemoveSurfaceVoxel(ptr, surface_voxels);
+                      changed += 1;
+                    }
+                }
+            }
+            DestroyPointList(&deletable_points);
+        }
+
+
+        // return the number of changes
+        return changed;
+    }
+
+    unsigned int Collect26Neighbors(long ix, long iy, long iz)
+    {
+        unsigned int neighbors = 0;
+
+        long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+        long row_size = padded_blocksize[OR_X];
+
+        long index = IndicesToIndex(ix, iy, iz, sheet_size, row_size);
+
+        // some of these lookups will create a new entry but the region is
+        // shrinking so memory overhead is minimal
+        for (long iv = 0; iv < 26; ++iv) {
+            if (segment[index + n26_offsets[iv]]) neighbors |= long_mask[iv];
+        }
+
+        return neighbors;
+    }
+
+    void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
+    {
+        ListElement *LE = (ListElement *)surface_voxels.first;
+        while (LE != NULL) {
+            long iv = LE->iv;
+            long ix = LE->ix;
+            long iy = LE->iy;
+            long iz = LE->iz;
+
+            // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
+            // this will only be called on things on the surface already so already in unordered_map
+            if (segment[iv] == 2) {
+                long value = 0;
+                // is the neighbor in the corresponding direction not in the segment
+                // some of these keys will not exist but will default to 0 value
+                // the search region retracts in from the boundary so limited memory overhead
+                // the n6_offsets are in the order UP, DOWN, NORTH, SOUTH, EAST, WEST
+                value = segment[iv + n6_offsets[direction]];
+
+                // see if the required point belongs to a different segment
+                if (!value) {
+                    unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
+
+                    // deletable point
+                    if (Simple26_6(neighbors)) {
+                        Voxel voxel;
+                        voxel.iv = iv;
+                        voxel.ix = ix;
+                        voxel.iy = iy;
+                        voxel.iz = iz;
+                        AddToList(deletable_points, voxel, LE);
+                    }
+                }
+            }
+            LE = (ListElement *) LE->next;
+        }
+    }
+
 };
 
-// static void NewSurfaceVoxel(long iv, long ix, long iy, long iz)
-// {
-//     ListElement *LE = new ListElement();
-//     LE->iv = iv;
-//     LE->ix = ix;
-//     LE->iy = iy;
-//     LE->iz = iz;
-//
-//     LE->next = NULL;
-//     LE->prev = surface_voxels.last;
-//
-//     if (surface_voxels.last != NULL) ((ListElement *) surface_voxels.last)->next = LE;
-//     surface_voxels.last = LE;
-//     if (surface_voxels.first == NULL) surface_voxels.first = LE;
-// }
-//
-// static void RemoveSurfaceVoxel(ListElement *LE)
-// {
-//     ListElement *LE2;
-//     if (surface_voxels.first == LE) surface_voxels.first = LE->next;
-//     if (surface_voxels.last == LE) surface_voxels.last = LE->prev;
-//
-//     if (LE->next != NULL) {
-//         LE2 = (ListElement *)(LE->next);
-//         LE2->prev = LE->prev;
-//     }
-//     if (LE->prev != NULL) {
-//         LE2 = (ListElement *)(LE->prev);
-//         LE2->next = LE->next;
-//     }
-//     delete LE;
-// }
-//
-// static void CreatePointList(PointList *s)
-// {
-//     s->head = NULL;
-//     s->tail = NULL;
-//     s->length = 0;
-// }
-//
-// static void AddToList(PointList *s, Voxel e, ListElement *ptr)
-// {
-//     Cell *newcell = new Cell();
-//     newcell->v = e;
-//     newcell->ptr = ptr;
-//     newcell->next = NULL;
-//
-//     if (s->head == NULL) {
-//         s->head = newcell;
-//         s->tail = newcell;
-//         s->length = 1;
-//     }
-//     else {
-//         s->tail->next = newcell;
-//         s->tail = newcell;
-//         s->length++;
-//     }
-// }
-//
-// static Voxel GetFromList(PointList *s, ListElement **ptr)
-// {
-//     Voxel V;
-//     Cell *tmp;
-//     V.iv = -1;
-//     V.ix = -1;
-//     V.iy = -1;
-//     V.iz = -1;
-//     (*ptr) = NULL;
-//     if (s->length == 0) return V;
-//     else {
-//         V = s->head->v;
-//         (*ptr) = s->head->ptr;
-//         tmp = (Cell *) s->head->next;
-//         delete s->head;
-//         s->head = tmp;
-//         s->length--;
-//         if (s->length == 0) {
-//             s->head = NULL;
-//             s->tail = NULL;
-//         }
-//         return V;
-//     }
-// }
-//
-// static void DestroyPointList(PointList *s)
-// {
-//     ListElement *ptr;
-//     while (s->length) GetFromList(s, &ptr);
-// }
+static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels)
+{
+    ListElement *LE = new ListElement();
+    LE->iv = iv;
+    LE->ix = ix;
+    LE->iy = iy;
+    LE->iz = iz;
+
+    LE->next = NULL;
+    LE->prev = surface_voxels.last;
+
+    if (surface_voxels.last != NULL) ((ListElement *) surface_voxels.last)->next = LE;
+    surface_voxels.last = LE;
+    if (surface_voxels.first == NULL) surface_voxels.first = LE;
+}
+
+static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels)
+{
+    ListElement *LE2;
+    if (surface_voxels.first == LE) surface_voxels.first = LE->next;
+    if (surface_voxels.last == LE) surface_voxels.last = LE->prev;
+
+    if (LE->next != NULL) {
+        LE2 = (ListElement *)(LE->next);
+        LE2->prev = LE->prev;
+    }
+    if (LE->prev != NULL) {
+        LE2 = (ListElement *)(LE->prev);
+        LE2->next = LE->next;
+    }
+    delete LE;
+}
+
+static void CreatePointList(PointList *s)
+{
+    s->head = NULL;
+    s->tail = NULL;
+    s->length = 0;
+}
+
+static void AddToList(PointList *s, Voxel e, ListElement *ptr)
+{
+    Cell *newcell = new Cell();
+    newcell->v = e;
+    newcell->ptr = ptr;
+    newcell->next = NULL;
+
+    if (s->head == NULL) {
+        s->head = newcell;
+        s->tail = newcell;
+        s->length = 1;
+    }
+    else {
+        s->tail->next = newcell;
+        s->tail = newcell;
+        s->length++;
+    }
+}
+
+static Voxel GetFromList(PointList *s, ListElement **ptr)
+{
+    Voxel V;
+    Cell *tmp;
+    V.iv = -1;
+    V.ix = -1;
+    V.iy = -1;
+    V.iz = -1;
+    (*ptr) = NULL;
+    if (s->length == 0) return V;
+    else {
+        V = s->head->v;
+        (*ptr) = s->head->ptr;
+        tmp = (Cell *) s->head->next;
+        delete s->head;
+        s->head = tmp;
+        s->length--;
+        if (s->length == 0) {
+            s->head = NULL;
+            s->tail = NULL;
+        }
+        return V;
+    }
+}
+
+static void DestroyPointList(PointList *s)
+{
+    ListElement *ptr;
+    while (s->length) GetFromList(s, &ptr);
+}
 
 static void InitializeLookupTables(const char *lookup_table_directory)
 {
@@ -571,251 +816,12 @@ static void InitializeLookupTables(const char *lookup_table_directory)
     set_long_mask();
 }
 
-// static void CollectSurfaceVoxels(void)
-// {
-//     // go through all voxels and check their six neighbors
-//     for (std::unordered_map<long, short>::iterator it = segment.begin(); it != segment.end(); ++it) {
-//         // all of these elements are either 1 or 3 and in the segment
-//         long index = it->first;
-//
-//         // initialize widths to maximum float value
-//         widths[index] = std::numeric_limits<float>::max();
-//
-//         long ix, iy, iz;
-//         IndexToIndices(index, ix, iy, iz);
-//         // check the 6 neighbors
-//         for (long iv = 0; iv < NTHINNING_DIRECTIONS; ++iv) {
-//             long neighbor_index = index + n6_offsets[iv];
-//
-//             long ii, ij, ik;
-//             IndexToIndices(neighbor_index, ii, ij, ik);
-//
-//             // skip the fake boundary elements
-//             if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-//             if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-//             if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-//
-//             if (segment.find(neighbor_index) == segment.end()) {
-//                 // this location is a boundary so create a surface voxel and break
-//                 // cannot update it->second if it is synapse so need this test!!
-//                 if (it->second == 1) {
-//                     it->second = 2;
-//                     NewSurfaceVoxel(index, ix, iy, iz);
-//                 }
-//
-//                 // note this location as surface
-//                 widths[index] = 0;
-//
-//                 break;
-//             }
-//         }
-//     }
-// }
-//
-// static unsigned int Collect26Neighbors(long ix, long iy, long iz)
-// {
-//     unsigned int neighbors = 0;
-//     long index = IndicesToIndex(ix, iy, iz);
-//
-//     // some of these lookups will create a new entry but the region is
-//     // shrinking so memory overhead is minimal
-//     for (long iv = 0; iv < 26; ++iv) {
-//         if (segment[index + n26_offsets[iv]]) neighbors |= long_mask[iv];
-//     }
-//
-//     return neighbors;
-// }
-//
-// static bool Simple26_6(unsigned int neighbors)
-// {
-//     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
-// }
-//
-// static void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
-// {
-//     ListElement *LE = (ListElement *)surface_voxels.first;
-//     while (LE != NULL) {
-//         long iv = LE->iv;
-//         long ix = LE->ix;
-//         long iy = LE->iy;
-//         long iz = LE->iz;
-//
-//         // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
-//         // this will only be called on things on the surface already so already in unordered_map
-//         if (segment[iv] == 2) {
-//             long value = 0;
-//             // is the neighbor in the corresponding direction not in the segment
-//             // some of these keys will not exist but will default to 0 value
-//             // the search region retracts in from the boundary so limited memory overhead
-//             // the n6_offsets are in the order UP, DOWN, NORTH, SOUTH, EAST, WEST
-//             value = segment[iv + n6_offsets[direction]];
-//
-//             // see if the required point belongs to a different segment
-//             if (!value) {
-//                 unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
-//
-//                 // deletable point
-//                 if (Simple26_6(neighbors)) {
-//                     Voxel voxel;
-//                     voxel.iv = iv;
-//                     voxel.ix = ix;
-//                     voxel.iy = iy;
-//                     voxel.iz = iz;
-//                     AddToList(deletable_points, voxel, LE);
-//                 }
-//             }
-//         }
-//         LE = (ListElement *) LE->next;
-//     }
-// }
-//
-// static long ThinningIterationStep(void)
-// {
-//     long changed = 0;
-//
-//     // iterate through every direction
-//     for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
-//         PointList deletable_points;
-//         ListElement *ptr;
-//
-//         CreatePointList(&deletable_points);
-//         DetectSimpleBorderPoints(&deletable_points, direction);
-//
-//         while (deletable_points.length) {
-//             Voxel voxel = GetFromList(&deletable_points, &ptr);
-//
-//             long index = voxel.iv;
-//             long ix = voxel.ix;
-//             long iy = voxel.iy;
-//             long iz = voxel.iz;
-//
-//             bool isAnchorPoint = 0;
-//
-//             if (borderpoints_segment[OR_Y].count(index)){
-//
-//                 long sum_of_neighbors = 0; //collect voxels of neighbors on x-z plane
-//                 sum_of_neighbors += segment[index+ n26_offsets[3]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[4]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[5]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[12]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[13]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[20]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[21]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[22]];
-//
-//                 if (sum_of_neighbors==0) isAnchorPoint = 1;
-//             }
-//             else if (borderpoints_segment[OR_Z].count(index)){
-//
-//                 long sum_of_neighbors = 0; //collect voxels of neighbors on x-y plane
-//                 sum_of_neighbors += segment[index+ n26_offsets[9]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[10]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[11]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[12]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[13]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[14]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[15]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[16]];
-//
-//                 if (sum_of_neighbors==0) isAnchorPoint = 1;
-//
-//             }
-//             else if (borderpoints_segment[OR_X].count(index)){
-//
-//                 long sum_of_neighbors = 0; //collect voxels of neighbors on y-z plane
-//                 sum_of_neighbors += segment[index+ n26_offsets[7]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[4]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[1]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[10]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[15]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[24]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[21]];
-//                 sum_of_neighbors += segment[index+ n26_offsets[18]];
-//
-//                 if (sum_of_neighbors==0) isAnchorPoint = 1;
-//             }
-//
-//             // if anchor point detected, fix it and do not check if simple
-//             if (isAnchorPoint){
-//               // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
-//               segment[index]=3;
-//             }
-//
-//             // otherise do normal procedure - hceck if simple, if so, delete it
-//             else{
-//
-//               unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
-//               if (Simple26_6(neighbors)) {
-//                   // delete the simple point
-//                   segment[index] = 0;
-//
-//                   // add the new surface voxels
-//                   for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
-//                       long neighbor_index = index + n6_offsets[ip];
-//
-//                       // previously not on the surface but is in the object
-//                       // widths of voxels start at maximum and first updated when put on surface
-//                       if (segment[neighbor_index] == 1) {
-//                           long iu, iv, iw;
-//                           IndexToIndices(neighbor_index, iu, iv, iw);
-//                           NewSurfaceVoxel(neighbor_index, iu, iv, iw);
-//
-//                           // convert to a surface point
-//                           segment[neighbor_index] = 2;
-//                       }
-//                   }
-//
-//                   // check all 26 neighbors to see if width is better going through this voxel
-//                   for (long ip = 0; ip < 26; ++ip) {
-//                       long neighbor_index = index + n26_offsets[ip];
-//                       if (!segment[neighbor_index]) continue;
-//
-//                       // get this index in (x, y, z)
-//                       long iu, iv, iw;
-//                       IndexToIndices(neighbor_index, iu, iv, iw);
-//
-//                       // get the distance from the voxel to be deleted
-//                       float diffx = resolution[OR_X] * (ix - iu);
-//                       float diffy = resolution[OR_Y] * (iy - iv);
-//                       float diffz = resolution[OR_Z] * (iz - iw);
-//
-//                       float distance = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
-//                       float current_width = widths[neighbor_index];
-//
-//                       if (widths[index] + distance < current_width) {
-//                           widths[neighbor_index] = widths[index] + distance;
-//                       }
-//                   }
-//
-//                   // remove this from the surface voxels
-//                   RemoveSurfaceVoxel(ptr);
-//                   changed += 1;
-//                 }
-//             }
-//         }
-//         DestroyPointList(&deletable_points);
-//     }
-//
-//
-//     // return the number of changes
-//     return changed;
-// }
-//
-// static void SequentialThinning(const char *prefix, long segment_ID)
-// {
-//     // create a vector of surface voxels
-//     CollectSurfaceVoxels();
-//     int iteration = 0;
-//     long changed = 0;
-//     do {
-//         changed = ThinningIterationStep();
-//         iteration++;
-//         // printf("  Iteration %d deleted %ld points\n", iteration, changed);
-//     } while (changed);
-//     printf("Needed %d iterations\n", iteration);
-//
-// }
-//
+
+static bool Simple26_6(unsigned int neighbors)
+{
+    return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
+}
+
 // static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_time, long initial_points, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
 // {
 //
@@ -909,7 +915,7 @@ static void InitializeLookupTables(const char *lookup_table_directory)
 //         index_local[counter_it]=iv_local;
 //
 //         // remove this voxel
-//         RemoveSurfaceVoxel(LE);
+//         RemoveSurfaceVoxel(LE, surface_voxels);
 //         counter_it++;
 //     }
 //
@@ -969,229 +975,7 @@ static void InitializeLookupTables(const char *lookup_table_directory)
 //
 //   fclose(zmaxfp);
 // }
-//
-// static int ReadSynapses(const char *prefix)
-// {
-//
-//   // read the synapses
-//   char synapse_filename[4096];
-//   snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_z, block_y, block_x);
-//
-//   FILE *fp = fopen(synapse_filename, "rb");
-//   if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   long z_input_volume_size, y_input_volume_size, x_input_volume_size;
-//   long z_input_block_size, y_input_block_size, x_input_block_size;
-//
-//   if (fread(&z_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (fread(&y_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (fread(&x_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   if (z_input_volume_size != volumesize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (y_input_volume_size != volumesize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (x_input_volume_size != volumesize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   if (fread(&z_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (fread(&y_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (fread(&x_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   if (z_input_block_size != input_blocksize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (y_input_block_size != input_blocksize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//   if (x_input_block_size != input_blocksize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   long nneurons;
-//   if (fread(&nneurons, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//   for (long iv = 0; iv < nneurons; ++iv) {
-//       // get the label and number of synapses
-//       long segment_ID;
-//       long nsynapses;
-//
-//       if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//       if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//       // synapses[segment_ID] = std::vector<long>();
-//
-//       // ignore the global coordinates
-//       for (long is = 0; is < nsynapses; ++is) {
-//           long dummy_index;
-//           if (fread(&dummy_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//       }
-//
-//       // set block indexing parameters
-//       long nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-//       long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-//       long row_size = padded_blocksize[OR_X];
-//       long infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
-//
-//       // add the local coordinates (offset by one in each direction)
-//       for (long is = 0; is < nsynapses; ++is) {
-//           long linear_index;
-//           if (fread(&linear_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-//
-//           long iz = linear_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-//           long iy = (linear_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-//           long ix = linear_index % input_blocksize[OR_X];
-//
-//           //  pad the location by one
-//           iz += 1; iy += 1; ix += 1;
-//
-//           // find the new voxel index
-//           long iv = IndicesToIndex(ix, iy, iz, sheet_size, row_size);
-//
-//           Pointclouds[segment_ID][iv] = 3;
-//       }
-//
-//   }
-//
-//   // close file
-//   fclose(fp);
-//
-//   return 1;
-//
-// }
-//
-// static int ReadAnchorpoints(const char *prefix)
-// {
-//   // make filename of adjacent z lock (in negative direction)
-//   char output_filename_zmax[4096];
-//   sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z-1, block_y, block_x);
-//
-//   std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
-//
-//   FILE *fpzmax = fopen(output_filename_zmax, "rb");
-//   if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-//
-//   long npoints;
-//   if (fread(&npoints, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-//
-//   std::cout << "number of anchor points: " << npoints << std::endl;
-//
-//   for (long pos = 0; pos < npoints; pos++) {
-//
-//       // get the label and number of synapses
-//       long iy_local;
-//       long ix_local;
-//       long segment_ID;
-//
-//       if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-//       if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-//       if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-//
-//       // populate offset
-//       long iz_padded = 1;
-//       long iy_padded = iy_local + 1;
-//       long ix_padded = ix_local + 1;
-//
-//       nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-//       sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-//       row_size = padded_blocksize[OR_X];
-//       infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
-//
-//       //  find the new voxel index
-//       long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, sheet_size, row_size);
-//
-//       Pointclouds[segment_ID][iv] = 3;
-//
-//       std::cout << "added anchor point at: " << iy_local << "," << ix_local << "segment ID: " << segment_ID << std::endl;
-//
-//   }
-//
-//   // close file
-//   fclose(fpzmax);
-//
-//   return 1;
-//
-// }
 
-// void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
-// {
-//     // initialize and clear set to hold all IDs that are present in this block
-//     IDs_in_block = std::unordered_set<long>();
-//     std::unordered_set<long> IDs_to_process;
-//
-//     // insert IDs that should be processed
-//     IDs_to_process.insert({48,71,72,73,91,111,124,137,158,209});
-//
-//     // create vectors to store border points at zmax direction (size unknown so far)
-//     std::vector<long> zmax_iy_local = std::vector<long>();
-//     std::vector<long> zmax_ix_local = std::vector<long>();
-//     std::vector<long> zmax_segment_ID = std::vector<long>();
-//
-//     // retrive points clouds from h5 file
-//     CppPopulatePointCloudFromH5(inp_labels);
-//
-//     // read all synapses for this block
-//     if (!ReadSynapses(prefix)) exit(-1);
-//
-//     // read all anchor points for this block
-//     if (!ReadAnchorpoints(prefix)) exit(-1);
-//
-//     // initialize all of the lookup tables
-//     InitializeLookupTables(lookup_table_directory);
-//
-//     // initialize variable segment_ID, that holds the segment_ID which is currently processed
-//     long segment_ID;
-//
-//     // create iterator over set
-//     std::unordered_set<long>::iterator itr = IDs_to_process.begin();
-//
-//     // iterate over all elements in this set and compute and save their skeletons
-//     long loop_executions = 0;
-//
-//     while (itr != IDs_to_process.end())
-//     {
-//       // create (and clear) the global variables
-//       segment = std::unordered_map<long, short>();
-//       borderpoints_segment = std::unordered_map<long,std::unordered_set<long>>();
-//       widths = std::unordered_map<long, float>();
-//
-//       // Reset surface voxels list (TODO: is this correct?)
-//       surface_voxels.first = NULL;
-//       surface_voxels.last = NULL;
-//
-//       // start timing statistics
-//       clock_t start_time = clock();
-//
-//       // set segment_ID to current ID
-//       segment_ID = *itr;
-//
-//       std::cout << "-----------------------------------" << std::endl;
-//       std::cout << "Processing segment_ID " << segment_ID << std::endl;
-//
-//       // set segment to the pointcloud of current segment_ID
-//       segment = Pointclouds[segment_ID];
-//       borderpoints_segment = borderpoints[segment_ID];
-//
-//       // std::cout << "value of segment 95 at 4218037: " << segment[4218037] << std::endl;
-//
-//       // print number of synapses in this pointcloud
-//       // std::cout << "Synapses: " << synapses.size() << std::endl;
-//
-//       // get the number of points
-//       long initial_points = segment.size();
-//       printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
-//
-//       // needs to happen after PopulatePointCloud()
-//       PopulateOffsets();
-//
-//       // call the sequential thinning algorithm
-//       SequentialThinning(prefix, segment_ID);
-//
-//       // Write time, skeleton and width output files
-//       WriteOutputfiles(prefix, segment_ID, start_time, initial_points, zmax_iy_local, zmax_ix_local, zmax_segment_ID);
-//
-//       // increment iterator
-//       itr++;
-//       loop_executions += 1;
-//
-//     }
-//
-//     writeZmaxBlock(prefix, zmax_iy_local, zmax_ix_local, zmax_segment_ID);
-//
-//     delete[] lut_simple;
-//
-// }
 
 void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
   // create new Datablock and set the input variables
@@ -1227,7 +1011,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
       PopulateOffsets(segA.padded_blocksize);
 
       // call the sequential thinning algorithm
-      SequentialThinning(prefix, segment_ID);
+      segA.SequentialThinning(prefix);
 
       itr++;
   }
