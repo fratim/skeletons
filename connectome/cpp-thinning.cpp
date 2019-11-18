@@ -233,10 +233,8 @@ class DataBlock{
     {
 
         // indexing parameters for indexing within current block
-        long nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
         long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
         long row_size = padded_blocksize[OR_X];
-        long infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
 
         long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
 
@@ -330,10 +328,8 @@ class DataBlock{
           }
 
           // set block indexing parameters
-          long nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
           long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
           long row_size = padded_blocksize[OR_X];
-          long infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
 
           // add the local coordinates (offset by one in each direction)
           for (long is = 0; is < nsynapses; ++is) {
@@ -394,10 +390,8 @@ class DataBlock{
           long iy_padded = iy_local + 1;
           long ix_padded = ix_local + 1;
 
-          long nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
           long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
           long row_size = padded_blocksize[OR_X];
-          long infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
 
           //  find the new voxel index
           long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, sheet_size, row_size);
@@ -424,6 +418,7 @@ class BlockSegment : public DataBlock{
     std::unordered_map<long, std::unordered_set<long>> borderpoints_segment;
     std::unordered_map<long, float> widths;
     List surface_voxels;
+    long initial_points;
 
   public:
     BlockSegment(long segment_ID_inp, DataBlock Blockx){
@@ -446,7 +441,7 @@ class BlockSegment : public DataBlock{
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
-      long initial_points = segment.size();
+      initial_points = segment.size();
       printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
     }
 
@@ -700,6 +695,130 @@ class BlockSegment : public DataBlock{
         }
     }
 
+    void WriteOutputfiles(const char *prefix)
+    {
+
+        // count the number of remaining points
+        long num = 0;
+        ListElement *LE = (ListElement *) surface_voxels.first;
+        while (LE != NULL) {
+            num++;
+            LE = (ListElement *)LE->next;
+        }
+
+        // create an output file for the points
+        char output_filename[4096];
+        sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x ,segment_ID);
+
+        FILE *wfp = fopen(output_filename, "wb");
+        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+        // write the number of elements
+        if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&(input_blocksize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&(input_blocksize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&(input_blocksize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&segment_ID, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+        // write the widths to file
+        char widths_filename[4096];
+        sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
+
+        FILE *width_fp = fopen(widths_filename, "wb");
+        if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+        // write the number of elements
+        if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+        if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+        if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+        if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+        printf("Remaining voxels: %ld\n", num);
+
+        long index_local[num];
+        long counter_it = 0;
+
+        while (surface_voxels.first != NULL) {
+            // get the surface voxels
+            ListElement *LE = (ListElement *) surface_voxels.first;
+
+            long index = LE->iv;
+            float width = widths[index];
+
+            // get the coordinates for this skeleton point in the global frame
+            long iz_local = LE->iz - 1;
+            long iy_local = LE->iy - 1;
+            long ix_local = LE->ix - 1;
+
+            long iz_global = iz_local + block_z*input_blocksize[OR_Z];
+            long iy_global = iy_local + block_y*input_blocksize[OR_Y];
+            long ix_global = ix_local + block_x*input_blocksize[OR_X];
+
+            // check that indices are not out of volume size
+            if (iz_global>=volumesize[OR_Z] ||  iy_global>=volumesize[OR_Y] || ix_global>=volumesize[OR_X]){
+              throw std::invalid_argument("Output global indices outside of volumesize!");
+            }
+
+            if (iz_local>=input_blocksize[OR_Z] ||  iy_local>=input_blocksize[OR_Y] || ix_local>=input_blocksize[OR_X]){
+              throw std::invalid_argument("Output local indices outside of blocksize_input!");
+            }
+
+            // TODO: transform to global frame here
+            long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
+            long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
+
+            // write to zmax border file, if on border
+            if (iz_local==(input_blocksize[OR_Z]-1)){
+
+                zmax_iy_local.push_back(iy_local);
+                zmax_ix_local.push_back(ix_local);
+                zmax_segment_ID.push_back(segment_ID);
+
+                // std::cout << "added anchor point - iz_local, inp_blocksize[OR_Z]-1: " << iz_local << "," << (input_blocksize[OR_Z]-1) << std::endl;
+
+            }
+
+            if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+            if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+            index_local[counter_it]=iv_local;
+
+            // remove this voxel
+            RemoveSurfaceVoxel(LE, surface_voxels);
+            counter_it++;
+        }
+
+        for (int j=0; j<num; j++){
+            if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        // close the I/O files
+        fclose(wfp);
+        fclose(width_fp);
+
+        // double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
+        //
+        // char time_filename[4096];
+        // sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, segment_ID);
+        //
+        // FILE *tfp = fopen(time_filename, "wb");
+        // if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+        //
+        // // write the number of points and the total time to file
+        // if (fwrite(&initial_points, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+        // if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
+
+
+        // // close file
+        // fclose(tfp);
+
+
+    }
+
 };
 
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels)
@@ -816,135 +935,12 @@ static void InitializeLookupTables(const char *lookup_table_directory)
     set_long_mask();
 }
 
-
 static bool Simple26_6(unsigned int neighbors)
 {
     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
 }
 
-// static void WriteOutputfiles(const char *prefix, long segment_ID, clock_t start_time, long initial_points, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
-// {
-//
-//     // count the number of remaining points
-//     long num = 0;
-//     ListElement *LE = (ListElement *) surface_voxels.first;
-//     while (LE != NULL) {
-//         num++;
-//         LE = (ListElement *)LE->next;
-//     }
-//
-//     // create an output file for the points
-//     char output_filename[4096];
-//     sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x ,segment_ID);
-//
-//     FILE *wfp = fopen(output_filename, "wb");
-//     if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
-//
-//     // write the number of elements
-//     if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&(input_blocksize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&(input_blocksize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&(input_blocksize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&segment_ID, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//
-//     // write the widths to file
-//     char widths_filename[4096];
-//     sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
-//
-//     FILE *width_fp = fopen(widths_filename, "wb");
-//     if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//
-//     // write the number of elements
-//     if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//     if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//     if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//     if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//
-//     printf("Remaining voxels: %ld\n", num);
-//
-//     long index_local[num];
-//     long counter_it = 0;
-//
-//     while (surface_voxels.first != NULL) {
-//         // get the surface voxels
-//         ListElement *LE = (ListElement *) surface_voxels.first;
-//
-//         long index = LE->iv;
-//         float width = widths[index];
-//
-//         // get the coordinates for this skeleton point in the global frame
-//         long iz_local = LE->iz - 1;
-//         long iy_local = LE->iy - 1;
-//         long ix_local = LE->ix - 1;
-//
-//         long iz_global = iz_local + block_z*input_blocksize[OR_Z];
-//         long iy_global = iy_local + block_y*input_blocksize[OR_Y];
-//         long ix_global = ix_local + block_x*input_blocksize[OR_X];
-//
-//         // check that indices are not out of volume size
-//         if (iz_global>=volumesize[OR_Z] ||  iy_global>=volumesize[OR_Y] || ix_global>=volumesize[OR_X]){
-//           throw std::invalid_argument("Output global indices outside of volumesize!");
-//         }
-//
-//         if (iz_local>=input_blocksize[OR_Z] ||  iy_local>=input_blocksize[OR_Y] || ix_local>=input_blocksize[OR_X]){
-//           throw std::invalid_argument("Output local indices outside of blocksize_input!");
-//         }
-//
-//         // TODO: transform to global frame here
-//         long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
-//         long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
-//
-//         // write to zmax border file, if on border
-//         if (iz_local==(input_blocksize[OR_Z]-1)){
-//
-//             zmax_iy_local.push_back(iy_local);
-//             zmax_ix_local.push_back(ix_local);
-//             zmax_segment_ID.push_back(segment_ID);
-//
-//             // std::cout << "added anchor point - iz_local, inp_blocksize[OR_Z]-1: " << iz_local << "," << (input_blocksize[OR_Z]-1) << std::endl;
-//
-//         }
-//
-//         if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//         if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//         if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-//
-//         index_local[counter_it]=iv_local;
-//
-//         // remove this voxel
-//         RemoveSurfaceVoxel(LE, surface_voxels);
-//         counter_it++;
-//     }
-//
-//     for (int j=0; j<num; j++){
-//         if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-//     }
-//
-//     // close the I/O files
-//     fclose(wfp);
-//     fclose(width_fp);
-//
-//     double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
-//
-//     char time_filename[4096];
-//     sprintf(time_filename, "running_times/skeletons/%s-%06ld.time", prefix, segment_ID);
-//
-//     FILE *tfp = fopen(time_filename, "wb");
-//     if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-//
-//     // write the number of points and the total time to file
-//     if (fwrite(&initial_points, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-//     if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-//
-//
-//     // close file
-//     fclose(tfp);
-//
-//
-// }
+
 //
 // static void writeZmaxBlock (const char *prefix, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
 // {
@@ -1001,7 +997,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
   // iterate over all elements in this set and compute and save their skeletons
-  long loop_executions = 0;
+  // long loop_executions = 0;
 
   while (itr != BlockA.IDs_to_process.end())
   {
@@ -1012,6 +1008,8 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
       // call the sequential thinning algorithm
       segA.SequentialThinning(prefix);
+
+      segA.WriteOutputfiles(prefix);
 
       itr++;
   }

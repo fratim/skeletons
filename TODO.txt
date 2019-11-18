@@ -6,6 +6,7 @@ TODO:
 12. Project synapses on surface
 13. change pointclouds back to char (currently short)
 14. Check blocksizes also for read write of border anchor points
+15. Revive timing
 
 COMMENTS:
 1. Do we have a second monitor anywhere?
