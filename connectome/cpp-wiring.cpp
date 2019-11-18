@@ -8,129 +8,129 @@
 
 
 
-// set default values
+// // set default values
+//
+// long padded_blocksize[3] = { -1, -1, -1 };
+// long input_blocksize[3] = { -1, -1, -1 };
+// long volumesize[3] = { -1, -1, -1 };
+// float resolution[3] = { -1, -1, -1 };
+// long block_z = -1;
+// long block_y = -1;
+// long block_x = -1;
+// long nentries = -1;
+// long sheet_size = -1;
+// long row_size = -1;
+// long infinity = -1;
+//
+// // create new default variables (will be overwritten) TODO: do I really need these declarations?
+// std::unordered_map<long, short> segment = std::unordered_map<long, short>();
+// std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>> borderpoints = std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>>();
+// std::unordered_map<long,std::unordered_set<long>> borderpoints_segment = std::unordered_map<long,std::unordered_set<long>>();
+// // std::unordered_map<long, std::vector<long> > synapses;
+// std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
+// std::unordered_map<long, std::unordered_map<long,short>> Pointclouds = std::unordered_map<long, std::unordered_map<long,short>>();
+//
+// const char *synapses_directory;
+// const char *somae_directory;
+// const char *skeleton_directory;
 
-long padded_blocksize[3] = { -1, -1, -1 };
-long input_blocksize[3] = { -1, -1, -1 };
-long volumesize[3] = { -1, -1, -1 };
-float resolution[3] = { -1, -1, -1 };
-long block_z = -1;
-long block_y = -1;
-long block_x = -1;
-long nentries = -1;
-long sheet_size = -1;
-long row_size = -1;
-long infinity = -1;
 
-// create new default variables (will be overwritten) TODO: do I really need these declarations?
-std::unordered_map<long, short> segment = std::unordered_map<long, short>();
-std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>> borderpoints = std::unordered_map<long, std::unordered_map<long,std::unordered_set<long>>>();
-std::unordered_map<long,std::unordered_set<long>> borderpoints_segment = std::unordered_map<long,std::unordered_set<long>>();
-// std::unordered_map<long, std::vector<long> > synapses;
-std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
-std::unordered_map<long, std::unordered_map<long,short>> Pointclouds = std::unordered_map<long, std::unordered_map<long,short>>();
-
-const char *synapses_directory;
-const char *somae_directory;
-const char *skeleton_directory;
-
-
-void CppUpdateResolution(float input_resolution[3])
-{
-    resolution[OR_Z] = input_resolution[OR_Z];
-    resolution[OR_Y] = input_resolution[OR_Y];
-    resolution[OR_X] = input_resolution[OR_X];
-}
-
-void CppUpdateBlocksize(long inp_blocksize[3])
-{
-    input_blocksize[OR_Z] = inp_blocksize[OR_Z];
-    input_blocksize[OR_Y] = inp_blocksize[OR_Y];
-    input_blocksize[OR_X] = inp_blocksize[OR_X];
-
-    padded_blocksize[OR_Z] = inp_blocksize[OR_Z]+2;
-    padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
-    padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
-
-}
-
-void CppUpdateVolumesize(long volume_size[3])
-{
-    volumesize[OR_Z] = volume_size[OR_Z];
-    volumesize[OR_Y] = volume_size[OR_Y];
-    volumesize[OR_X] = volume_size[OR_X];
-
-}
-
-void CppUpdateBlockindices(long inp_block_z, long inp_block_y, long inp_block_x)
-{
-    block_z = inp_block_z;
-    block_y = inp_block_y;
-    block_x = inp_block_x;
-}
-
-void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir)
-{
-    synapses_directory = synapses_dir;
-    somae_directory = somae_dir;
-    skeleton_directory = skeleton_dir;
-}
-
-///////////////////////////////////////
-//// POINT CLOUD UTILITY FUNCTIONS ////
-///////////////////////////////////////
-
-/* conventient I/O function */
-void CppPopulatePointCloudFromH5(long *inp_labels) {
-
-    // indexing parameters for indexing within current block
-    nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-    sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-    row_size = padded_blocksize[OR_X];
-    infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
-
-    long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
-
-    std::cout << "n_points is: " << n_points << std::endl << std::flush;
-
-    for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
-
-      // get segment_ID of current index and skip if is zero
-      long curr_label = inp_labels[voxel_index];
-      if (!curr_label) continue;
-
-      // find coordinates of this voxel_index
-      long iz = voxel_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-      long iy = (voxel_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-      long ix = voxel_index % input_blocksize[OR_X];
-
-      long iz_padded; long iy_padded; long ix_padded;
-
-      //  pad the location by one
-      iz_padded = iz + 1;
-      iy_padded = iy + 1;
-      ix_padded = ix + 1;
-
-      // find the new voxel index
-      long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded);
-
-      // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
-      if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-        Pointclouds[curr_label] = std::unordered_map<long,short>();
-        // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
-        IDs_in_block.insert(curr_label);
-      }
-
-      Pointclouds[curr_label][iv] = 1;
-
-      // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
-      if (iz==(input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
-      else if (iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
-      else if (ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
-
-    }
-
-}
+// void CppUpdateResolution(float input_resolution[3])
+// {
+//     resolution[OR_Z] = input_resolution[OR_Z];
+//     resolution[OR_Y] = input_resolution[OR_Y];
+//     resolution[OR_X] = input_resolution[OR_X];
+// }
+//
+// void CppUpdateBlocksize(long inp_blocksize[3])
+// {
+//     input_blocksize[OR_Z] = inp_blocksize[OR_Z];
+//     input_blocksize[OR_Y] = inp_blocksize[OR_Y];
+//     input_blocksize[OR_X] = inp_blocksize[OR_X];
+//
+//     padded_blocksize[OR_Z] = inp_blocksize[OR_Z]+2;
+//     padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
+//     padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
+//
+// }
+//
+// void CppUpdateVolumesize(long volume_size[3])
+// {
+//     volumesize[OR_Z] = volume_size[OR_Z];
+//     volumesize[OR_Y] = volume_size[OR_Y];
+//     volumesize[OR_X] = volume_size[OR_X];
+//
+// }
+//
+// void CppUpdateBlockindices(long inp_block_z, long inp_block_y, long inp_block_x)
+// {
+//     block_z = inp_block_z;
+//     block_y = inp_block_y;
+//     block_x = inp_block_x;
+// }
+//
+// void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir)
+// {
+//     synapses_directory = synapses_dir;
+//     somae_directory = somae_dir;
+//     skeleton_directory = skeleton_dir;
+// }
+//
+// ///////////////////////////////////////
+// //// POINT CLOUD UTILITY FUNCTIONS ////
+// ///////////////////////////////////////
+//
+// /* conventient I/O function */
+// void CppPopulatePointCloudFromH5(long *inp_labels) {
+//
+//     // indexing parameters for indexing within current block
+//     nentries = padded_blocksize[OR_Z] * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+//     sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+//     row_size = padded_blocksize[OR_X];
+//     infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
+//
+//     long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
+//
+//     std::cout << "n_points is: " << n_points << std::endl << std::flush;
+//
+//     for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
+//
+//       // get segment_ID of current index and skip if is zero
+//       long curr_label = inp_labels[voxel_index];
+//       if (!curr_label) continue;
+//
+//       // find coordinates of this voxel_index
+//       long iz = voxel_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
+//       long iy = (voxel_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
+//       long ix = voxel_index % input_blocksize[OR_X];
+//
+//       long iz_padded; long iy_padded; long ix_padded;
+//
+//       //  pad the location by one
+//       iz_padded = iz + 1;
+//       iy_padded = iy + 1;
+//       ix_padded = ix + 1;
+//
+//       // find the new voxel index
+//       long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, sheet_size, row_size);
+//
+//       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
+//       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
+//         Pointclouds[curr_label] = std::unordered_map<long,short>();
+//         // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
+//         IDs_in_block.insert(curr_label);
+//       }
+//
+//       Pointclouds[curr_label][iv] = 1;
+//
+//       // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
+//       if (iz==(input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
+//       else if (iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
+//       else if (ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
+//
+//     }
+//
+// }
 
 // /* conventient I/O function */
 // void CppPopulatePointCloud(const char *prefix, const char *dataset, long segment_ID) {

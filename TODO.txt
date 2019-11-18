@@ -22,8 +22,7 @@ IDEAS:
 3. Remove the removed surface points from the border points sets to achieve speed up
 
 QUESTIONS:
-1. Mistake in source code? Line 585 cpp-thinning:
-  if (fwrite(&iv, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); } should be wfp
+1.
 
 
 NOTES:
