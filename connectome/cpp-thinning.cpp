@@ -158,9 +158,8 @@ static bool Simple26_6(unsigned int neighbors);
 
 
 class DataBlock{
-  public:
+protected:
     long input_blocksize[3];
-    long padded_blocksize[3];
     long volumesize[3];
     float resolution[3];
     long block_z;
@@ -173,14 +172,16 @@ class DataBlock{
     const char *synapses_directory;
     const char *somae_directory;
     const char *skeleton_directory;
+
+  public:
+    long padded_blocksize[3];
+    std::unordered_set<long> IDs_to_process;
+    std::unordered_set<long> IDs_in_block;
     std::unordered_map<long, std::unordered_map<long, short>> Pointclouds;
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
     std::vector<long> zmax_iy_local = std::vector<long>();
     std::vector<long> zmax_ix_local = std::vector<long>();
     std::vector<long> zmax_segment_ID = std::vector<long>();
-
-    std::unordered_set<long> IDs_to_process;
-    std::unordered_set<long> IDs_in_block;
 
     DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
 
@@ -451,12 +452,12 @@ class DataBlock{
 
 class BlockSegment : public DataBlock{
   private:
-    std::unordered_map<long, short> segment;
-    long segment_ID;
-    std::unordered_map<long, std::unordered_set<long>> borderpoints_segment;
-    std::unordered_map<long, float> widths;
-    List surface_voxels;
     long initial_points;
+    long segment_ID;
+    List surface_voxels;
+    std::unordered_map<long, short> segment;
+    std::unordered_map<long, std::unordered_set<long>> borderpoints_segment = std::unordered_map<long, std::unordered_set<long>>();
+    std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
   public:
     BlockSegment(long segment_ID_inp, DataBlock &Blockx):
@@ -984,6 +985,9 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
 
+  // needs to happen after PopulatePointCloud()
+  PopulateOffsets(BlockA.padded_blocksize);
+
   // create iterator over set
   std::unordered_set<long>::iterator itr = BlockA.IDs_in_block.begin();
 
@@ -991,9 +995,6 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   {
       // initialize segment using the Block object and the segment ID to process
       BlockSegment segA(*itr, BlockA);
-
-      // needs to happen after PopulatePointCloud()
-      PopulateOffsets(segA.padded_blocksize);
 
       // call the sequential thinning algorithm
       segA.SequentialThinning(prefix);
