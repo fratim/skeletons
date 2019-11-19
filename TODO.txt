@@ -9,6 +9,7 @@ TODO:
 15. Revive timing
 16. fix writing of anchor points (how to write to the Block variable in a smart way?)
 17. How to copy the base object variables to the inherited class object?
+18, make block indices one object
 
 COMMENTS:
 1. Do we have a second monitor anywhere?

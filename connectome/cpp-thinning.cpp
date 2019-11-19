@@ -176,73 +176,60 @@ class DataBlock{
     const char *skeleton_directory;
     std::unordered_map<long, std::unordered_map<long, short>> Pointclouds;
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
-    std::unordered_set<long> IDs_to_process;
-    std::unordered_set<long> IDs_in_block;
     std::vector<long> zmax_iy_local = std::vector<long>();
     std::vector<long> zmax_ix_local = std::vector<long>();
     std::vector<long> zmax_segment_ID = std::vector<long>();
 
-    void CppUpdateResolution(float input_resolution[3])
-    {
-        resolution_test[OR_Z] = input_resolution[OR_Z];
-        resolution_test[OR_Y] = input_resolution[OR_Y];
-        resolution_test[OR_X] = input_resolution[OR_X];
+    std::unordered_set<long> IDs_to_process;
+    std::unordered_set<long> IDs_in_block;
 
-        std::cout << "Resolution set to: " << resolution_test[OR_Z] << "," << resolution_test[OR_Y] << "," << resolution_test[OR_X] << "," << std::endl;
+    DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
 
-    }
+      resolution_test[OR_Z] = input_resolution[OR_Z];
+      resolution_test[OR_Y] = input_resolution[OR_Y];
+      resolution_test[OR_X] = input_resolution[OR_X];
 
-    void CppUpdateBlocksize(long inp_blocksize[3])
-    {
-        input_blocksize[OR_Z] = inp_blocksize[OR_Z];
-        input_blocksize[OR_Y] = inp_blocksize[OR_Y];
-        input_blocksize[OR_X] = inp_blocksize[OR_X];
+      std::cout << "Resolution set to: " << resolution_test[OR_Z] << "," << resolution_test[OR_Y] << "," << resolution_test[OR_X] << "," << std::endl;
 
-        padded_blocksize[OR_Z] = inp_blocksize[OR_Z]+2;
-        padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
-        padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
+      input_blocksize[OR_Z] = inp_blocksize[OR_Z];
+      input_blocksize[OR_Y] = inp_blocksize[OR_Y];
+      input_blocksize[OR_X] = inp_blocksize[OR_X];
 
-        padded_sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-        padded_row_size = padded_blocksize[OR_X];
+      padded_blocksize[OR_Z] = inp_blocksize[OR_Z]+2;
+      padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
+      padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
 
-        input_sheet_size = input_blocksize[OR_Y] * input_blocksize[OR_X];
-        input_row_size = input_blocksize[OR_X];
+      padded_sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+      padded_row_size = padded_blocksize[OR_X];
 
-        std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
-        std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
-        std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
-        std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
-        std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
-        std::cout << "Rowsize input set to: " << input_row_size << std::endl;
+      input_sheet_size = input_blocksize[OR_Y] * input_blocksize[OR_X];
+      input_row_size = input_blocksize[OR_X];
 
-    }
+      std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
+      std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
+      std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
+      std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
+      std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
+      std::cout << "Rowsize input set to: " << input_row_size << std::endl;
 
-    void CppUpdateVolumesize(long volume_size[3])
-    {
-        volumesize[OR_Z] = volume_size[OR_Z];
-        volumesize[OR_Y] = volume_size[OR_Y];
-        volumesize[OR_X] = volume_size[OR_X];
+      volumesize[OR_Z] = volume_size[OR_Z];
+      volumesize[OR_Y] = volume_size[OR_Y];
+      volumesize[OR_X] = volume_size[OR_X];
 
-        std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
+      std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
 
-    }
+      block_z = block_ind_inp[OR_Z];
+      block_y = block_ind_inp[OR_Y];
+      block_x = block_ind_inp[OR_X];
 
-    void CppUpdateBlockindices(long block_ind_inp[3])
-    {
-        block_z = block_ind_inp[OR_Z];
-        block_y = block_ind_inp[OR_Y];
-        block_x = block_ind_inp[OR_X];
+      std::cout << "Block indices set to: " << block_z << "," << block_y << "," << block_x << "," << std::endl;
 
-        std::cout << "Block indices set to: " << block_z << "," << block_y << "," << block_x << "," << std::endl;
-    }
+      synapses_directory = synapses_dir;
+      somae_directory = somae_dir;
+      skeleton_directory = skeleton_dir;
 
-    void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir)
-    {
-        synapses_directory = synapses_dir;
-        somae_directory = somae_dir;
-        skeleton_directory = skeleton_dir;
+      std::cout << "Directories set. " << std::endl;
 
-        std::cout << "Directories set. " << std::endl;
     }
 
     void CppPopulatePointCloudFromH5(long *inp_labels)
@@ -455,7 +442,8 @@ class BlockSegment : public DataBlock{
     long initial_points;
 
   public:
-    BlockSegment(long segment_ID_inp, DataBlock &Blockx){
+    BlockSegment(long segment_ID_inp, DataBlock &Blockx, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir):
+          DataBlock(input_resolution, inp_blocksize, volume_size, block_ind_inp, synapses_dir, somae_dir, skeleton_dir){
 
       std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
       std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
@@ -981,19 +969,20 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   clock_t start_time_total = clock();
 
-  DataBlock BlockA;
-  BlockA.CppUpdateResolution(input_resolution);
-  BlockA.CppUpdateBlocksize(inp_blocksize);
-  BlockA.CppUpdateVolumesize(volume_size);
-  BlockA.CppUpdateBlockindices(block_ind);
-  BlockA.CppUpdateDirectories(synapses_dir, somae_dir, skeleton_dir);
+  DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
 
   // insert IDs that should be processed
   // BlockA.IDs_to_process.insert({91});
 
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
+
+  // read Synapses
   if (!BlockA.ReadSynapses(prefix)) exit(-1);
+
+  // read Anchor points (if block before does exist)
   // if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
+
+  // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
 
   // create iterator over set
@@ -1001,26 +990,26 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   while (itr != BlockA.IDs_in_block.end())
   {
-
-      BlockSegment segA(*itr, BlockA);
+      // initialize segment using the Block object and the segment ID to process
+      BlockSegment segA(*itr, BlockA, input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
 
       // needs to happen after PopulatePointCloud()
       PopulateOffsets(segA.padded_blocksize);
 
       // call the sequential thinning algorithm
-      clock_t start_time = clock();
       segA.SequentialThinning(prefix);
-      time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;
-      std::cout << "time added summed: " << time_added << std::endl;
 
+      // write skeletons and widths, add anchor points to
       segA.WriteOutputfiles(prefix);
 
+      // increment iterator
       itr++;
   }
 
+  // write border anchor points to file
   BlockA.writeZmaxBlock(prefix);
-
-  double total_time_program = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
-  printf("Total time summed up: %f\n", total_time_program);
-
 }
+
+// clock_t start_time = clock();
+// time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;
+// std::cout << "time added summed: " << time_added << std::endl;
