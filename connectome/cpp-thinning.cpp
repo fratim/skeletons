@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <vector>
+#include <time.h>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -27,6 +28,8 @@ static long long_mask[26];
 static unsigned char char_mask[8];
 static long n26_offsets[26];
 static long n6_offsets[6];
+
+double time_added = 0;
 
 static void set_long_mask(void)
 {
@@ -164,12 +167,13 @@ class DataBlock{
     long block_z;
     long block_y;
     long block_x;
+    long padded_row_size;
+    long padded_sheet_size;
     const char *synapses_directory;
     const char *somae_directory;
     const char *skeleton_directory;
     std::unordered_map<long, std::unordered_map<long, short>> Pointclouds;
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
-
     std::unordered_set<long> IDs_to_process;
     std::unordered_set<long> IDs_in_block;
     std::vector<long> zmax_iy_local = std::vector<long>();
@@ -196,8 +200,13 @@ class DataBlock{
         padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
         padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
 
+        padded_sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+        padded_row_size = padded_blocksize[OR_X];
+
         std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
         std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
+        std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
+        std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
 
     }
 
@@ -232,10 +241,6 @@ class DataBlock{
     void CppPopulatePointCloudFromH5(long *inp_labels)
     {
 
-        // indexing parameters for indexing within current block
-        long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-        long row_size = padded_blocksize[OR_X];
-
         long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
 
         std::cout << "n_points is: " << n_points << std::endl << std::flush;
@@ -259,7 +264,7 @@ class DataBlock{
           ix_padded = ix + 1;
 
           // find the new voxel index
-          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, sheet_size, row_size);
+          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
 
           // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
           if (Pointclouds.find(curr_label) == Pointclouds.end()) {
@@ -327,9 +332,6 @@ class DataBlock{
               if (fread(&dummy_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
           }
 
-          // set block indexing parameters
-          long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-          long row_size = padded_blocksize[OR_X];
 
           // add the local coordinates (offset by one in each direction)
           for (long is = 0; is < nsynapses; ++is) {
@@ -344,7 +346,7 @@ class DataBlock{
               iz += 1; iy += 1; ix += 1;
 
               // find the new voxel index
-              long iv = IndicesToIndex(ix, iy, iz, sheet_size, row_size);
+              long iv = IndicesToIndex(ix, iy, iz, padded_sheet_size, padded_row_size);
 
               Pointclouds[segment_ID][iv] = 3;
           }
@@ -390,11 +392,9 @@ class DataBlock{
           long iy_padded = iy_local + 1;
           long ix_padded = ix_local + 1;
 
-          long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-          long row_size = padded_blocksize[OR_X];
 
           //  find the new voxel index
-          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, sheet_size, row_size);
+          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
 
           Pointclouds[segment_ID][iv] = 3;
 
@@ -407,6 +407,36 @@ class DataBlock{
 
       return 1;
 
+    }
+
+    void writeZmaxBlock (const char *prefix)
+    {
+
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      char output_filename_zmax[4096];
+      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x);
+
+      FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+      if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+      if (!((zmax_iy_local.size()==zmax_ix_local.size())&&(zmax_ix_local.size()==zmax_segment_ID.size()))){
+        throw std::invalid_argument("z vectors not of same size!");
+      }
+
+      long n_points_zmax = zmax_iy_local.size();
+
+      std::cout << "Anchor points found: " << n_points_zmax << std::endl;
+
+      if (fwrite(&n_points_zmax, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+
+      for (int pos = 0; pos < n_points_zmax; pos++){
+        if (fwrite(&zmax_iy_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&zmax_ix_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&zmax_segment_ID[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+      }
+
+      fclose(zmaxfp);
     }
 
 };
@@ -422,6 +452,7 @@ class BlockSegment : public DataBlock{
 
   public:
     BlockSegment(long segment_ID_inp, DataBlock Blockx){
+      
       std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
       std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
       std::copy(std::begin(Blockx.padded_blocksize), std::end(Blockx.padded_blocksize), std::begin(padded_blocksize));
@@ -434,6 +465,9 @@ class BlockSegment : public DataBlock{
       somae_directory = Blockx.somae_directory;
       skeleton_directory = Blockx.skeleton_directory;
 
+      padded_row_size = Blockx.padded_row_size;
+      padded_sheet_size = Blockx.padded_sheet_size;
+
       segment_ID = segment_ID_inp;
       segment = Blockx.Pointclouds[segment_ID];
       borderpoints_segment = Blockx.borderpoints[segment_ID];
@@ -442,7 +476,9 @@ class BlockSegment : public DataBlock{
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
       initial_points = segment.size();
+
       printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
+
     }
 
     void SequentialThinning(const char *prefix)
@@ -462,6 +498,7 @@ class BlockSegment : public DataBlock{
 
     void CollectSurfaceVoxels(void)
     {
+
         // go through all voxels and check their six neighbors
         for (std::unordered_map<long, short>::iterator it = segment.begin(); it != segment.end(); ++it) {
             // all of these elements are either 1 or 3 and in the segment
@@ -470,17 +507,15 @@ class BlockSegment : public DataBlock{
             // initialize widths to maximum float value
             widths[index] = std::numeric_limits<float>::max();
 
-            long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-            long row_size = padded_blocksize[OR_X];
-
             long ix, iy, iz;
-            IndexToIndices(index, ix, iy, iz, sheet_size, row_size);
+            IndexToIndices(index, ix, iy, iz, padded_sheet_size, padded_row_size);
             // check the 6 neighbors
             for (long iv = 0; iv < NTHINNING_DIRECTIONS; ++iv) {
                 long neighbor_index = index + n6_offsets[iv];
 
                 long ii, ij, ik;
-                IndexToIndices(neighbor_index, ii, ij, ik, sheet_size, row_size);
+
+                IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
 
                 // skip the fake boundary elements
                 if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
@@ -579,9 +614,6 @@ class BlockSegment : public DataBlock{
                 // otherise do normal procedure - hceck if simple, if so, delete it
                 else{
 
-                  long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-                  long row_size = padded_blocksize[OR_X];
-
                   unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
                   if (Simple26_6(neighbors)) {
                       // delete the simple point
@@ -595,7 +627,7 @@ class BlockSegment : public DataBlock{
                           // widths of voxels start at maximum and first updated when put on surface
                           if (segment[neighbor_index] == 1) {
                               long iu, iv, iw;
-                              IndexToIndices(neighbor_index, iu, iv, iw, sheet_size, row_size);
+                              IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size, padded_row_size);
                               NewSurfaceVoxel(neighbor_index, iu, iv, iw, surface_voxels);
 
                               // convert to a surface point
@@ -610,7 +642,7 @@ class BlockSegment : public DataBlock{
 
                           // get this index in (x, y, z)
                           long iu, iv, iw;
-                          IndexToIndices(neighbor_index, iu, iv, iw, sheet_size, row_size);
+                          IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size, padded_row_size);
 
                           // get the distance from the voxel to be deleted
                           float diffx = resolution[OR_X] * (ix - iu);
@@ -643,10 +675,7 @@ class BlockSegment : public DataBlock{
     {
         unsigned int neighbors = 0;
 
-        long sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-        long row_size = padded_blocksize[OR_X];
-
-        long index = IndicesToIndex(ix, iy, iz, sheet_size, row_size);
+        long index = IndicesToIndex(ix, iy, iz, padded_sheet_size, padded_row_size);
 
         // some of these lookups will create a new entry but the region is
         // shrinking so memory overhead is minimal
@@ -852,6 +881,7 @@ static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels)
         LE2->next = LE->next;
     }
     delete LE;
+
 }
 
 static void CreatePointList(PointList *s)
@@ -940,41 +970,10 @@ static bool Simple26_6(unsigned int neighbors)
     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
 }
 
-
-//
-// static void writeZmaxBlock (const char *prefix, std::vector<long> &zmax_iy_local, std::vector<long> &zmax_ix_local, std::vector<long> &zmax_segment_ID)
-// {
-//
-//   // write the zmax border points to a file (so far stored in vectors)
-//   // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-//   char output_filename_zmax[4096];
-//   sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x);
-//
-//   FILE *zmaxfp = fopen(output_filename_zmax, "wb");
-//   if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
-//
-//   if (!((zmax_iy_local.size()==zmax_ix_local.size())&&(zmax_ix_local.size()==zmax_segment_ID.size()))){
-//     throw std::invalid_argument("z vectors not of same size!");
-//   }
-//
-//   long n_points_zmax = zmax_iy_local.size();
-//
-//   std::cout << "Anchor points found: " << n_points_zmax << std::endl;
-//
-//   if (fwrite(&n_points_zmax, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-//
-//   for (int pos = 0; pos < n_points_zmax; pos++){
-//     if (fwrite(&zmax_iy_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-//     if (fwrite(&zmax_ix_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-//     if (fwrite(&zmax_segment_ID[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-//   }
-//
-//   fclose(zmaxfp);
-// }
-
-
 void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
   // create new Datablock and set the input variables
+
+  clock_t start_time_total = clock();
 
   DataBlock BlockA;
   BlockA.CppUpdateResolution(input_resolution);
@@ -984,35 +983,36 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   BlockA.CppUpdateDirectories(synapses_dir, somae_dir, skeleton_dir);
 
   // insert IDs that should be processed
-  BlockA.IDs_to_process.insert({91});
+  // BlockA.IDs_to_process.insert({91});
+
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
   if (!BlockA.ReadSynapses(prefix)) exit(-1);
-  if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
+  // if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
   InitializeLookupTables(lookup_table_directory);
 
-  long initial_points = BlockA.Pointclouds[91].size();
-  printf("segment_ID 91 initial points: %ld\n", initial_points);
-
   // create iterator over set
-  std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
+  std::unordered_set<long>::iterator itr = BlockA.IDs_in_block.begin();
 
-  // iterate over all elements in this set and compute and save their skeletons
-  // long loop_executions = 0;
-
-  while (itr != BlockA.IDs_to_process.end())
+  while (itr != BlockA.IDs_in_block.end())
   {
+
+      clock_t start_time = clock();
       BlockSegment segA(*itr, BlockA);
+      time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;
+      std::cout << "time added summed: " << time_added << std::endl;
 
       // needs to happen after PopulatePointCloud()
       PopulateOffsets(segA.padded_blocksize);
-
       // call the sequential thinning algorithm
       segA.SequentialThinning(prefix);
-
       segA.WriteOutputfiles(prefix);
 
       itr++;
   }
 
+  BlockA.writeZmaxBlock(prefix);
+
+  double total_time_program = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
+  printf("Total time summed up: %f\n", total_time_program);
 
 }

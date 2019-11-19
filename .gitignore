@@ -8,6 +8,7 @@ examples/running_times/
 examples/widths/
 examples/synapses_old
 examples/synapses_new
+examples/synapses_512
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,13 +1,13 @@
 # resolution in nm
 18x18x20
 # volume size
-5332x5456x5700
+5632x5632x5700
 # block size
-2048x2048x256
+512x512x512
 # input_labels directory
 /home/frtim/Documents/Code/skeletons/examples/segmentations
 # synapses directory
-/home/frtim/Documents/Code/skeletons/examples/synapses
+/home/frtim/Documents/Code/skeletons/examples/synapses_512
 # somae directory
 /home/frtim/Documents/Code/skeletons/examples/somae
 # skeleton directory
