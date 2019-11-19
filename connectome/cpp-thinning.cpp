@@ -159,7 +159,6 @@ static bool Simple26_6(unsigned int neighbors);
 
 class DataBlock{
   public:
-    float resolution_test[3];
     long input_blocksize[3];
     long padded_blocksize[3];
     long volumesize[3];
@@ -185,11 +184,11 @@ class DataBlock{
 
     DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
 
-      resolution_test[OR_Z] = input_resolution[OR_Z];
-      resolution_test[OR_Y] = input_resolution[OR_Y];
-      resolution_test[OR_X] = input_resolution[OR_X];
+      resolution[OR_Z] = input_resolution[OR_Z];
+      resolution[OR_Y] = input_resolution[OR_Y];
+      resolution[OR_X] = input_resolution[OR_X];
 
-      std::cout << "Resolution set to: " << resolution_test[OR_Z] << "," << resolution_test[OR_Y] << "," << resolution_test[OR_X] << "," << std::endl;
+      std::cout << "Resolution set to: " << resolution[OR_Z] << "," << resolution[OR_Y] << "," << resolution[OR_X] << "," << std::endl;
 
       input_blocksize[OR_Z] = inp_blocksize[OR_Z];
       input_blocksize[OR_Y] = inp_blocksize[OR_Y];
@@ -229,6 +228,24 @@ class DataBlock{
       skeleton_directory = skeleton_dir;
 
       std::cout << "Directories set. " << std::endl;
+
+    }
+
+    DataBlock(DataBlock &Block){
+      std::copy(std::begin(Block.input_blocksize), std::end(Block.input_blocksize), std::begin(input_blocksize));
+      std::copy(std::begin(Block.padded_blocksize), std::end(Block.padded_blocksize), std::begin(padded_blocksize));
+      std::copy(std::begin(Block.volumesize), std::end(Block.volumesize), std::begin(volumesize));
+      std::copy(std::begin(Block.resolution), std::end(Block.resolution), std::begin(resolution));
+      block_z = Block.block_z;
+      block_y = Block.block_y;
+      block_x = Block.block_x;
+      skeleton_directory = Block.skeleton_directory;
+
+      padded_row_size = Block.padded_row_size;
+      padded_sheet_size = Block.padded_sheet_size;
+
+      input_row_size = Block.input_row_size;
+      input_sheet_size = Block.input_sheet_size;
 
     }
 
@@ -442,28 +459,8 @@ class BlockSegment : public DataBlock{
     long initial_points;
 
   public:
-    BlockSegment(long segment_ID_inp, DataBlock &Blockx, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir):
-          DataBlock(input_resolution, inp_blocksize, volume_size, block_ind_inp, synapses_dir, somae_dir, skeleton_dir){
-
-      std::cout << "here: " << std::endl;
-
-      // std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
-      // std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
-      // std::copy(std::begin(Blockx.padded_blocksize), std::end(Blockx.padded_blocksize), std::begin(padded_blocksize));
-      // std::copy(std::begin(Blockx.volumesize), std::end(Blockx.volumesize), std::begin(volumesize));
-      // std::copy(std::begin(Blockx.resolution), std::end(Blockx.resolution), std::begin(resolution));
-      // block_z = Blockx.block_z;
-      // block_y = Blockx.block_y;
-      // block_x = Blockx.block_x;
-      // synapses_directory = Blockx.synapses_directory;
-      // somae_directory = Blockx.somae_directory;
-      // skeleton_directory = Blockx.skeleton_directory;
-      //
-      // padded_row_size = Blockx.padded_row_size;
-      // padded_sheet_size = Blockx.padded_sheet_size;
-      //
-      // input_row_size = Blockx.input_row_size;
-      // input_sheet_size = Blockx.input_sheet_size;
+    BlockSegment(long segment_ID_inp, DataBlock &Blockx):
+          DataBlock(Blockx){
 
       segment_ID = segment_ID_inp;
       segment = Blockx.Pointclouds[segment_ID];
@@ -720,7 +717,7 @@ class BlockSegment : public DataBlock{
         }
     }
 
-    void WriteOutputfiles(const char *prefix)
+    void WriteOutputfiles(const char *prefix, DataBlock &Blockx)
     {
 
         // count the number of remaining points
@@ -798,9 +795,9 @@ class BlockSegment : public DataBlock{
             // write to zmax border file, if on border
             if (iz_local==(input_blocksize[OR_Z]-1)){
 
-                zmax_iy_local.push_back(iy_local);
-                zmax_ix_local.push_back(ix_local);
-                zmax_segment_ID.push_back(segment_ID);
+                Blockx.zmax_iy_local.push_back(iy_local);
+                Blockx.zmax_ix_local.push_back(ix_local);
+                Blockx.zmax_segment_ID.push_back(segment_ID);
 
                 // std::cout << "added anchor point - iz_local, inp_blocksize[OR_Z]-1: " << iz_local << "," << (input_blocksize[OR_Z]-1) << std::endl;
 
@@ -993,7 +990,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   while (itr != BlockA.IDs_in_block.end())
   {
       // initialize segment using the Block object and the segment ID to process
-      BlockSegment segA(*itr, BlockA, input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
+      BlockSegment segA(*itr, BlockA);
 
       // needs to happen after PopulatePointCloud()
       PopulateOffsets(segA.padded_blocksize);
@@ -1002,7 +999,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
       segA.SequentialThinning(prefix);
 
       // write skeletons and widths, add anchor points to
-      segA.WriteOutputfiles(prefix);
+      segA.WriteOutputfiles(prefix, BlockA);
 
       // increment iterator
       itr++;
