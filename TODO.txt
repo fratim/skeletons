@@ -7,7 +7,8 @@ TODO:
 13. change pointclouds back to char (currently short)
 14. Check blocksizes also for read write of border anchor points
 15. Revive timing
-16. fix writing of anchor points
+16. fix writing of anchor points (how to write to the Block variable in a smart way?)
+17. How to copy the base object variables to the inherited class object?
 
 COMMENTS:
 1. Do we have a second monitor anywhere?

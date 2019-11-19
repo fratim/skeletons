@@ -169,6 +169,8 @@ class DataBlock{
     long block_x;
     long padded_row_size;
     long padded_sheet_size;
+    long input_row_size;
+    long input_sheet_size;
     const char *synapses_directory;
     const char *somae_directory;
     const char *skeleton_directory;
@@ -203,10 +205,15 @@ class DataBlock{
         padded_sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
         padded_row_size = padded_blocksize[OR_X];
 
+        input_sheet_size = input_blocksize[OR_Y] * input_blocksize[OR_X];
+        input_row_size = input_blocksize[OR_X];
+
         std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
         std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
         std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
         std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
+        std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
+        std::cout << "Rowsize input set to: " << input_row_size << std::endl;
 
     }
 
@@ -251,10 +258,8 @@ class DataBlock{
           long curr_label = inp_labels[voxel_index];
           if (!curr_label) continue;
 
-          // find coordinates of this voxel_index
-          long iz = voxel_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-          long iy = (voxel_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-          long ix = voxel_index % input_blocksize[OR_X];
+          long ix, iy, iz;
+          IndexToIndices(voxel_index, ix, iy, iz, input_sheet_size, input_row_size);
 
           long iz_padded; long iy_padded; long ix_padded;
 
@@ -338,9 +343,8 @@ class DataBlock{
               long linear_index;
               if (fread(&linear_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
 
-              long iz = linear_index / (input_blocksize[OR_Y] * input_blocksize[OR_X]);
-              long iy = (linear_index - iz * (input_blocksize[OR_Y] * input_blocksize[OR_X])) / input_blocksize[OR_X];
-              long ix = linear_index % input_blocksize[OR_X];
+              long ix, iy, iz;
+              IndexToIndices(linear_index, ix, iy, iz, input_sheet_size, input_row_size);
 
               //  pad the location by one
               iz += 1; iy += 1; ix += 1;
@@ -468,6 +472,9 @@ class BlockSegment : public DataBlock{
       padded_row_size = Blockx.padded_row_size;
       padded_sheet_size = Blockx.padded_sheet_size;
 
+      input_row_size = Blockx.input_row_size;
+      input_sheet_size = Blockx.input_sheet_size;
+
       segment_ID = segment_ID_inp;
       segment = Blockx.Pointclouds[segment_ID];
       borderpoints_segment = Blockx.borderpoints[segment_ID];
@@ -476,7 +483,6 @@ class BlockSegment : public DataBlock{
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
       initial_points = segment.size();
-
       printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
 
     }
