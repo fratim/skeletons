@@ -451,8 +451,8 @@ class BlockSegment : public DataBlock{
     long initial_points;
 
   public:
-    BlockSegment(long segment_ID_inp, DataBlock Blockx){
-      
+    BlockSegment(long segment_ID_inp, DataBlock &Blockx){
+
       std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
       std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
       std::copy(std::begin(Blockx.padded_blocksize), std::end(Blockx.padded_blocksize), std::begin(padded_blocksize));
@@ -996,15 +996,17 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   while (itr != BlockA.IDs_in_block.end())
   {
 
-      clock_t start_time = clock();
       BlockSegment segA(*itr, BlockA);
-      time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;
-      std::cout << "time added summed: " << time_added << std::endl;
 
       // needs to happen after PopulatePointCloud()
       PopulateOffsets(segA.padded_blocksize);
+
       // call the sequential thinning algorithm
+      clock_t start_time = clock();
       segA.SequentialThinning(prefix);
+      time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;
+      std::cout << "time added summed: " << time_added << std::endl;
+
       segA.WriteOutputfiles(prefix);
 
       itr++;
