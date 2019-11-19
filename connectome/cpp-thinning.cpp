@@ -445,23 +445,25 @@ class BlockSegment : public DataBlock{
     BlockSegment(long segment_ID_inp, DataBlock &Blockx, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir):
           DataBlock(input_resolution, inp_blocksize, volume_size, block_ind_inp, synapses_dir, somae_dir, skeleton_dir){
 
-      std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
-      std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
-      std::copy(std::begin(Blockx.padded_blocksize), std::end(Blockx.padded_blocksize), std::begin(padded_blocksize));
-      std::copy(std::begin(Blockx.volumesize), std::end(Blockx.volumesize), std::begin(volumesize));
-      std::copy(std::begin(Blockx.resolution), std::end(Blockx.resolution), std::begin(resolution));
-      block_z = Blockx.block_z;
-      block_y = Blockx.block_y;
-      block_x = Blockx.block_x;
-      synapses_directory = Blockx.synapses_directory;
-      somae_directory = Blockx.somae_directory;
-      skeleton_directory = Blockx.skeleton_directory;
+      std::cout << "here: " << std::endl;
 
-      padded_row_size = Blockx.padded_row_size;
-      padded_sheet_size = Blockx.padded_sheet_size;
-
-      input_row_size = Blockx.input_row_size;
-      input_sheet_size = Blockx.input_sheet_size;
+      // std::copy(std::begin(Blockx.resolution_test), std::end(Blockx.resolution_test), std::begin(resolution_test));
+      // std::copy(std::begin(Blockx.input_blocksize), std::end(Blockx.input_blocksize), std::begin(input_blocksize));
+      // std::copy(std::begin(Blockx.padded_blocksize), std::end(Blockx.padded_blocksize), std::begin(padded_blocksize));
+      // std::copy(std::begin(Blockx.volumesize), std::end(Blockx.volumesize), std::begin(volumesize));
+      // std::copy(std::begin(Blockx.resolution), std::end(Blockx.resolution), std::begin(resolution));
+      // block_z = Blockx.block_z;
+      // block_y = Blockx.block_y;
+      // block_x = Blockx.block_x;
+      // synapses_directory = Blockx.synapses_directory;
+      // somae_directory = Blockx.somae_directory;
+      // skeleton_directory = Blockx.skeleton_directory;
+      //
+      // padded_row_size = Blockx.padded_row_size;
+      // padded_sheet_size = Blockx.padded_sheet_size;
+      //
+      // input_row_size = Blockx.input_row_size;
+      // input_sheet_size = Blockx.input_sheet_size;
 
       segment_ID = segment_ID_inp;
       segment = Blockx.Pointclouds[segment_ID];
