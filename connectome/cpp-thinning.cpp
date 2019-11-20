@@ -253,6 +253,10 @@ class DataBlock{
 
         std::cout << "n_points is: " << n_points << std::endl << std::flush;
 
+        long z_max =input_blocksize[OR_Z]-1;
+        long y_max =input_blocksize[OR_Y]-1;
+        long x_max =input_blocksize[OR_X]-1;
+
         for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
 
           // get segment_ID of current index and skip if is zero
@@ -282,9 +286,9 @@ class DataBlock{
           Pointclouds[curr_label][iv] = 1;
 
           // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
-          if (iz==(input_blocksize[OR_Z]-1)) borderpoints[curr_label][OR_Z].insert(iv);
-          else if (iy==(input_blocksize[OR_Y]-1)) borderpoints[curr_label][OR_Y].insert(iv);
-          else if (ix==(input_blocksize[OR_X]-1)) borderpoints[curr_label][OR_X].insert(iv);
+          if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z].insert(iv);
+          else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y].insert(iv);
+          else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(iv);
 
         }
 
@@ -367,48 +371,54 @@ class DataBlock{
 
     int ReadAnchorpoints(const char *prefix)
     {
-      // make filename of adjacent z lock (in negative direction)
-      char output_filename_zmax[4096];
-      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
 
-      std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
+      // only read in points if not first block in z direction
+      if (block_ind[OR_Z]!=0)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
 
-      FILE *fpzmax = fopen(output_filename_zmax, "rb");
-      if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+        std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
 
-      long npoints;
-      if (fread(&npoints, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+        FILE *fpzmax = fopen(output_filename_zmax, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
 
-      std::cout << "number of anchor points: " << npoints << std::endl;
+        long npoints;
+        if (fread(&npoints, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
 
-      for (long pos = 0; pos < npoints; pos++) {
+        std::cout << "number of anchor points: " << npoints << std::endl;
 
-          // get the label and number of synapses
-          long iy_local;
-          long ix_local;
-          long segment_ID;
+        for (long pos = 0; pos < npoints; pos++) {
 
-          if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-          if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-          if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+            // get the label and number of synapses
+            long iy_local;
+            long ix_local;
+            long segment_ID;
 
-          // populate offset
-          long iz_padded = 1;
-          long iy_padded = iy_local + 1;
-          long ix_padded = ix_local + 1;
+            if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+            if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+            if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+            // populate offset
+            long iz_padded = 1;
+            long iy_padded = iy_local + 1;
+            long ix_padded = ix_local + 1;
 
 
-          //  find the new voxel index
-          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            //  find the new voxel index
+            long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
 
-          Pointclouds[segment_ID][iv] = 3;
+            Pointclouds[segment_ID][iv] = 3;
 
-          // std::cout << "added anchor point at: " << iy_local << "," << ix_local << "segment ID: " << segment_ID << std::endl;
+            // std::cout << "added anchor point at: " << iy_local << "," << ix_local << "segment ID: " << segment_ID << std::endl;
+
+        }
+
+        // close file
+        fclose(fpzmax);
 
       }
-
-      // close file
-      fclose(fpzmax);
 
       return 1;
 
@@ -467,6 +477,9 @@ class BlockSegment : public DataBlock{
 
       initial_points = segment.size();
       printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
+
+      surface_voxels.first = NULL;
+      surface_voxels.last = NULL;
 
     }
 
@@ -532,13 +545,26 @@ class BlockSegment : public DataBlock{
     {
         long changed = 0;
 
+
         // iterate through every direction
         for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
+            std::cout << "HOSSA C" << std::endl <<std::flush;
+
             PointList deletable_points;
             ListElement *ptr;
 
+            std::cout << "HOSSA D" << std::endl <<std::flush;
+
             CreatePointList(&deletable_points);
+
+            std::cout << "HOSSA E" << std::endl <<std::flush;
+            std::cout << &deletable_points << std::endl <<std::flush;
+            // std::cout << deletable_points << std::endl <<std::flush;
+            std::cout << direction << std::endl <<std::flush;
+
             DetectSimpleBorderPoints(&deletable_points, direction);
+
+            std::cout << "HOSSA F" << std::endl <<std::flush;
 
             while (deletable_points.length) {
                 Voxel voxel = GetFromList(&deletable_points, &ptr);
@@ -656,6 +682,8 @@ class BlockSegment : public DataBlock{
         }
 
 
+
+
         // return the number of changes
         return changed;
     }
@@ -677,16 +705,33 @@ class BlockSegment : public DataBlock{
 
     void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
     {
+
+        std::cout << "HOSSA E1" << std::endl <<std::flush;
+
+
         ListElement *LE = (ListElement *)surface_voxels.first;
         while (LE != NULL) {
+
+            std::cout << "HOSSA E2" << std::endl <<std::flush;
+
             long iv = LE->iv;
+            std::cout << "HOSSA E2A" << std::endl <<std::flush;
             long ix = LE->ix;
+            std::cout << "HOSSA E2B" << std::endl <<std::flush;
             long iy = LE->iy;
+            std::cout << "HOSSA E2C" << std::endl <<std::flush;
             long iz = LE->iz;
+            std::cout << "HOSSA E2D" << std::endl <<std::flush;
+
+            std::cout << "HOSSA E3" << std::endl <<std::flush;
+
 
             // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
             // this will only be called on things on the surface already so already in unordered_map
             if (segment[iv] == 2) {
+
+                std::cout << "HOSSA E4" << std::endl <<std::flush;
+
                 long value = 0;
                 // is the neighbor in the corresponding direction not in the segment
                 // some of these keys will not exist but will default to 0 value
@@ -694,9 +739,15 @@ class BlockSegment : public DataBlock{
                 // the n6_offsets are in the order UP, DOWN, NORTH, SOUTH, EAST, WEST
                 value = segment[iv + n6_offsets[direction]];
 
+                std::cout << "HOSSA E5" << std::endl <<std::flush;
+
+
                 // see if the required point belongs to a different segment
                 if (!value) {
                     unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
+
+                    std::cout << "HOSSA E6" << std::endl <<std::flush;
+
 
                     // deletable point
                     if (Simple26_6(neighbors)) {
@@ -707,7 +758,11 @@ class BlockSegment : public DataBlock{
                         voxel.iz = iz;
                         AddToList(deletable_points, voxel, LE);
                     }
+
+                    std::cout << "HOSSA E7" << std::endl <<std::flush;
+
                 }
+
             }
             LE = (ListElement *) LE->next;
         }
@@ -968,7 +1023,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   if (!BlockA.ReadSynapses(prefix)) exit(-1);
 
   // read Anchor points (if block before does exist)
-  // if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
+  if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
 
   // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
@@ -996,6 +1051,9 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   // write border anchor points to file
   BlockA.writeZmaxBlock(prefix);
+  double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
+  std::cout << "time added summed: " << time_total << std::endl;
+
 }
 
 // clock_t start_time = clock();

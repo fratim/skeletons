@@ -5,6 +5,7 @@ TODO:
 14. Check blocksizes also for read write of border anchor points
 15. Revive timing
 19. Talk to guy who did somae detection
+20. get rid off passing the prefix to many functions
 
 COMMENTS:
 2. Name specifications:
@@ -18,6 +19,3 @@ IDEAS:
    in advance (then check both LUT on iteration step)
 2. Can we somehow tweak the bitwise comparison and get rid ogf the extra bordercomponent sets by simply changing the labels?
 3. Remove the removed surface points from the border points sets to achieve speed up
-
-QUESTIONS:
-1.
