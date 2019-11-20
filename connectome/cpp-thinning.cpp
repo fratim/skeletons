@@ -157,9 +157,8 @@ static void DestroyPointList(PointList *s);
 static void InitializeLookupTables(const char *lookup_table_directory);
 static bool Simple26_6(unsigned int neighbors);
 
-
 class DataBlock{
-protected:
+  protected:
     long input_blocksize[3];
     long volumesize[3];
     float resolution[3];
@@ -178,7 +177,7 @@ protected:
     long padded_blocksize[3];
     std::unordered_set<long> IDs_to_process;
     std::unordered_set<long> IDs_in_block;
-    std::unordered_map<long, std::unordered_map<long, short>> Pointclouds;
+    std::unordered_map<long, std::unordered_map<long, char>> Pointclouds;
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
     std::vector<long> zmax_iy_local = std::vector<long>();
     std::vector<long> zmax_ix_local = std::vector<long>();
@@ -279,7 +278,7 @@ protected:
 
           // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
           if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-            Pointclouds[curr_label] = std::unordered_map<long,short>();
+            Pointclouds[curr_label] = std::unordered_map<long,char>();
             // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
             IDs_in_block.insert(curr_label);
           }
@@ -456,7 +455,7 @@ class BlockSegment : public DataBlock{
     long initial_points;
     long segment_ID;
     List surface_voxels;
-    std::unordered_map<long, short> segment;
+    std::unordered_map<long, char> segment;
     std::unordered_map<long, std::unordered_set<long>> borderpoints_segment = std::unordered_map<long, std::unordered_set<long>>();
     std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
@@ -495,7 +494,7 @@ class BlockSegment : public DataBlock{
     {
 
         // go through all voxels and check their six neighbors
-        for (std::unordered_map<long, short>::iterator it = segment.begin(); it != segment.end(); ++it) {
+        for (std::unordered_map<long, char>::iterator it = segment.begin(); it != segment.end(); ++it) {
             // all of these elements are either 1 or 3 and in the segment
             long index = it->first;
 

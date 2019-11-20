@@ -1,7 +1,7 @@
 # resolution in nm
 18x18x20
 # volume size
-5632x5632x5700
+5632x5632x6144
 # block size
 512x512x512
 # input_labels directory

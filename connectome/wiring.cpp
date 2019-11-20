@@ -19,7 +19,6 @@
         "name": "wiring",
         "sources": [
             "wiring.pyx",
-            "cpp-wiring.cpp",
             "cpp-thinning.cpp"
         ]
     },
