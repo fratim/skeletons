@@ -4,11 +4,9 @@ TODO:
 12. Project synapses on surface
 14. Check blocksizes also for read write of border anchor points
 15. Revive timing
-18, make block indices one object
 19. Talk to guy who did somae detection
 
 COMMENTS:
-1. Do we have a second monitor anywhere?
 2. Name specifications:
     - input labels: labels_inp
     - segment: point cloud of one ID in a blocks
@@ -23,8 +21,3 @@ IDEAS:
 
 QUESTIONS:
 1.
-
-
-NOTES:
-1. Interesting Neurons:
-   - 73, 103, 143

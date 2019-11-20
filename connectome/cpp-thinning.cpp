@@ -456,11 +456,11 @@ class BlockSegment : public DataBlock{
     std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
   public:
-    BlockSegment(long segment_ID_inp, DataBlock &Blockx):DataBlock(Blockx){
+    BlockSegment(long segment_ID_inp, DataBlock &Block):DataBlock(Block){
 
       segment_ID = segment_ID_inp;
-      segment = Blockx.Pointclouds[segment_ID];
-      borderpoints_segment = Blockx.borderpoints[segment_ID];
+      segment = Block.Pointclouds[segment_ID];
+      borderpoints_segment = Block.borderpoints[segment_ID];
 
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
@@ -813,7 +813,8 @@ class BlockSegment : public DataBlock{
 
     }
 
-    void WriteHeader(FILE *fp, long &num){
+    void WriteHeader(FILE *fp, long &num)
+    {
       int check = 0;
       int size_l = sizeof(long);
 
