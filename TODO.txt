@@ -2,11 +2,8 @@ TODO:
 10. Initialize maps with specific size?
 11. Make variables const if possible
 12. Project synapses on surface
-13. change pointclouds back to char (currently short)
 14. Check blocksizes also for read write of border anchor points
 15. Revive timing
-16. fix writing of anchor points (how to write to the Block variable in a smart way?)
-17. How to copy the base object variables to the inherited class object?
 18, make block indices one object
 19. Talk to guy who did somae detection
 

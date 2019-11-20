@@ -162,9 +162,7 @@ class DataBlock{
     long input_blocksize[3];
     long volumesize[3];
     float resolution[3];
-    long block_z;
-    long block_y;
-    long block_x;
+    long block_ind[3];
     long padded_row_size;
     long padded_sheet_size;
     long input_row_size;
@@ -218,11 +216,11 @@ class DataBlock{
 
       std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
 
-      block_z = block_ind_inp[OR_Z];
-      block_y = block_ind_inp[OR_Y];
-      block_x = block_ind_inp[OR_X];
+      block_ind[OR_Z]= block_ind_inp[OR_Z];
+      block_ind[OR_Y] = block_ind_inp[OR_Y];
+      block_ind[OR_X] = block_ind_inp[OR_X];
 
-      std::cout << "Block indices set to: " << block_z << "," << block_y << "," << block_x << "," << std::endl;
+      std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
 
       synapses_directory = synapses_dir;
       somae_directory = somae_dir;
@@ -237,9 +235,7 @@ class DataBlock{
       std::copy(std::begin(Block.padded_blocksize), std::end(Block.padded_blocksize), std::begin(padded_blocksize));
       std::copy(std::begin(Block.volumesize), std::end(Block.volumesize), std::begin(volumesize));
       std::copy(std::begin(Block.resolution), std::end(Block.resolution), std::begin(resolution));
-      block_z = Block.block_z;
-      block_y = Block.block_y;
-      block_x = Block.block_x;
+      std::copy(std::begin(Block.block_ind), std::end(Block.block_ind), std::begin(block_ind));
       skeleton_directory = Block.skeleton_directory;
 
       padded_row_size = Block.padded_row_size;
@@ -299,7 +295,7 @@ class DataBlock{
 
       // read the synapses
       char synapse_filename[4096];
-      snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_z, block_y, block_x);
+      snprintf(synapse_filename, 4096, "%s/%s/%s-synapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
       FILE *fp = fopen(synapse_filename, "rb");
       if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
@@ -373,7 +369,7 @@ class DataBlock{
     {
       // make filename of adjacent z lock (in negative direction)
       char output_filename_zmax[4096];
-      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z-1, block_y, block_x);
+      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
 
       std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
 
@@ -424,7 +420,7 @@ class DataBlock{
       // write the zmax border points to a file (so far stored in vectors)
       // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
       char output_filename_zmax[4096];
-      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x);
+      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
       FILE *zmaxfp = fopen(output_filename_zmax, "wb");
       if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -460,8 +456,7 @@ class BlockSegment : public DataBlock{
     std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
   public:
-    BlockSegment(long segment_ID_inp, DataBlock &Blockx):
-          DataBlock(Blockx){
+    BlockSegment(long segment_ID_inp, DataBlock &Blockx):DataBlock(Blockx){
 
       segment_ID = segment_ID_inp;
       segment = Blockx.Pointclouds[segment_ID];
@@ -731,7 +726,7 @@ class BlockSegment : public DataBlock{
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x ,segment_ID);
+        sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
 
         // write the widths to file
         char widths_filename[4096];
@@ -766,9 +761,9 @@ class BlockSegment : public DataBlock{
             long iy_local = LE->iy - 1;
             long ix_local = LE->ix - 1;
 
-            long iz_global = iz_local + block_z*input_blocksize[OR_Z];
-            long iy_global = iy_local + block_y*input_blocksize[OR_Y];
-            long ix_global = ix_local + block_x*input_blocksize[OR_X];
+            long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+            long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+            long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
 
             long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
             long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
