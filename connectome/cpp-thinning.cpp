@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <time.h>
+#include <stdio.h>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -733,31 +734,21 @@ class BlockSegment : public DataBlock{
         char output_filename[4096];
         sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_z, block_y, block_x ,segment_ID);
 
-        FILE *wfp = fopen(output_filename, "wb");
-        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
-
-        // write the number of elements
-        if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&(input_blocksize[OR_Z]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&(input_blocksize[OR_Y]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&(input_blocksize[OR_X]), sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&segment_ID, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&num, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
         // write the widths to file
         char widths_filename[4096];
         sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
 
+        FILE *wfp = fopen(output_filename, "wb");
+        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
         FILE *width_fp = fopen(widths_filename, "wb");
         if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-        // write the number of elements
-        if (fwrite(&(volumesize[OR_Z]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-        if (fwrite(&(volumesize[OR_Y]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-        if (fwrite(&(volumesize[OR_X]), sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-        if (fwrite(&num, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+        // write the characteristics header
+        WriteHeader(wfp, num);
+
+        // characteristics
+        WriteHeader(width_fp, num);
 
         printf("Remaining voxels: %ld\n", num);
 
@@ -780,28 +771,14 @@ class BlockSegment : public DataBlock{
             long iy_global = iy_local + block_y*input_blocksize[OR_Y];
             long ix_global = ix_local + block_x*input_blocksize[OR_X];
 
-            // check that indices are not out of volume size
-            if (iz_global>=volumesize[OR_Z] ||  iy_global>=volumesize[OR_Y] || ix_global>=volumesize[OR_X]){
-              throw std::invalid_argument("Output global indices outside of volumesize!");
-            }
-
-            if (iz_local>=input_blocksize[OR_Z] ||  iy_local>=input_blocksize[OR_Y] || ix_local>=input_blocksize[OR_X]){
-              throw std::invalid_argument("Output local indices outside of blocksize_input!");
-            }
-
-            // TODO: transform to global frame here
             long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
             long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
 
             // write to zmax border file, if on border
             if (iz_local==(input_blocksize[OR_Z]-1)){
-
                 Blockx.zmax_iy_local.push_back(iy_local);
                 Blockx.zmax_ix_local.push_back(ix_local);
                 Blockx.zmax_segment_ID.push_back(segment_ID);
-
-                // std::cout << "added anchor point - iz_local, inp_blocksize[OR_Z]-1: " << iz_local << "," << (input_blocksize[OR_Z]-1) << std::endl;
-
             }
 
             if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
@@ -840,6 +817,22 @@ class BlockSegment : public DataBlock{
         // fclose(tfp);
 
 
+    }
+
+    void WriteHeader(FILE *fp, long &num){
+      int check = 0;
+      int size_l = sizeof(long);
+
+      check += fwrite(&(volumesize[OR_Z]), size_l, 1, fp);
+      check += fwrite(&(volumesize[OR_Y]), size_l, 1, fp);
+      check += fwrite(&(volumesize[OR_X]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_Z]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_Y]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_X]), size_l, 1, fp);
+      check += fwrite(&segment_ID, size_l, 1, fp);
+      check += fwrite(&num, size_l, 1, fp);
+
+      if (check != 8) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
     }
 
 };
