@@ -548,23 +548,16 @@ class BlockSegment : public DataBlock{
 
         // iterate through every direction
         for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
-            std::cout << "HOSSA C" << std::endl <<std::flush;
-
             PointList deletable_points;
             ListElement *ptr;
 
-            std::cout << "HOSSA D" << std::endl <<std::flush;
-
             CreatePointList(&deletable_points);
 
-            std::cout << "HOSSA E" << std::endl <<std::flush;
             std::cout << &deletable_points << std::endl <<std::flush;
             // std::cout << deletable_points << std::endl <<std::flush;
             std::cout << direction << std::endl <<std::flush;
 
             DetectSimpleBorderPoints(&deletable_points, direction);
-
-            std::cout << "HOSSA F" << std::endl <<std::flush;
 
             while (deletable_points.length) {
                 Voxel voxel = GetFromList(&deletable_points, &ptr);
@@ -706,31 +699,20 @@ class BlockSegment : public DataBlock{
     void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
     {
 
-        std::cout << "HOSSA E1" << std::endl <<std::flush;
 
 
         ListElement *LE = (ListElement *)surface_voxels.first;
         while (LE != NULL) {
 
-            std::cout << "HOSSA E2" << std::endl <<std::flush;
-
             long iv = LE->iv;
-            std::cout << "HOSSA E2A" << std::endl <<std::flush;
             long ix = LE->ix;
-            std::cout << "HOSSA E2B" << std::endl <<std::flush;
             long iy = LE->iy;
-            std::cout << "HOSSA E2C" << std::endl <<std::flush;
             long iz = LE->iz;
-            std::cout << "HOSSA E2D" << std::endl <<std::flush;
-
-            std::cout << "HOSSA E3" << std::endl <<std::flush;
 
 
             // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
             // this will only be called on things on the surface already so already in unordered_map
             if (segment[iv] == 2) {
-
-                std::cout << "HOSSA E4" << std::endl <<std::flush;
 
                 long value = 0;
                 // is the neighbor in the corresponding direction not in the segment
@@ -739,15 +721,10 @@ class BlockSegment : public DataBlock{
                 // the n6_offsets are in the order UP, DOWN, NORTH, SOUTH, EAST, WEST
                 value = segment[iv + n6_offsets[direction]];
 
-                std::cout << "HOSSA E5" << std::endl <<std::flush;
-
 
                 // see if the required point belongs to a different segment
                 if (!value) {
                     unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
-
-                    std::cout << "HOSSA E6" << std::endl <<std::flush;
-
 
                     // deletable point
                     if (Simple26_6(neighbors)) {
@@ -758,8 +735,6 @@ class BlockSegment : public DataBlock{
                         voxel.iz = iz;
                         AddToList(deletable_points, voxel, LE);
                     }
-
-                    std::cout << "HOSSA E7" << std::endl <<std::flush;
 
                 }
 

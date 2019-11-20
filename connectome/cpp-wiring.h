@@ -26,14 +26,6 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 inline void IndexToIndices(long iv, long &ix, long &iy, long &iz, long sheet_size, long row_size)
 {
 
-    if (row_size==0){
-      std::cout << "HOSSA A" << std::endl <<std::flush;
-    }
-
-    if (sheet_size==0){
-      std::cout << "HOSSA B" << std::endl <<std::flush;
-    }
-
     iz = iv / sheet_size;
     iy = (iv - iz * sheet_size) / row_size;
     ix = iv % row_size;
