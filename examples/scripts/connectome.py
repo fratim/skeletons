@@ -4,7 +4,7 @@ from skeletons.connectome import wiring
 
 
 prefix = 'Zebrafinch'
-block_z = 1
+block_z = 0
 block_y = 0
 block_x = 0
 

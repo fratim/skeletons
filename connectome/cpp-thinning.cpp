@@ -7,6 +7,7 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
+#include <string>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -177,10 +178,11 @@ class DataBlock{
     std::unordered_set<long> IDs_in_block;
     std::unordered_map<long, std::unordered_map<long, char>> Pointclouds;
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
-    std::vector<long> zmax_iy_local = std::vector<long>();
-    std::vector<long> zmax_ix_local = std::vector<long>();
-    std::vector<long> zmax_local_index = std::vector<long>();
-    std::vector<long> zmax_segment_ID = std::vector<long>();
+    std::unordered_map<long, std::unordered_map<std::string, std::vector<long>>> zmax_anchors_comp;
+    std::unordered_map<long, std::unordered_map<std::string, std::vector<long>>> zmin_anchors_seeded;
+    // std::vector<long> zmax_ix_local = std::vector<long>();
+    // std::vector<long> zmax_local_index = std::vector<long>();
+    // std::vector<long> zmax_segment_ID = std::vector<long>();
 
     DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
 
@@ -366,50 +368,48 @@ class DataBlock{
         FILE *fpzmax = fopen(output_filename_zmax, "rb");
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
 
-        long npoints;
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
 
-        ReadHeader(fpzmax,npoints);
+        for (long i=0; i<nsegments; i++) {
 
-        std::cout << "number of anchor points: " << npoints << std::endl;
+          long seg_ID;
+          long n_anchors;
 
-        for (long pos = 0; pos < npoints; pos++) {
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
 
-            // get the label and number of synapses
-            long iy_local;
-            long ix_local;
-            long local_index;
-            long segment_ID;
+          for (long pos=0; pos<n_anchors; pos++) {
 
-            if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-            if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-            if (fread(&local_index, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-            if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+            // long iv_global = zmax_anchors_comp[seg_ID][global_index][pos];
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+            zmin_anchors_seeded[seg_ID]["local_index"].push_back(iv_local);
 
-            // populate offset
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long ix_padded = ix + 1;
+
+            long iv;
+
             long iz_padded = 1;
-            long iy_padded = iy_local + 1;
-            long ix_padded = ix_local + 1;
+            iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            Pointclouds[seg_ID][iv] = 3;
+            zmin_anchors_seeded[seg_ID]["local_index"].push_back(iv);
 
-            // fix point in new block on boundary (z=0)
-            long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            Pointclouds[segment_ID][iv] = 3;
-
-            // // write to zmax border file, if on border
-            // Block.zmax_iy_local.push_back(iy_local);
-            // Block.zmax_ix_local.push_back(ix_local);
-            // Block.zmax_local_index.push_back(iv);
-            // Block.zmax_segment_ID.push_back(segment_ID);
-
-            // fix point in new block on boundary (z=1)
             iz_padded = 2;
             iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            Pointclouds[segment_ID][iv] = 3;
+            Pointclouds[seg_ID][iv] = 3;
+            zmin_anchors_seeded[seg_ID]["local_index"].push_back(iv);
 
-            // fix point in new block on boundary (z=1)
             iz_padded = 3;
             iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            Pointclouds[segment_ID][iv] = 3;
+            Pointclouds[seg_ID][iv] = 3;
+            zmin_anchors_seeded[seg_ID]["local_index"].push_back(iv);
 
+          }
         }
 
         // close file
@@ -432,24 +432,63 @@ class DataBlock{
       FILE *zmaxfp = fopen(output_filename_zmax, "wb");
       if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
 
-      if (!((zmax_iy_local.size()==zmax_ix_local.size())&&(zmax_ix_local.size()==zmax_segment_ID.size()))){
-        throw std::invalid_argument("z vectors not of same size!");
-      }
+      long nsegments = zmax_anchors_comp.size();
+      WriteHeader(zmaxfp, nsegments);
 
-      long n_points_zmax = zmax_iy_local.size();
+      for (std::unordered_map<long, std::unordered_map<std::string, std::vector<long>>>::iterator iter = zmax_anchors_comp.begin(); iter != zmax_anchors_comp.end(); ++iter) {
 
-      std::cout << "Anchor points found: " << n_points_zmax << std::endl;
+        long seg_ID = iter->first;
+        long n_anchors =  zmax_anchors_comp[seg_ID]["local_index"].size();
 
-      WriteHeader(zmaxfp, n_points_zmax);
+        if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
 
-      for (int pos = 0; pos < n_points_zmax; pos++){
-        if (fwrite(&zmax_iy_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-        if (fwrite(&zmax_ix_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-        if (fwrite(&zmax_local_index[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-        if (fwrite(&zmax_segment_ID[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        for (long pos=0; pos<n_anchors; pos++) {
+
+          long iv_local = zmax_anchors_comp[seg_ID]["local_index"][pos];
+          // long iv_global = zmax_anchors_comp[seg_ID][global_index][pos];
+          if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          // if (fwrite(&iv_global, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        }
       }
 
       fclose(zmaxfp);
+
+    }
+
+    void writeZminBlock (const char *prefix)
+    {
+
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      char output_filename_zmax[4096];
+      sprintf(output_filename_zmax, "%s/%s/%s-borderZMin-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+      FILE *fpzmin = fopen(output_filename_zmax, "wb");
+      if (!fpzmin) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+      long nsegments = zmin_anchors_seeded.size();
+      WriteHeader(fpzmin, nsegments);
+
+      for (std::unordered_map<long, std::unordered_map<std::string, std::vector<long>>>::iterator iter = zmin_anchors_seeded.begin(); iter != zmin_anchors_seeded.end(); ++iter) {
+
+        long seg_ID = iter->first;
+        long n_anchors =  zmin_anchors_seeded[seg_ID]["local_index"].size();
+
+        if (fwrite(&seg_ID, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&n_anchors, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+
+        for (long pos=0; pos<n_anchors; pos++) {
+
+          long iv_local = zmin_anchors_seeded[seg_ID]["local_index"][pos];
+          // long iv_global = zmin_anchors_seeded[seg_ID][global_index][pos];
+          if (fwrite(&iv_local, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          // if (fwrite(&iv_global, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        }
+      }
+
+      fclose(fpzmin);
+
     }
 
     void WriteHeader(FILE *fp, long &num)
@@ -665,13 +704,8 @@ class BlockSegment : public DataBlock{
 
                   long iv_local = iz * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy * input_blocksize[OR_X] + ix;
 
-                  // std::cout << "iz:  "<< iz << std::endl;
-
-                  // write to zmax border file, if on border
-                  Block.zmax_iy_local.push_back(iy);
-                  Block.zmax_ix_local.push_back(ix);
-                  Block.zmax_local_index.push_back(iv_local);
-                  Block.zmax_segment_ID.push_back(segment_ID);
+                  // write to zmax anchor file
+                  Block.zmax_anchors_comp[segment_ID]["local_index"].push_back(iv_local);
 
                   segment[index]=3;
                 }
