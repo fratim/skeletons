@@ -6,6 +6,8 @@ TODO:
 15. Revive timing
 19. Talk to guy who did somae detection
 20. get rid off passing the prefix to many functions
+21. Change anchor points and zmax points
+22. Change how anchor points are saved, to not have to pass block reference to segment
 
 COMMENTS:
 2. Name specifications:

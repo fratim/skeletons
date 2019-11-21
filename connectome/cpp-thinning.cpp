@@ -179,6 +179,7 @@ class DataBlock{
     std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints;
     std::vector<long> zmax_iy_local = std::vector<long>();
     std::vector<long> zmax_ix_local = std::vector<long>();
+    std::vector<long> zmax_local_index = std::vector<long>();
     std::vector<long> zmax_segment_ID = std::vector<long>();
 
     DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
@@ -304,27 +305,8 @@ class DataBlock{
       FILE *fp = fopen(synapse_filename, "rb");
       if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
 
-      long z_input_volume_size, y_input_volume_size, x_input_volume_size;
-      long z_input_block_size, y_input_block_size, x_input_block_size;
-
-      if (fread(&z_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (fread(&y_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (fread(&x_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-
-      if (z_input_volume_size != volumesize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (y_input_volume_size != volumesize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (x_input_volume_size != volumesize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-
-      if (fread(&z_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (fread(&y_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (fread(&x_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-
-      if (z_input_block_size != input_blocksize[OR_Z]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (y_input_block_size != input_blocksize[OR_Y]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-      if (x_input_block_size != input_blocksize[OR_X]) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
-
       long nneurons;
-      if (fread(&nneurons, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+      ReadHeader(fp, nneurons);
 
       for (long iv = 0; iv < nneurons; ++iv) {
           // get the label and number of synapses
@@ -385,7 +367,8 @@ class DataBlock{
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
 
         long npoints;
-        if (fread(&npoints, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+        ReadHeader(fpzmax,npoints);
 
         std::cout << "number of anchor points: " << npoints << std::endl;
 
@@ -394,10 +377,12 @@ class DataBlock{
             // get the label and number of synapses
             long iy_local;
             long ix_local;
+            long local_index;
             long segment_ID;
 
             if (fread(&iy_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
             if (fread(&ix_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+            if (fread(&local_index, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
             if (fread(&segment_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
 
             // populate offset
@@ -405,13 +390,25 @@ class DataBlock{
             long iy_padded = iy_local + 1;
             long ix_padded = ix_local + 1;
 
-
-            //  find the new voxel index
+            // fix point in new block on boundary (z=0)
             long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-
             Pointclouds[segment_ID][iv] = 3;
 
-            // std::cout << "added anchor point at: " << iy_local << "," << ix_local << "segment ID: " << segment_ID << std::endl;
+            // // write to zmax border file, if on border
+            // Block.zmax_iy_local.push_back(iy_local);
+            // Block.zmax_ix_local.push_back(ix_local);
+            // Block.zmax_local_index.push_back(iv);
+            // Block.zmax_segment_ID.push_back(segment_ID);
+
+            // fix point in new block on boundary (z=1)
+            iz_padded = 2;
+            iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            Pointclouds[segment_ID][iv] = 3;
+
+            // fix point in new block on boundary (z=1)
+            iz_padded = 3;
+            iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            Pointclouds[segment_ID][iv] = 3;
 
         }
 
@@ -443,15 +440,58 @@ class DataBlock{
 
       std::cout << "Anchor points found: " << n_points_zmax << std::endl;
 
-      if (fwrite(&n_points_zmax, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+      WriteHeader(zmaxfp, n_points_zmax);
 
       for (int pos = 0; pos < n_points_zmax; pos++){
         if (fwrite(&zmax_iy_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
         if (fwrite(&zmax_ix_local[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&zmax_local_index[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
         if (fwrite(&zmax_segment_ID[pos], sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
       }
 
       fclose(zmaxfp);
+    }
+
+    void WriteHeader(FILE *fp, long &num)
+    {
+      int check = 0;
+      int size_l = sizeof(long);
+
+      check += fwrite(&(volumesize[OR_Z]), size_l, 1, fp);
+      check += fwrite(&(volumesize[OR_Y]), size_l, 1, fp);
+      check += fwrite(&(volumesize[OR_X]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_Z]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_Y]), size_l, 1, fp);
+      check += fwrite(&(input_blocksize[OR_X]), size_l, 1, fp);
+      check += fwrite(&num, size_l, 1, fp);
+
+      if (check != 7) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
+    }
+
+    void ReadHeader(FILE *fp, long &num)
+    {
+
+      long z_input_volume_size, y_input_volume_size, x_input_volume_size;
+      long z_input_block_size, y_input_block_size, x_input_block_size;
+
+      if (fread(&z_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+      if (fread(&y_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+      if (fread(&x_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+
+      if (z_input_volume_size != volumesize[OR_Z]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
+      if (y_input_volume_size != volumesize[OR_Y]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
+      if (x_input_volume_size != volumesize[OR_X]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
+
+      if (fread(&z_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+      if (fread(&y_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+      if (fread(&x_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+
+      if (z_input_block_size != input_blocksize[OR_Z]) { fprintf(stderr, "Block Size not equal to input block size.\n"); exit(-1); }
+      if (y_input_block_size != input_blocksize[OR_Y]) { fprintf(stderr, "Block Size not equal to input block size.\n"); exit(-1); }
+      if (x_input_block_size != input_blocksize[OR_X]) { fprintf(stderr, "Block Size not equal to input block size.\n"); exit(-1); }
+
+      if (fread(&num, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
+
     }
 
 };
@@ -483,14 +523,14 @@ class BlockSegment : public DataBlock{
 
     }
 
-    void SequentialThinning(const char *prefix)
+    void SequentialThinning(const char *prefix, DataBlock &Block)
     {
         // create a vector of surface voxels
         CollectSurfaceVoxels();
         int iteration = 0;
         long changed = 0;
         do {
-            changed = ThinningIterationStep();
+            changed = ThinningIterationStep(Block);
             iteration++;
             // printf("  Iteration %d deleted %ld points\n", iteration, changed);
         } while (changed);
@@ -503,6 +543,7 @@ class BlockSegment : public DataBlock{
 
         // go through all voxels and check their six neighbors
         for (std::unordered_map<long, char>::iterator it = segment.begin(); it != segment.end(); ++it) {
+
             // all of these elements are either 1 or 3 and in the segment
             long index = it->first;
 
@@ -541,7 +582,7 @@ class BlockSegment : public DataBlock{
         }
     }
 
-    long ThinningIterationStep(void)
+    long ThinningIterationStep(DataBlock &Block)
     {
         long changed = 0;
 
@@ -553,11 +594,8 @@ class BlockSegment : public DataBlock{
 
             CreatePointList(&deletable_points);
 
-            std::cout << &deletable_points << std::endl <<std::flush;
-            // std::cout << deletable_points << std::endl <<std::flush;
-            std::cout << direction << std::endl <<std::flush;
-
             DetectSimpleBorderPoints(&deletable_points, direction);
+
 
             while (deletable_points.length) {
                 Voxel voxel = GetFromList(&deletable_points, &ptr);
@@ -566,6 +604,11 @@ class BlockSegment : public DataBlock{
                 long ix = voxel.ix;
                 long iy = voxel.iy;
                 long iz = voxel.iz;
+
+
+                if ((borderpoints_segment[OR_Y].count(index)) && direction==0) continue;
+                if ((borderpoints_segment[OR_Z].count(index)) && direction==2) continue;
+                if ((borderpoints_segment[OR_X].count(index)) && direction==5) continue;
 
                 bool isAnchorPoint = 0;
 
@@ -616,6 +659,20 @@ class BlockSegment : public DataBlock{
                 // if anchor point detected, fix it and do not check if simple
                 if (isAnchorPoint){
                   // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
+                  long ix, iy, iz;
+                  IndexToIndices(index, ix, iy, iz, padded_sheet_size, padded_row_size);
+                  ix-=1; iy-=1; iz-=1;
+
+                  long iv_local = iz * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy * input_blocksize[OR_X] + ix;
+
+                  // std::cout << "iz:  "<< iz << std::endl;
+
+                  // write to zmax border file, if on border
+                  Block.zmax_iy_local.push_back(iy);
+                  Block.zmax_ix_local.push_back(ix);
+                  Block.zmax_local_index.push_back(iv_local);
+                  Block.zmax_segment_ID.push_back(segment_ID);
+
                   segment[index]=3;
                 }
 
@@ -671,7 +728,9 @@ class BlockSegment : public DataBlock{
                     }
                 }
             }
+
             DestroyPointList(&deletable_points);
+
         }
 
 
@@ -698,9 +757,6 @@ class BlockSegment : public DataBlock{
 
     void DetectSimpleBorderPoints(PointList *deletable_points, int direction)
     {
-
-
-
         ListElement *LE = (ListElement *)surface_voxels.first;
         while (LE != NULL) {
 
@@ -708,7 +764,6 @@ class BlockSegment : public DataBlock{
             long ix = LE->ix;
             long iy = LE->iy;
             long iz = LE->iz;
-
 
             // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
             // this will only be called on things on the surface already so already in unordered_map
@@ -720,7 +775,6 @@ class BlockSegment : public DataBlock{
                 // the search region retracts in from the boundary so limited memory overhead
                 // the n6_offsets are in the order UP, DOWN, NORTH, SOUTH, EAST, WEST
                 value = segment[iv + n6_offsets[direction]];
-
 
                 // see if the required point belongs to a different segment
                 if (!value) {
@@ -743,7 +797,7 @@ class BlockSegment : public DataBlock{
         }
     }
 
-    void WriteOutputfiles(const char *prefix, DataBlock &Blockx)
+    void WriteOutputfiles(const char *prefix)
     {
 
         // count the number of remaining points
@@ -769,10 +823,10 @@ class BlockSegment : public DataBlock{
         if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
         // write the characteristics header
-        WriteHeader(wfp, num);
+        WriteHeaderSegID(wfp, num);
 
         // characteristics
-        WriteHeader(width_fp, num);
+        WriteHeaderSegID(width_fp, num);
 
         printf("Remaining voxels: %ld\n", num);
 
@@ -797,13 +851,6 @@ class BlockSegment : public DataBlock{
 
             long iv_local = iz_local * input_blocksize[OR_X] * input_blocksize[OR_Y] + iy_local * input_blocksize[OR_X] + ix_local;
             long iv_global = iz_global * volumesize[OR_X] * volumesize[OR_Y] + iy_global * volumesize[OR_X] + ix_global;
-
-            // write to zmax border file, if on border
-            if (iz_local==(input_blocksize[OR_Z]-1)){
-                Blockx.zmax_iy_local.push_back(iy_local);
-                Blockx.zmax_ix_local.push_back(ix_local);
-                Blockx.zmax_segment_ID.push_back(segment_ID);
-            }
 
             if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
@@ -843,7 +890,7 @@ class BlockSegment : public DataBlock{
 
     }
 
-    void WriteHeader(FILE *fp, long &num)
+    void WriteHeaderSegID(FILE *fp, long &num)
     {
       int check = 0;
       int size_l = sizeof(long);
@@ -989,9 +1036,6 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
 
-  // insert IDs that should be processed
-  // BlockA.IDs_to_process.insert({91});
-
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
 
   // read Synapses
@@ -1006,19 +1050,25 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // needs to happen after PopulatePointCloud()
   PopulateOffsets(BlockA.padded_blocksize);
 
-  // create iterator over set
-  std::unordered_set<long>::iterator itr = BlockA.IDs_in_block.begin();
+  // insert IDs that should be processed
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
 
-  while (itr != BlockA.IDs_in_block.end())
+  // create iterator over set
+  std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
+
+  while (itr != BlockA.IDs_to_process.end())
   {
       // initialize segment using the Block object and the segment ID to process
       BlockSegment segA(*itr, BlockA);
 
       // call the sequential thinning algorithm
-      segA.SequentialThinning(prefix);
+      segA.SequentialThinning(prefix, BlockA);
 
       // write skeletons and widths, add anchor points to
-      segA.WriteOutputfiles(prefix, BlockA);
+      segA.WriteOutputfiles(prefix);
 
       // increment iterator
       itr++;
