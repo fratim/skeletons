@@ -10,6 +10,7 @@ TODO:
 22. Change how anchor points are saved, to not have to pass block reference to segment
 23. Project synapses on surface and update synapse files
 25. Implement checknumber at end of every written file, that hads to be read last to check completeness
+26. Dynamically allocate large objects
 
 COMMENTS:
 2. Name specifications:
