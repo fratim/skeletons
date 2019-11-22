@@ -357,14 +357,12 @@ class DataBlock{
     int ReadAnchorpoints(const char *prefix)
     {
 
-      // only read in points if not first block in z direction
-      if (block_ind[OR_Z]!=0)
+      // read in z anchors
+      if (block_ind[OR_Z]>0)
       {
         // make filename of adjacent z lock (in negative direction)
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
-
-        std::cout << "Reading Anchor points from: " << output_filename_zmax << std::endl;
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *fpzmax = fopen(output_filename_zmax, "rb");
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
@@ -407,78 +405,307 @@ class DataBlock{
 
         // close file
         fclose(fpzmax);
-
       }
+
+      // read in y anchors
+      if (block_ind[OR_Y]>0)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y]-1, block_ind[OR_X]);
+
+        FILE *fpzmax = fopen(output_filename_zmax, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iz_padded = iz + 1;
+            long ix_padded = ix + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+            long iy_padded;
+
+            iy_padded = 1;
+            iy = 0;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+          }
+        }
+        // close file
+        fclose(fpzmax);
+      }
+
+      // read in y anchors
+      if (block_ind[OR_X]>0)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]-1);
+
+        FILE *fpzmax = fopen(output_filename_zmax, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long iz_padded = iz + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+            long ix_padded;
+
+            ix_padded = 1;
+            ix = 0;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
+          }
+        }
+
+      // close file
+      fclose(fpzmax);
+    }
 
       return 1;
 
     }
 
-    void writeZmaxBlock (const char *prefix)
+    void writeAnchorsComputed (const char *prefix)
     {
 
       // write the zmax border points to a file (so far stored in vectors)
       // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      char output_filename_zmax[4096];
-      sprintf(output_filename_zmax, "%s/%s/%s-borderZMax-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-      FILE *zmaxfp = fopen(output_filename_zmax, "wb");
-      if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
 
-      long nsegments = max_anchors_comp.size();
-      WriteHeader(zmaxfp, nsegments);
+        long nsegments = max_anchors_comp.size();
+        WriteHeader(zmaxfp, nsegments);
 
-      for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = max_anchors_comp.begin(); iter != max_anchors_comp.end(); ++iter) {
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = max_anchors_comp.begin(); iter != max_anchors_comp.end(); ++iter) {
+
+          long seg_ID = iter->first;
+
+          long n_anchors;
+
+          // write z anchors
+          n_anchors =  max_anchors_comp[seg_ID][OR_Z].size();
+          if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          for (long pos=0; pos<n_anchors; pos++) {
+            long iv_local = max_anchors_comp[seg_ID][OR_Z][pos];
+            if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          }
+
+          fclose(zmaxfp);
+
+        }
+      }
+
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+        long nsegments = max_anchors_comp.size();
+        WriteHeader(zmaxfp, nsegments);
+
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = max_anchors_comp.begin(); iter != max_anchors_comp.end(); ++iter) {
+
+          long seg_ID = iter->first;
+
+          long n_anchors;
+
+          // write z anchors
+          n_anchors =  max_anchors_comp[seg_ID][OR_Y].size();
+          if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          for (long pos=0; pos<n_anchors; pos++) {
+            long iv_local = max_anchors_comp[seg_ID][OR_Y][pos];
+            if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          }
+
+          fclose(zmaxfp);
+
+        }
+      }
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+        long nsegments = max_anchors_comp.size();
+        WriteHeader(zmaxfp, nsegments);
+
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = max_anchors_comp.begin(); iter != max_anchors_comp.end(); ++iter) {
+
+          long seg_ID = iter->first;
+
+          long n_anchors;
+
+          // write z anchors
+          n_anchors =  max_anchors_comp[seg_ID][OR_X].size();
+          if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          for (long pos=0; pos<n_anchors; pos++) {
+            long iv_local = max_anchors_comp[seg_ID][OR_X][pos];
+            if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          }
+
+          fclose(zmaxfp);
+
+        }
+      }
+    }
+
+
+    void writeanchorsSeeded (const char *prefix)
+    {
+
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+        long nsegments = min_anchors_seeded.size();
+        WriteHeader(zmaxfp, nsegments);
+
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = min_anchors_seeded.begin(); iter != min_anchors_seeded.end(); ++iter) {
 
         long seg_ID = iter->first;
-        long n_anchors =  max_anchors_comp[seg_ID][OR_Z].size();
 
+        long n_anchors;
+
+        // write z anchors
+        n_anchors =  min_anchors_seeded[seg_ID][OR_Z].size();
         if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
         if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-
         for (long pos=0; pos<n_anchors; pos++) {
-
-          long iv_local = max_anchors_comp[seg_ID][OR_Z][pos];
+          long iv_local = min_anchors_seeded[seg_ID][OR_Z][pos];
           if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
         }
+
+        fclose(zmaxfp);
+
       }
-
-      fclose(zmaxfp);
-
-    }
-
-    void writeZminBlock (const char *prefix)
-    {
-
+      }
       // write the zmax border points to a file (so far stored in vectors)
       // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      char output_filename_zmax[4096];
-      sprintf(output_filename_zmax, "%s/%s/%s-borderZMin-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-      FILE *fpzmin = fopen(output_filename_zmax, "wb");
-      if (!fpzmin) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
 
-      long nsegments = min_anchors_seeded.size();
-      WriteHeader(fpzmin, nsegments);
+        long nsegments = min_anchors_seeded.size();
+        WriteHeader(zmaxfp, nsegments);
 
-      for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = min_anchors_seeded.begin(); iter != min_anchors_seeded.end(); ++iter) {
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = min_anchors_seeded.begin(); iter != min_anchors_seeded.end(); ++iter) {
 
-        long seg_ID = iter->first;
-        long n_anchors =  min_anchors_seeded[seg_ID][OR_Z].size();
+          long seg_ID = iter->first;
 
-        if (fwrite(&seg_ID, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-        if (fwrite(&n_anchors, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          long n_anchors;
 
-        for (long pos=0; pos<n_anchors; pos++) {
+          // write z anchors
+          n_anchors =  min_anchors_seeded[seg_ID][OR_Y].size();
+          if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          for (long pos=0; pos<n_anchors; pos++) {
+            long iv_local = min_anchors_seeded[seg_ID][OR_Y][pos];
+            if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          }
 
-          long iv_local = min_anchors_seeded[seg_ID][OR_Z][pos];
-          if (fwrite(&iv_local, sizeof(long), 1, fpzmin) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+          fclose(zmaxfp);
+
         }
       }
+      // write the zmax border points to a file (so far stored in vectors)
+      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
+      if (1){
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-      fclose(fpzmin);
+        FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+        if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
 
+        long nsegments = min_anchors_seeded.size();
+        WriteHeader(zmaxfp, nsegments);
+
+        for (std::unordered_map<long, std::unordered_map<short, std::vector<long>>>::iterator iter = min_anchors_seeded.begin(); iter != min_anchors_seeded.end(); ++iter) {
+
+        long seg_ID = iter->first;
+
+        long n_anchors;
+
+        // write z anchors
+        n_anchors =  min_anchors_seeded[seg_ID][OR_X].size();
+        if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        for (long pos=0; pos<n_anchors; pos++) {
+          long iv_local = min_anchors_seeded[seg_ID][OR_X][pos];
+          if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        }
+
+        fclose(zmaxfp);
+
+      }
+      }
     }
+
 
     void WriteHeader(FILE *fp, long &num)
     {
@@ -652,7 +879,20 @@ class BlockSegment : public DataBlock{
                     sum_of_neighbors += segment[index+ n26_offsets[21]];
                     sum_of_neighbors += segment[index+ n26_offsets[22]];
 
-                    if (sum_of_neighbors==0) isAnchorPoint = 1;
+                    if (sum_of_neighbors==0) {
+                      isAnchorPoint = 1;
+
+                      // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
+                      long ix_local, iy_local, iz_local;
+                      IndexToIndices(index, ix_local, iy_local, iz_local, padded_sheet_size, padded_row_size);
+                      ix_local-=1; iy_local-=1; iz_local-=1;
+
+                      long iv_local = IndicesToIndex(ix_local,iy_local,iz_local,input_sheet_size, input_row_size);
+
+                      // write to zmax anchor file
+                      Block.max_anchors_comp[segment_ID][OR_Y].push_back(iv_local);
+
+                    }
                 }
                 else if (borderpoints_segment[OR_Z].count(index)){
 
@@ -694,7 +934,20 @@ class BlockSegment : public DataBlock{
                     sum_of_neighbors += segment[index+ n26_offsets[21]];
                     sum_of_neighbors += segment[index+ n26_offsets[18]];
 
-                    if (sum_of_neighbors==0) isAnchorPoint = 1;
+                    if (sum_of_neighbors==0) {
+                      isAnchorPoint = 1;
+
+                      // fix anchor point (as a fake synapse) TODO: might need another label here to identify anchor points seperately
+                      long ix_local, iy_local, iz_local;
+                      IndexToIndices(index, ix_local, iy_local, iz_local, padded_sheet_size, padded_row_size);
+                      ix_local-=1; iy_local-=1; iz_local-=1;
+
+                      long iv_local = IndicesToIndex(ix_local,iy_local,iz_local,input_sheet_size, input_row_size);
+
+                      // write to zmax anchor file
+                      Block.max_anchors_comp[segment_ID][OR_X].push_back(iv_local);
+
+                    }
                 }
 
                 // if anchor point detected, fix it and do not check if simple
@@ -835,8 +1088,12 @@ class BlockSegment : public DataBlock{
         }
 
         //get number of anchor points
-        long n_anchors_comp =  Block.max_anchors_comp[segment_ID][OR_Z].size();
-        long n_anchors_seeded =  Block.min_anchors_seeded[segment_ID][OR_Z].size();
+        long n_anchors_comp_z =  Block.max_anchors_comp[segment_ID][OR_Z].size();
+        long n_anchors_seeded_z =  Block.min_anchors_seeded[segment_ID][OR_Z].size();
+        long n_anchors_comp_y =  Block.max_anchors_comp[segment_ID][OR_Y].size();
+        long n_anchors_seeded_y =  Block.min_anchors_seeded[segment_ID][OR_Y].size();
+        long n_anchors_comp_x =  Block.max_anchors_comp[segment_ID][OR_X].size();
+        long n_anchors_seeded_x =  Block.min_anchors_seeded[segment_ID][OR_X].size();
         long n_synapses =  Block.synapses[segment_ID].size();
 
         // create an output file for the points
@@ -853,7 +1110,7 @@ class BlockSegment : public DataBlock{
         FILE *width_fp = fopen(widths_filename, "wb");
         if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-        long total_points = num+n_anchors_comp+n_anchors_seeded+n_synapses;
+        long total_points = num+n_anchors_comp_z+n_anchors_seeded_z+n_anchors_comp_y+n_anchors_seeded_y+n_anchors_comp_x+n_anchors_seeded_x+n_synapses;
 
         // write the characteristics header
         WriteHeaderSegID(wfp, total_points);
@@ -901,9 +1158,9 @@ class BlockSegment : public DataBlock{
             if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
-        // write anchor points computed in this step
-        long index_local_anchors_comp[n_anchors_comp];
-        for (long pos=0; pos<n_anchors_comp; pos++) {
+        // write z anchor points computed in this step
+        long index_local_anchors_comp_z[n_anchors_comp_z];
+        for (long pos=0; pos<n_anchors_comp_z; pos++) {
 
           long iv_local = Block.max_anchors_comp[segment_ID][OR_Z][pos];
 
@@ -927,17 +1184,16 @@ class BlockSegment : public DataBlock{
           if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
           if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-          index_local_anchors_comp[pos] = iv_local;
+          index_local_anchors_comp_z[pos] = iv_local;
 
         }
-
-        for (int j=0; j<n_anchors_comp; j++){
-            if (fwrite(&index_local_anchors_comp[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        for (int j=0; j<n_anchors_comp_z; j++){
+            if (fwrite(&index_local_anchors_comp_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
-        // write anchor points seeded in this step
-        long index_local_anchors_seeded[n_anchors_seeded];
-        for (long pos=0; pos<n_anchors_seeded; pos++) {
+        // write z anchor points seeded in this step
+        long index_local_anchors_seeded_z[n_anchors_seeded_z];
+        for (long pos=0; pos<n_anchors_seeded_z; pos++) {
 
           long iv_local = Block.min_anchors_seeded[segment_ID][OR_Z][pos];
 
@@ -961,12 +1217,143 @@ class BlockSegment : public DataBlock{
           if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
           if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-          index_local_anchors_seeded[pos] = iv_local;
+          index_local_anchors_seeded_z[pos] = iv_local;
 
         }
+        for (int j=0; j<n_anchors_seeded_z; j++){
+            if (fwrite(&index_local_anchors_seeded_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
 
-        for (int j=0; j<n_anchors_seeded; j++){
-            if (fwrite(&index_local_anchors_seeded[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        // write y anchor points computed in this step
+        long index_local_anchors_comp_y[n_anchors_comp_y];
+        for (long pos=0; pos<n_anchors_comp_y; pos++) {
+
+          long iv_local = Block.max_anchors_comp[segment_ID][OR_Y][pos];
+
+          long iz_local, iy_local, ix_local;
+          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
+          long iz_padded = iz_local + 1;
+          long iy_padded = iy_local + 1;
+          long ix_padded = ix_local + 1;
+
+          long iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          float width = widths[iv_padded];
+
+          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
+
+          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+          index_local_anchors_comp_y[pos] = iv_local;
+
+        }
+        for (int j=0; j<n_anchors_comp_y; j++){
+            if (fwrite(&index_local_anchors_comp_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        // write y anchor points seeded in this step
+        long index_local_anchors_seeded_y[n_anchors_seeded_y];
+        for (long pos=0; pos<n_anchors_seeded_y; pos++) {
+
+          long iv_local = Block.min_anchors_seeded[segment_ID][OR_Y][pos];
+
+          long iz_local, iy_local, ix_local;
+          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
+          long iz_padded = iz_local + 1;
+          long iy_padded = iy_local + 1;
+          long ix_padded = ix_local + 1;
+
+          long iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          float width = widths[iv_padded];
+
+          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
+
+          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+          index_local_anchors_seeded_y[pos] = iv_local;
+
+        }
+        for (int j=0; j<n_anchors_seeded_y; j++){
+            if (fwrite(&index_local_anchors_seeded_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        // write x anchor points computed in this step
+        long index_local_anchors_comp_x[n_anchors_comp_x];
+        for (long pos=0; pos<n_anchors_comp_x; pos++) {
+
+          long iv_local = Block.max_anchors_comp[segment_ID][OR_X][pos];
+
+          long iz_local, iy_local, ix_local;
+          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
+          long iz_padded = iz_local + 1;
+          long iy_padded = iy_local + 1;
+          long ix_padded = ix_local + 1;
+
+          long iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          float width = widths[iv_padded];
+
+          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
+
+          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+          index_local_anchors_comp_x[pos] = iv_local;
+
+        }
+        for (int j=0; j<n_anchors_comp_x; j++){
+            if (fwrite(&index_local_anchors_comp_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        // write x anchor points seeded in this step
+        long index_local_anchors_seeded_x[n_anchors_seeded_x];
+        for (long pos=0; pos<n_anchors_seeded_x; pos++) {
+
+          long iv_local = Block.min_anchors_seeded[segment_ID][OR_X][pos];
+
+          long iz_local, iy_local, ix_local;
+          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
+          long iz_padded = iz_local + 1;
+          long iy_padded = iy_local + 1;
+          long ix_padded = ix_local + 1;
+
+          long iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          float width = widths[iv_padded];
+
+          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
+
+          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
+          index_local_anchors_seeded_x[pos] = iv_local;
+
+        }
+        for (int j=0; j<n_anchors_seeded_x; j++){
+            if (fwrite(&index_local_anchors_seeded_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
         // write the synapses
@@ -977,8 +1364,6 @@ class BlockSegment : public DataBlock{
 
           long iz_local, iy_local, ix_local;
           IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
-
-          std::cout << "Found synapses at iz,iy,ix: " << iz_local << "," << iy_local << ","<< ix_local << std::endl;
 
           long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
           long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
@@ -1185,11 +1570,11 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   PopulateOffsets(BlockA.padded_blocksize);
 
   // insert IDs that should be processed
-  // BlockA.IDs_to_process = BlockA.IDs_in_block;
-  // BlockA.IDs_to_process.erase(55);
-  // BlockA.IDs_to_process.erase(81);
-  // BlockA.IDs_to_process.erase(301);
-  BlockA.IDs_to_process.insert({149});
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
+  // BlockA.IDs_to_process.insert({294});
 
 
   // create iterator over set
@@ -1211,8 +1596,8 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   }
 
   // write border anchor points to file
-  BlockA.writeZmaxBlock(prefix);
-  BlockA.writeZminBlock(prefix);
+  BlockA.writeAnchorsComputed(prefix);
+  BlockA.writeanchorsSeeded(prefix);
   double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
   std::cout << "time added summed: " << time_total << std::endl;
 
