@@ -1629,11 +1629,11 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // create iterator over set
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
-  // while (itr != BlockA.IDs_to_process.end())
-  // {
-  //   std::cout << *itr << ",";
-  //   itr++;
-  // }
+  while (itr != BlockA.IDs_to_process.end())
+  {
+    std::cout << *itr << ",";
+    itr++;
+  }
 
   while (itr != BlockA.IDs_to_process.end())
   {
