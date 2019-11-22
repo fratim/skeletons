@@ -8,6 +8,8 @@ TODO:
 20. get rid off passing the prefix to many functions
 21. Change anchor points and zmax points
 22. Change how anchor points are saved, to not have to pass block reference to segment
+23. Project synapses on surface and update synapse files
+25. Implement checknumber at end of every written file, that hads to be read last to check completeness
 
 COMMENTS:
 2. Name specifications:
