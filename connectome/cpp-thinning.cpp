@@ -8,6 +8,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string>
+#include <malloc.h>
 
 // constant variables
 static const int lookup_table_size = 1 << 23;
@@ -607,7 +608,6 @@ class DataBlock{
       }
     }
 
-
     void writeanchorsSeeded (const char *prefix)
     {
 
@@ -763,9 +763,21 @@ class BlockSegment : public DataBlock{
   public:
     BlockSegment(long segment_ID_inp, DataBlock &Block):DataBlock(Block){
 
+
+      std::cout << "HOSSA 2" << std::endl << std::flush;
+
       segment_ID = segment_ID_inp;
+
+      std::cout << "HOSSA 3" << std::endl << std::flush;
+
       segment = Block.Pointclouds[segment_ID];
+
+      std::cout << "HOSSA 4" << std::endl << std::flush;
+
       borderpoints_segment = Block.borderpoints[segment_ID];
+
+      std::cout << "HOSSA 5" << std::endl << std::flush;
+
 
       std::cout << "-----------------------------------" << std::endl;
       std::cout << "Processing segment_ID " << segment_ID << std::endl;
@@ -1096,6 +1108,8 @@ class BlockSegment : public DataBlock{
         long n_anchors_seeded_x =  Block.min_anchors_seeded[segment_ID][OR_X].size();
         long n_synapses =  Block.synapses[segment_ID].size();
 
+        std::cout << "HOSSA A" << std::endl<< std::flush;
+
         // create an output file for the points
         char output_filename[4096];
         sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
@@ -1103,6 +1117,8 @@ class BlockSegment : public DataBlock{
         // write the widths to file
         char widths_filename[4096];
         sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
+
+        std::cout << "HOSSA B" << std::endl<< std::flush;
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -1112,11 +1128,15 @@ class BlockSegment : public DataBlock{
 
         long total_points = num+n_anchors_comp_z+n_anchors_seeded_z+n_anchors_comp_y+n_anchors_seeded_y+n_anchors_comp_x+n_anchors_seeded_x+n_synapses;
 
+        std::cout << "HOSSA C" << std::endl<< std::flush;
+
         // write the characteristics header
         WriteHeaderSegID(wfp, total_points);
 
         // characteristics
         WriteHeaderSegID(width_fp, total_points);
+
+        std::cout << "HOSSA D" << std::endl<< std::flush;
 
         printf("Remaining voxels: %ld\n", num);
 
@@ -1158,6 +1178,9 @@ class BlockSegment : public DataBlock{
             if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+
+        std::cout << "HOSSA E" << std::endl<< std::flush;
+
         // write z anchor points computed in this step
         long index_local_anchors_comp_z[n_anchors_comp_z];
         for (long pos=0; pos<n_anchors_comp_z; pos++) {
@@ -1190,6 +1213,8 @@ class BlockSegment : public DataBlock{
         for (int j=0; j<n_anchors_comp_z; j++){
             if (fwrite(&index_local_anchors_comp_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
+
+        std::cout << "HOSSA F" << std::endl<< std::flush;
 
         // write z anchor points seeded in this step
         long index_local_anchors_seeded_z[n_anchors_seeded_z];
@@ -1224,6 +1249,8 @@ class BlockSegment : public DataBlock{
             if (fwrite(&index_local_anchors_seeded_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        std::cout << "HOSSA G" << std::endl<< std::flush;
+
         // write y anchor points computed in this step
         long index_local_anchors_comp_y[n_anchors_comp_y];
         for (long pos=0; pos<n_anchors_comp_y; pos++) {
@@ -1256,6 +1283,8 @@ class BlockSegment : public DataBlock{
         for (int j=0; j<n_anchors_comp_y; j++){
             if (fwrite(&index_local_anchors_comp_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
+
+        std::cout << "HOSSA H" << std::endl<< std::flush;
 
         // write y anchor points seeded in this step
         long index_local_anchors_seeded_y[n_anchors_seeded_y];
@@ -1290,6 +1319,8 @@ class BlockSegment : public DataBlock{
             if (fwrite(&index_local_anchors_seeded_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        std::cout << "HOSSA K" << std::endl<< std::flush;
+
         // write x anchor points computed in this step
         long index_local_anchors_comp_x[n_anchors_comp_x];
         for (long pos=0; pos<n_anchors_comp_x; pos++) {
@@ -1322,6 +1353,9 @@ class BlockSegment : public DataBlock{
         for (int j=0; j<n_anchors_comp_x; j++){
             if (fwrite(&index_local_anchors_comp_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
+
+
+        std::cout << "HOSSA L" << std::endl<< std::flush;
 
         // write x anchor points seeded in this step
         long index_local_anchors_seeded_x[n_anchors_seeded_x];
@@ -1356,6 +1390,9 @@ class BlockSegment : public DataBlock{
             if (fwrite(&index_local_anchors_seeded_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        std::cout << "HOSSA M" << std::endl<< std::flush;
+
+
         // write the synapses
         long index_local_synapses[n_synapses];
         for (long pos=0; pos<n_synapses; pos++) {
@@ -1376,10 +1413,14 @@ class BlockSegment : public DataBlock{
           index_local_synapses[pos] = iv_local;
 
         }
+        std::cout << "HOSSA N" << std::endl;
 
         for (int j=0; j<n_synapses; j++){
             if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
+
+        std::cout << "HOSSA O" << std::endl << std::flush;
+
 
         // write checkvalue at end
         long checkvalue = 2147483647;
@@ -1388,6 +1429,9 @@ class BlockSegment : public DataBlock{
         // close the I/O files
         fclose(wfp);
         fclose(width_fp);
+
+        std::cout << "HOSSA P" << std::endl << std::flush;
+
 
         // double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
         //
@@ -1551,6 +1595,11 @@ static bool Simple26_6(unsigned int neighbors)
 void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
   // create new Datablock and set the input variables
 
+  if (mallopt(M_CHECK_ACTION, 2) != 1) {
+    fprintf(stderr, "mallopt() failed");
+    exit(-1);
+  }
+
   clock_t start_time_total = clock();
 
   DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
@@ -1580,8 +1629,17 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // create iterator over set
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
+  // while (itr != BlockA.IDs_to_process.end())
+  // {
+  //   std::cout << *itr << ",";
+  //   itr++;
+  // }
+
   while (itr != BlockA.IDs_to_process.end())
   {
+
+      std::cout << "HOSSA 1" << std::endl << std::flush;
+
       // initialize segment using the Block object and the segment ID to process
       BlockSegment segA(*itr, BlockA);
 
@@ -1591,8 +1649,19 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
       // write skeletons and widths, add anchor points to
       segA.WriteOutputfiles(prefix, BlockA);
 
+      std::cout << "HOSSA Q" << std::endl << std::flush;
+
+      segA.~BlockSegment();
       // increment iterator
       itr++;
+
+      std::cout << *itr << std::endl << std::flush;
+
+      std::cout << (itr != BlockA.IDs_to_process.end()) << std::endl << std::flush;
+
+      std::cout << "HOSSA R" << std::endl << std::flush;
+
+
   }
 
   // write border anchor points to file
