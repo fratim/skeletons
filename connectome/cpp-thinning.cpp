@@ -401,6 +401,20 @@ class DataBlock{
             iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
             Pointclouds[seg_ID][iv_padded] = 3;
             min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
+
+            iz_padded = 2;
+            iz = 1;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
+
+            iz_padded = 3;
+            iz = 2;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
           }
         }
 
@@ -1589,16 +1603,16 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   std::unordered_set<long> process = std::unordered_set<long>();
 
-  // std::unordered_set<long>::iterator itr2 = BlockA.IDs_in_block.begin();
-  // while (itr2 != BlockA.IDs_in_block.end())
-  // {
-  //
-  //   if ((*itr2 != 55) && (*itr2 != 81) && (*itr2 != 301)) {
-      process.insert({149});
-  //   }
-  //
-  //   itr2++;
-  // }
+  std::unordered_set<long>::iterator itr2 = BlockA.IDs_in_block.begin();
+  while (itr2 != BlockA.IDs_in_block.end())
+  {
+
+    if ((*itr2 != 55) && (*itr2 != 81) && (*itr2 != 301)) {
+      process.insert({*itr2});
+    }
+
+    itr2++;
+  }
 
 
   std::unordered_set<long>::iterator itr = process.begin();
