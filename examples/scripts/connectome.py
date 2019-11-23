@@ -16,4 +16,4 @@ prefix = 'Zebrafinch'
 # topological_thinning.TopologicalThinning(prefix, label)
 # teaser.TEASER(prefix, label)
 wiring.GenerateSkeleton(prefix, block_z, block_y, block_x)
-# wiring.RefineSkeleton(prefix, label)
+wiring.RefineSkeleton(prefix, label)

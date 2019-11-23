@@ -267,18 +267,8 @@ class DataBlock{
           long curr_label = inp_labels[voxel_index];
           if (!curr_label) continue;
 
-          long ix, iy, iz;
-          IndexToIndices(voxel_index, ix, iy, iz, input_sheet_size, input_row_size);
-
-          long iz_padded; long iy_padded; long ix_padded;
-
-          //  pad the location by one
-          iz_padded = iz + 1;
-          iy_padded = iy + 1;
-          ix_padded = ix + 1;
-
           // find the new voxel index
-          long iv = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          long iv = PadIndex(voxel_index, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
           // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
           if (Pointclouds.find(curr_label) == Pointclouds.end()) {
@@ -290,6 +280,9 @@ class DataBlock{
           Pointclouds[curr_label][iv] = 1;
 
           // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
+          long ix, iy, iz;
+          IndexToIndices(voxel_index, ix, iy, iz, input_sheet_size, input_row_size);
+
           if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z].insert(iv);
           else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y].insert(iv);
           else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(iv);
@@ -325,25 +318,19 @@ class DataBlock{
               if (fread(&dummy_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
           }
 
-
           // add the local coordinates (offset by one in each direction)
           for (long is = 0; is < nsynapses; ++is) {
 
               long linear_index;
               if (fread(&linear_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+              // add them to the synapses vector (unpadded)
               synapses[segment_ID].push_back(linear_index);
 
-              long ix, iy, iz;
-              IndexToIndices(linear_index, ix, iy, iz, input_sheet_size, input_row_size);
-
-              //  pad the location by one
-              iz += 1; iy += 1; ix += 1;
-
               // find the new voxel index
-              long iv = IndicesToIndex(ix, iy, iz, padded_sheet_size, padded_row_size);
+              long iv = PadIndex(linear_index, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
+              // set ID of this index to 3 (==Synapse)
               Pointclouds[segment_ID][iv] = 3;
-
           }
 
       }
@@ -381,7 +368,6 @@ class DataBlock{
 
           for (long pos=0; pos<n_anchors; pos++) {
 
-            // long iv_global = max_anchors_comp[seg_ID][global_index][pos];
             long iv_local;
             if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
 
@@ -390,10 +376,10 @@ class DataBlock{
 
             long iy_padded = iy + 1;
             long ix_padded = ix + 1;
+            long iz_padded;
 
             long iv_padded;
             long iv_unpadded;
-            long iz_padded;
 
             iz_padded = 1;
             iz = 0;
@@ -453,10 +439,10 @@ class DataBlock{
 
             long iz_padded = iz + 1;
             long ix_padded = ix + 1;
+            long iy_padded;
 
             long iv_padded;
             long iv_unpadded;
-            long iy_padded;
 
             iy_padded = 1;
             iy = 0;
@@ -464,6 +450,21 @@ class DataBlock{
             iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
             Pointclouds[seg_ID][iv_padded] = 3;
             min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+
+            iy_padded = 2;
+            iy = 1;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+
+            iy_padded = 3;
+            iy = 2;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+
           }
         }
         // close file
@@ -512,6 +513,20 @@ class DataBlock{
             iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
             Pointclouds[seg_ID][iv_padded] = 3;
             min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
+
+            ix_padded = 2;
+            ix = 1;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
+
+            ix_padded = 3;
+            ix = 2;
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
           }
         }
 
@@ -525,10 +540,8 @@ class DataBlock{
 
     void writeAnchorsComputed (const char *prefix)
     {
-
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the zmax anchor points to a file (so far stored in vectors)
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -556,9 +569,8 @@ class DataBlock{
         fclose(zmaxfp);
 
       }
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the ymax anchor points to a file (so far stored in vectors)
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -585,9 +597,8 @@ class DataBlock{
         }
         fclose(zmaxfp);
       }
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the xmax anchor points to a file (so far stored in vectors)
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -615,15 +626,12 @@ class DataBlock{
         }
         fclose(zmaxfp);
       }
-
     }
 
     void writeanchorsSeeded (const char *prefix)
     {
-
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the zmin anchors that were seeded in this block
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -652,9 +660,8 @@ class DataBlock{
         fclose(zmaxfp);
 
       }
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the ymin anchors that were seeded in this block
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -681,9 +688,8 @@ class DataBlock{
         }
         fclose(zmaxfp);
       }
-      // write the zmax border points to a file (so far stored in vectors)
-      // create an output file that saves th epoints on the positive z bounday, as (global index, local index, segment_ID)*n_points , npoints
-      if (1){
+      // write the xmin anchors that were seeded in this block
+      {
         char output_filename_zmax[4096];
         sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
@@ -714,9 +720,10 @@ class DataBlock{
       }
     }
 
-
     void WriteHeader(FILE *fp, long &num)
     {
+
+      // write the header parameters to the top of the output file
       int check = 0;
       int size_l = sizeof(long);
 
@@ -733,6 +740,7 @@ class DataBlock{
 
     void ReadHeader(FILE *fp, long &num)
     {
+      // read the header parameters from the top of the file and check if they agree
 
       long z_input_volume_size, y_input_volume_size, x_input_volume_size;
       long z_input_block_size, y_input_block_size, x_input_block_size;
@@ -798,7 +806,6 @@ class BlockSegment : public DataBlock{
             // printf("  Iteration %d deleted %ld points\n", iteration, changed);
         } while (changed);
         printf("Needed %d iterations\n", iteration);
-
     }
 
     void CollectSurfaceVoxels(void)
@@ -859,7 +866,6 @@ class BlockSegment : public DataBlock{
 
             DetectSimpleBorderPoints(&deletable_points, direction);
 
-
             while (deletable_points.length) {
                 Voxel voxel = GetFromList(&deletable_points, &ptr);
 
@@ -868,14 +874,14 @@ class BlockSegment : public DataBlock{
                 long iy = voxel.iy;
                 long iz = voxel.iz;
 
-
-                if ((borderpoints_segment[OR_Y].count(index)) && direction==0) continue;
-                if ((borderpoints_segment[OR_Z].count(index)) && direction==2) continue;
-                if ((borderpoints_segment[OR_X].count(index)) && direction==5) continue;
+                // do not remove voxel in the dirction of the outer facing surface
+                if ((borderpoints_segment[OR_Y].find(index)!=borderpoints_segment[OR_Y].end()) && direction==0) continue;
+                if ((borderpoints_segment[OR_Z].find(index)!=borderpoints_segment[OR_Z].end()) && direction==2) continue;
+                if ((borderpoints_segment[OR_X].find(index)!=borderpoints_segment[OR_X].end()) && direction==5) continue;
 
                 bool isAnchorPoint = 0;
 
-                if (borderpoints_segment[OR_Y].count(index)){
+                if (borderpoints_segment[OR_Y].find(index)!=borderpoints_segment[OR_Y].end()){
 
                     long sum_of_neighbors = 0; //collect voxels of neighbors on x-z plane
                     sum_of_neighbors += segment[index+ n26_offsets[3]];
@@ -902,7 +908,7 @@ class BlockSegment : public DataBlock{
 
                     }
                 }
-                else if (borderpoints_segment[OR_Z].count(index)){
+                else if (borderpoints_segment[OR_Z].find(index)!=borderpoints_segment[OR_Z].end()){
 
                     long sum_of_neighbors = 0; //collect voxels of neighbors on x-y plane
                     sum_of_neighbors += segment[index+ n26_offsets[9]];
@@ -928,9 +934,8 @@ class BlockSegment : public DataBlock{
                       Block.max_anchors_comp[segment_ID][OR_Z].push_back(iv_local);
 
                     }
-
                 }
-                else if (borderpoints_segment[OR_X].count(index)){
+                else if (borderpoints_segment[OR_X].find(index)!=borderpoints_segment[OR_X].end()){
 
                     long sum_of_neighbors = 0; //collect voxels of neighbors on y-z plane
                     sum_of_neighbors += segment[index+ n26_offsets[7]];
@@ -958,14 +963,15 @@ class BlockSegment : public DataBlock{
                     }
                 }
 
-                // if anchor point detected, fix it and do not check if simple
+                // if anchor point detected, fix it, do not check if simple and remove from surface voxels
                 if (isAnchorPoint){
                   segment[index]=3;
+                  RemoveSurfaceVoxel(ptr, surface_voxels);
+                  continue;
                 }
 
-                // otherise do normal procedure - hceck if simple, if so, delete it
+                // otherise do normal procedure - ceck if simple, if so, delete it
                 else{
-
                   unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
                   if (Simple26_6(neighbors)) {
                       // delete the simple point
@@ -1120,7 +1126,6 @@ class BlockSegment : public DataBlock{
         if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
         long total_points = num+n_anchors_comp_z+n_anchors_seeded_z+n_anchors_comp_y+n_anchors_seeded_y+n_anchors_comp_x+n_anchors_seeded_x+n_synapses;
-        // long total_points = n_anchors_comp_z+n_anchors_seeded_z;
 
         // write the characteristics header
         WriteHeaderSegID(wfp, total_points);
@@ -1133,7 +1138,7 @@ class BlockSegment : public DataBlock{
         long index_local[num];
         long counter_it = 0;
 
-        //write surface voxels
+        // write surface voxels (global index)
         while (surface_voxels.first != NULL) {
             // get the surface voxels
             ListElement *LE = (ListElement *) surface_voxels.first;
@@ -1164,8 +1169,7 @@ class BlockSegment : public DataBlock{
             counter_it++;
         }
 
-
-        // write z anchor points computed in this step
+        // write z anchor points computed in this step (global index)
         long index_local_anchors_comp_z[n_anchors_comp_z];
         for (long pos=0; pos<n_anchors_comp_z; pos++) {
 
@@ -1196,7 +1200,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // write z anchor points seeded in this step
+        // write z anchor points seeded in this step (global index)
         long index_local_anchors_seeded_z[n_anchors_seeded_z];
         for (long pos=0; pos<n_anchors_seeded_z; pos++) {
 
@@ -1229,7 +1233,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // write y anchor points computed in this step
+        // write y anchor points computed in this step (global index)
         long index_local_anchors_comp_y[n_anchors_comp_y];
         for (long pos=0; pos<n_anchors_comp_y; pos++) {
 
@@ -1259,7 +1263,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // // write y anchor points seeded in this step
+        // write y anchor points seeded in this step (global index)
         long index_local_anchors_seeded_y[n_anchors_seeded_y];
         for (long pos=0; pos<n_anchors_seeded_y; pos++) {
 
@@ -1289,7 +1293,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // write x anchor points computed in this step
+        // write x anchor points computed in this step (global index)
         long index_local_anchors_comp_x[n_anchors_comp_x];
         for (long pos=0; pos<n_anchors_comp_x; pos++) {
 
@@ -1320,7 +1324,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // write x anchor points seeded in this step
+        // write x anchor points seeded in this step (global index)
         long index_local_anchors_seeded_x[n_anchors_seeded_x];
         for (long pos=0; pos<n_anchors_seeded_x; pos++) {
 
@@ -1351,7 +1355,7 @@ class BlockSegment : public DataBlock{
 
         }
 
-        // write the synapses
+        // write the synapses (global index)
         long index_local_synapses[n_synapses];
         for (long pos=0; pos<n_synapses; pos++) {
 
@@ -1372,35 +1376,43 @@ class BlockSegment : public DataBlock{
 
         }
 
+        // write surface voxels (local index)
         for (int j=0; j<num; j++){
           if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write z anchor points computed in this step (local index)
         for (int j=0; j<n_anchors_comp_z; j++){
           if (fwrite(&index_local_anchors_comp_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
         }
 
+        // write z anchor points seeded in this step (local index)
         for (int j=0; j<n_anchors_seeded_z; j++){
           if (fwrite(&index_local_anchors_seeded_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write y anchor points computed in this step (local index)
         for (int j=0; j<n_anchors_comp_y; j++){
           if (fwrite(&index_local_anchors_comp_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write y anchor points seeded in this step (local index)
         for (int j=0; j<n_anchors_seeded_y; j++){
           if (fwrite(&index_local_anchors_seeded_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write x anchor points computed in this step (local index)
         for (int j=0; j<n_anchors_comp_x; j++){
           if (fwrite(&index_local_anchors_comp_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write x anchor points seeded in this step (local index)
         for (int j=0; j<n_anchors_seeded_x; j++){
           if (fwrite(&index_local_anchors_seeded_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        // write the synapses (local index)
         for (int j=0; j<n_synapses; j++){
           if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
@@ -1595,29 +1607,14 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   PopulateOffsets(BlockA.padded_blocksize);
 
   // insert IDs that should be processed
-  // BlockA.IDs_to_process;
-  // BlockA.IDs_to_process.erase(55);
-  // BlockA.IDs_to_process.erase(81);
-  // BlockA.IDs_to_process.erase(301);
-  // BlockA.IDs_to_process.insert({294});
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
 
-  std::unordered_set<long> process = std::unordered_set<long>();
+  std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
-  std::unordered_set<long>::iterator itr2 = BlockA.IDs_in_block.begin();
-  while (itr2 != BlockA.IDs_in_block.end())
-  {
-
-    if ((*itr2 != 55) && (*itr2 != 81) && (*itr2 != 301)) {
-      process.insert({*itr2});
-    }
-
-    itr2++;
-  }
-
-
-  std::unordered_set<long>::iterator itr = process.begin();
-
-  while (itr != process.end())
+  while (itr != BlockA.IDs_to_process.end())
   {
 
       // initialize segment using the Block object and the segment ID to process

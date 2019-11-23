@@ -38,6 +38,24 @@ inline long IndicesToIndex(long ix, long iy, long iz, long sheet_size, long row_
     return iz * sheet_size + iy * row_size + ix;
 }
 
+inline long PadIndex(long index_unpadded, long unpadded_sheet_size, long unpadded_row_size, long padded_sheet_size, long padded_row_size)
+{
+
+    long iz = index_unpadded / unpadded_sheet_size;
+    long iy = (index_unpadded - iz * unpadded_sheet_size) / unpadded_row_size;
+    long ix = index_unpadded % unpadded_row_size;
+
+    //  pad the location by one
+    long iz_padded = iz + 1;
+    long iy_padded = iy + 1;
+    long ix_padded = ix + 1;
+
+    // find the new voxel index
+    long index_padded = iz_padded * padded_sheet_size + iy_padded * padded_row_size + ix_padded;
+
+    return index_padded;
+}
+
 
 
 #endif

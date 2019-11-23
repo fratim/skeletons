@@ -24,3 +24,5 @@ IDEAS:
    in advance (then check both LUT on iteration step)
 2. Can we somehow tweak the bitwise comparison and get rid ogf the extra bordercomponent sets by simply changing the labels?
 3. Remove the removed surface points from the border points sets to achieve speed up
+4. Why arent synapses (anchor points) considered as surface voxels?
+5. Remove voxels on edges, to achieve splitting of structures that span over edges
