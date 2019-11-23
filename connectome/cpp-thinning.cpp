@@ -1099,7 +1099,6 @@ class BlockSegment : public DataBlock{
         char widths_filename[4096];
         sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
 
-
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
 
@@ -1107,14 +1106,13 @@ class BlockSegment : public DataBlock{
         if (!width_fp) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
         long total_points = num+n_anchors_comp_z+n_anchors_seeded_z+n_anchors_comp_y+n_anchors_seeded_y+n_anchors_comp_x+n_anchors_seeded_x+n_synapses;
-
+        // long total_points = n_anchors_comp_z+n_anchors_seeded_z;
 
         // write the characteristics header
         WriteHeaderSegID(wfp, total_points);
 
         // characteristics
         WriteHeaderSegID(width_fp, total_points);
-
 
         printf("Remaining voxels: %ld\n", num);
 
@@ -1152,9 +1150,6 @@ class BlockSegment : public DataBlock{
             counter_it++;
         }
 
-        for (int j=0; j<num; j++){
-            if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
 
         // write z anchor points computed in this step
         long index_local_anchors_comp_z[n_anchors_comp_z];
@@ -1164,6 +1159,7 @@ class BlockSegment : public DataBlock{
 
           long iz_local, iy_local, ix_local;
           IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
 
           long iz_padded = iz_local + 1;
           long iy_padded = iy_local + 1;
@@ -1185,9 +1181,6 @@ class BlockSegment : public DataBlock{
           index_local_anchors_comp_z[pos] = iv_local;
 
         }
-        for (int j=0; j<n_anchors_comp_z; j++){
-            if (fwrite(&index_local_anchors_comp_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
 
         // write z anchor points seeded in this step
         long index_local_anchors_seeded_z[n_anchors_seeded_z];
@@ -1195,8 +1188,11 @@ class BlockSegment : public DataBlock{
 
           long iv_local = Block.min_anchors_seeded[segment_ID][OR_Z][pos];
 
+
+
           long iz_local, iy_local, ix_local;
           IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
 
           long iz_padded = iz_local + 1;
           long iy_padded = iy_local + 1;
@@ -1217,9 +1213,6 @@ class BlockSegment : public DataBlock{
 
           index_local_anchors_seeded_z[pos] = iv_local;
 
-        }
-        for (int j=0; j<n_anchors_seeded_z; j++){
-            if (fwrite(&index_local_anchors_seeded_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
         // write y anchor points computed in this step
@@ -1251,11 +1244,8 @@ class BlockSegment : public DataBlock{
           index_local_anchors_comp_y[pos] = iv_local;
 
         }
-        for (int j=0; j<n_anchors_comp_y; j++){
-            if (fwrite(&index_local_anchors_comp_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
 
-        // write y anchor points seeded in this step
+        // // write y anchor points seeded in this step
         long index_local_anchors_seeded_y[n_anchors_seeded_y];
         for (long pos=0; pos<n_anchors_seeded_y; pos++) {
 
@@ -1284,9 +1274,6 @@ class BlockSegment : public DataBlock{
           index_local_anchors_seeded_y[pos] = iv_local;
 
         }
-        for (int j=0; j<n_anchors_seeded_y; j++){
-            if (fwrite(&index_local_anchors_seeded_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
 
         // write x anchor points computed in this step
         long index_local_anchors_comp_x[n_anchors_comp_x];
@@ -1296,6 +1283,7 @@ class BlockSegment : public DataBlock{
 
           long iz_local, iy_local, ix_local;
           IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
 
           long iz_padded = iz_local + 1;
           long iy_padded = iy_local + 1;
@@ -1317,9 +1305,6 @@ class BlockSegment : public DataBlock{
           index_local_anchors_comp_x[pos] = iv_local;
 
         }
-        for (int j=0; j<n_anchors_comp_x; j++){
-            if (fwrite(&index_local_anchors_comp_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
 
         // write x anchor points seeded in this step
         long index_local_anchors_seeded_x[n_anchors_seeded_x];
@@ -1329,6 +1314,7 @@ class BlockSegment : public DataBlock{
 
           long iz_local, iy_local, ix_local;
           IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
 
           long iz_padded = iz_local + 1;
           long iy_padded = iy_local + 1;
@@ -1350,10 +1336,6 @@ class BlockSegment : public DataBlock{
           index_local_anchors_seeded_x[pos] = iv_local;
 
         }
-        for (int j=0; j<n_anchors_seeded_x; j++){
-            if (fwrite(&index_local_anchors_seeded_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        }
-
 
         // write the synapses
         long index_local_synapses[n_synapses];
@@ -1375,10 +1357,39 @@ class BlockSegment : public DataBlock{
           index_local_synapses[pos] = iv_local;
 
         }
-        for (int j=0; j<n_synapses; j++){
-            if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+        for (int j=0; j<num; j++){
+          if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        for (int j=0; j<n_anchors_comp_z; j++){
+          if (fwrite(&index_local_anchors_comp_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+        }
+
+        for (int j=0; j<n_anchors_seeded_z; j++){
+          if (fwrite(&index_local_anchors_seeded_z[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        for (int j=0; j<n_anchors_comp_y; j++){
+          if (fwrite(&index_local_anchors_comp_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        for (int j=0; j<n_anchors_seeded_y; j++){
+          if (fwrite(&index_local_anchors_seeded_y[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        for (int j=0; j<n_anchors_comp_x; j++){
+          if (fwrite(&index_local_anchors_comp_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        for (int j=0; j<n_anchors_seeded_x; j++){
+          if (fwrite(&index_local_anchors_seeded_x[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
+
+        for (int j=0; j<n_synapses; j++){
+          if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        }
 
         // write checkvalue at end
         long checkvalue = 2147483647;
@@ -1578,16 +1589,16 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   std::unordered_set<long> process = std::unordered_set<long>();
 
-  std::unordered_set<long>::iterator itr2 = BlockA.IDs_in_block.begin();
-  while (itr2 != BlockA.IDs_in_block.end())
-  {
-
-    if ((*itr2 != 55) && (*itr2 != 81) && (*itr2 != 301)) {
-      process.insert({*itr2});
-    }
-
-    itr2++;
-  }
+  // std::unordered_set<long>::iterator itr2 = BlockA.IDs_in_block.begin();
+  // while (itr2 != BlockA.IDs_in_block.end())
+  // {
+  //
+  //   if ((*itr2 != 55) && (*itr2 != 81) && (*itr2 != 301)) {
+      process.insert({149});
+  //   }
+  //
+  //   itr2++;
+  // }
 
 
   std::unordered_set<long>::iterator itr = process.begin();
