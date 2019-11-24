@@ -11,6 +11,8 @@ TODO:
 23. Project synapses on surface and update synapse files
 25. Implement checknumber at end of every written file, that hads to be read last to check completeness
 26. Dynamically allocate large objects
+27. Implement statistics for cubesize for synapse projection
+28. remove skeleton object, not needed anymore
 
 COMMENTS:
 2. Name specifications:

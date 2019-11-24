@@ -21,8 +21,8 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
     clock_t start_time = clock();
 
     // clear the global variables
-    segment = std::unordered_map<long, char>();
-    synapses = std::unordered_set<long>();
+    std::unordered_map<long, char> segment = std::unordered_map<long, char>();
+    std::unordered_set<long> synapses = std::unordered_set<long>();
     std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
 
     // populate the point clouds with segment voxels and anchor points

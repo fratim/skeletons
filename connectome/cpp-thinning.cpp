@@ -640,6 +640,27 @@ class DataBlock{
       }
     }
 
+    void writeIDsToProcess(const char *prefix)
+    {
+      char output_filename_IDs[4096];
+      sprintf(output_filename_IDs, "%s/%s/%s-IDsProcessed-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+      FILE *fpid = fopen(output_filename_IDs, "wb");
+      if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }
+
+      long num = IDs_to_process.size();
+      WriteHeader(fpid, num);
+
+      for (std::unordered_set<long>::iterator iter = IDs_to_process.begin(); iter != IDs_to_process.end(); ++iter) {
+
+        long seg_ID = *iter;
+
+        // IDs
+        if (fwrite(&seg_ID, sizeof(long), 1, fpid) != 1) { fprintf(stderr, "Failed to write to IDs in Block to %s \n", output_filename_IDs); exit(-1); }
+      }
+      fclose(fpid);
+    }
+
     void writeanchorsSeeded (const char *prefix)
     {
       // write the zmin anchors that were seeded in this block
@@ -777,6 +798,55 @@ class DataBlock{
 
     }
 
+    void WriteProjectedSynapses(const char *prefix)
+    {
+        //get number of anchor points
+        long n_neurons = IDs_to_process.size();
+
+        // create an output file for the points
+        char output_filename[4096];
+        sprintf(output_filename, "%s/%s/%s-projectedSynapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *wfp = fopen(output_filename, "wb");
+        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+        // write the characteristics header
+        WriteHeader(wfp, n_neurons);
+
+        for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
+            long seg_id = itr->first;
+            long n_synapses = synapses[seg_id].size();
+
+            if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            if (fwrite(&n_synapses, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+            long index_local[n_synapses];
+            long pos = 0;
+
+            for (std::vector<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2, ++pos){
+
+              long iv_local = *itr2;
+
+              long iz_local, iy_local, ix_local;
+              IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+
+              long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+              long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+              long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+              long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
+              if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+              index_local[pos] = iv_local;
+            }
+
+            for (int j=0; j<n_synapses; j++){
+              if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            }
+
+        }
+    }
+
 };
 
 class BlockSegment : public DataBlock{
@@ -789,12 +859,6 @@ class BlockSegment : public DataBlock{
     std::unordered_map<long, std::unordered_set<long>> borderpoints_segment = std::unordered_map<long, std::unordered_set<long>>();
     std::unordered_map<long, float> widths = std::unordered_map<long, float>();
     std::unordered_map<long, char> skeleton = std::unordered_map<long, char>();
-    struct DijkstraData {
-        long iv;
-        DijkstraData *prev;
-        double distance;
-        bool visited;
-    };
 
   public:
     BlockSegment(long segment_ID_inp, DataBlock &Block):DataBlock(Block){
@@ -1473,6 +1537,8 @@ class BlockSegment : public DataBlock{
 
     }
 
+
+
     void WriteHeaderSegID(FILE *fp, long &num)
     {
       int check = 0;
@@ -1501,25 +1567,25 @@ class BlockSegment : public DataBlock{
 
         long iz_unpadded, iy_unpadded, ix_unpadded;
         IndexToIndices(linear_index, ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
-        std::cout << "Original: " << iz_unpadded <<","<< iy_unpadded<<","<<ix_unpadded << std::endl;
+        // std::cout << "Original: " << iz_unpadded <<","<< iy_unpadded<<","<<ix_unpadded << std::endl;
         long iz_padded = iz_unpadded + 1;
         long iy_padded = iy_unpadded + 1;
         long ix_padded = ix_unpadded + 1;
 
-        long cubesize = 15;
+        long cubesize = 3;
         bool projection_found = 0;
         long closest_index_padded = -1;
 
         float* i1 = std::min_element(resolution, resolution+2);
         float resolution_min = *i1;
 
-        std::cout <<"min resolution is: " << resolution_min << std::endl;
+        // std::cout <<"min resolution is: " << resolution_min << std::endl;
 
         while (projection_found==0){
 
+          cubesize = (long)(cubesize*1.5);
           double min_distance = (double)(cubesize*resolution_min);
           if (min_distance>(resolution_min*30)){ fprintf(stderr, "Fail in finding projection point, search distance too large.\n"); exit(-1); }
-          // double min_distance = 100000000000;
 
           for (long iw = iz_padded - cubesize; iw <= iz_padded + cubesize; ++iw) {
               for (long iv = iy_padded - cubesize; iv <= iy_padded + cubesize; ++iv) {
@@ -1546,12 +1612,10 @@ class BlockSegment : public DataBlock{
                  }
               }
           }
-          cubesize = (long)(cubesize*2);
-          std::cout <<"cubesize is: " << cubesize << std::endl;
         }
 
         if (closest_index_padded == -1){ fprintf(stderr, "Fail in finding projection point.\n"); exit(-1); }
-        std::cout << "Projection found with cubesize: " << cubesize << std::endl;
+        // std::cout << "Projection found with cubesize: " << cubesize << std::endl;
         Block.Pointclouds[segment_ID][closest_index_padded] = 3;
         segment[closest_index_padded] = 3;
 
@@ -1561,7 +1625,7 @@ class BlockSegment : public DataBlock{
         iy_unpadded = iy_padded - 1;
         ix_unpadded = ix_padded - 1;
 
-        std::cout << "Projected to: " << iz_unpadded<<","<<iy_unpadded<<","<<ix_unpadded << std::endl;
+        // std::cout << "Projected to: " << iz_unpadded<<","<<iy_unpadded<<","<<ix_unpadded << std::endl;
 
         long projected_index = IndicesToIndex(ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
         Block.synapses[segment_ID].push_back(projected_index);
@@ -1722,6 +1786,8 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   BlockA.IDs_to_process.erase(81);
   BlockA.IDs_to_process.erase(301);
 
+  BlockA.writeIDsToProcess(prefix);
+
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
   while (itr != BlockA.IDs_to_process.end())
@@ -1745,6 +1811,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // write border anchor points to file
   BlockA.writeAnchorsComputed(prefix);
   BlockA.writeanchorsSeeded(prefix);
+  BlockA.WriteProjectedSynapses(prefix);
   double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
   std::cout << "time added summed: " << time_total << std::endl;
 
