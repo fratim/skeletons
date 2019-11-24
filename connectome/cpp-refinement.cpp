@@ -58,7 +58,6 @@ void CppSkeletonRefinement(const char *prefix, long label, double resolution[3])
         }
     }
 
-
     // visit all vertices
     long voxel_index;
     while (!voxel_heap.IsEmpty()) {
