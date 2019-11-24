@@ -1047,9 +1047,6 @@ class BlockSegment : public DataBlock{
 
         }
 
-
-
-
         // return the number of changes
         return changed;
     }
@@ -1493,199 +1490,6 @@ class BlockSegment : public DataBlock{
       if (check != 8) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
     }
 
-    void RefineSkeleton(const char *prefix, DataBlock &Block)
-    {
-        // start timing statistics
-        // clock_t start_time = clock();
-
-        padded_infinity = padded_blocksize[OR_Z] * padded_blocksize[OR_Z] + padded_blocksize[OR_Y] * padded_blocksize[OR_Y] + padded_blocksize[OR_X] * padded_blocksize[OR_X];
-
-        // clear the global variables
-        std::vector<long> synapses_seg = Block.synapses[segment_ID];
-        std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
-
-        // get the number of elements in the skeleton
-        long nelements = skeleton.size();
-        std::cout << "Elements before refinement step: " << nelements << std::endl;
-
-
-        DijkstraData *voxel_data = new DijkstraData[nelements];
-        if (!voxel_data) exit(-1);
-
-        // initialize the priority queue
-        DijkstraData tmp;
-        MinBinaryHeap<DijkstraData *> voxel_heap(&tmp, (&tmp.distance), skeleton.size());
-
-        // initialize all data
-        long index = 0;
-        for (std::unordered_map<long, char>::iterator it = skeleton.begin(); it != skeleton.end(); ++it, ++index) {
-            voxel_data[index].iv = it->first;
-            voxel_data[index].prev = NULL;
-            voxel_data[index].distance = padded_infinity;
-            voxel_data[index].visited = false;
-            dijkstra_map[it->first] = index;
-
-            // this is the soma
-            if (it->second == 4) {
-                // insert the source into the heap
-                voxel_data[index].distance = 0.0;
-                voxel_data[index].visited = true;
-                voxel_heap.Insert(index, &(voxel_data[index]));
-
-                std::cout << "Detected Soma at: " << index << std::endl;
-            }
-        }
-
-        // visit all vertices
-        long voxel_index;
-        while (!voxel_heap.IsEmpty()) {
-            DijkstraData *current = voxel_heap.DeleteMin();
-            voxel_index = current->iv;
-
-            // visit all 26 neighbors of this index
-            long ix, iy, iz;
-            IndexToIndices(voxel_index, ix, iy, iz, padded_sheet_size, padded_row_size);
-
-            for (long iw = iz - 1; iw <= iz + 1; ++iw) {
-                for (long iv = iy - 1; iv <= iy + 1; ++iv) {
-                    for (long iu = ix - 1; iu <= ix + 1; ++iu) {
-                        // get the linear index for this voxel
-                        long neighbor_index = IndicesToIndex(iu, iv, iw, padded_sheet_size, padded_row_size);
-
-                        // skip if background
-                        if (!skeleton[neighbor_index]) continue;
-
-                        // get the corresponding neighbor data
-                        long dijkstra_index = dijkstra_map[neighbor_index];
-                        DijkstraData *neighbor_data = &(voxel_data[dijkstra_index]);
-
-                        // find the distance between these voxels
-                        long deltaz = resolution[OR_Z] * (iw - iz);
-                        long deltay = resolution[OR_Y] * (iv - iy);
-                        long deltax = resolution[OR_X] * (iu - ix);
-
-                        // get the distance between (ix, iy, iz) and (iu, iv, iw)
-                        double distance = sqrt(deltax * deltax + deltay * deltay + deltaz * deltaz);
-
-                        // get the distance to get to this voxel through the current voxel (requires a penalty for visiting this voxel)
-                        double distance_through_current = current->distance + distance;
-                        double distance_without_current = neighbor_data->distance;
-
-                        if (!neighbor_data->visited) {
-                            neighbor_data->prev = current;
-                            neighbor_data->distance = distance_through_current;
-                            neighbor_data->visited = true;
-                            voxel_heap.Insert(dijkstra_index, neighbor_data);
-                        }
-                        else if (distance_through_current < distance_without_current) {
-                            neighbor_data->prev = current;
-                            neighbor_data->distance = distance_through_current;
-                            voxel_heap.DecreaseKey(dijkstra_index, neighbor_data);
-                        }
-                    }
-                }
-            }
-        }
-
-        std::unordered_set<long> wiring_diagram = std::unordered_set<long>();
-
-        std::cout << "Iteration over n synapses: " << synapses_seg.size() << std::endl;
-        // go through all of the synapses and add all of the skeleton points to the source
-        for (std::vector<long>::iterator it = synapses_seg.begin(); it != synapses_seg.end(); ++it) {
-            // get the voxel and corresponding entry in the dijkstra data frame
-            long voxel_index = *it;
-            long dijkstra_index = dijkstra_map[voxel_index];
-
-            DijkstraData *data = &(voxel_data[dijkstra_index]);
-
-            while (data != NULL) {
-                // add to the list of skeleton points
-                long iv = data->iv;
-
-                // convert to unpadded coordinates
-                long ix, iy, iz;
-                IndexToIndices(iv, ix, iy, iz, padded_sheet_size, padded_row_size);
-                // unpad x, y, and z
-                ix -= 1; iy -= 1; iz -= 1;
-                // reconvert to linear coordinates
-                iv = iz * (padded_blocksize[OR_Y] - 2) * (padded_blocksize[OR_X] - 2) + iy * (padded_blocksize[OR_X] - 2) + ix;
-
-                wiring_diagram.insert(iv);
-
-                data = data->prev;
-            }
-        }
-
-        char wiring_filename[4096];
-        sprintf(wiring_filename, "%s/%s/%s-connectomes-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
-        char distance_filename[4096];
-        sprintf(distance_filename, "%s/%s/%s-distances-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
-
-        FILE *wfp = fopen(wiring_filename, "wb");
-        if (!wfp) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
-        FILE *dfp = fopen(distance_filename, "wb");
-        if (!dfp) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
-
-        long nskeleton_points = wiring_diagram.size();
-
-        std::cout << "Skeleton points after refinement: " << nskeleton_points << std::endl;
-
-        WriteHeaderSegID(wfp, nskeleton_points);
-        WriteHeaderSegID(dfp, nskeleton_points);
-
-        for (std::unordered_set<long>::iterator it = wiring_diagram.begin(); it != wiring_diagram.end(); ++it) {
-            long voxel_index = *it;
-            if (fwrite(&voxel_index, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
-
-            // get the upsampled location
-            long ix, iy, iz;
-            iz = voxel_index / (input_blocksize[OR_X] * input_blocksize[OR_Y]);
-            iy = (voxel_index - iz * input_blocksize[OR_X] * input_blocksize[OR_Y]) / input_blocksize[OR_X];
-            ix = voxel_index % input_blocksize[OR_X];
-
-            // need to repad everything
-            iz += 1;
-            iy += 1;
-            ix += 1;
-
-            long padded_index = iz * (input_blocksize[OR_X] + 2) * (input_blocksize[OR_Y] + 2) + iy * (input_blocksize[OR_X] + 2) + ix;
-
-            // get the corresponding neighbor data
-            long dijkstra_index = dijkstra_map[padded_index];
-            DijkstraData *dijkstra_data = &(voxel_data[dijkstra_index]);
-            double distance = dijkstra_data->distance;
-
-            if (fwrite(&voxel_index, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
-            if (fwrite(&distance, sizeof(double), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
-        }
-
-        // write checkvalue at end
-        long checkvalue = 2147483647;
-        if (fwrite(&checkvalue, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", wiring_filename); exit(-1); }
-        if (fwrite(&checkvalue, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s\n", distance_filename); exit(-1); }
-
-
-        fclose(wfp);
-        fclose(dfp);
-
-        delete[] voxel_data;
-
-        // double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
-        //
-        // char time_filename[4096];
-        // sprintf(time_filename, "running_times/refinement/%s-%06ld.time", prefix, segment_ID);
-        //
-        // FILE *tfp = fopen(time_filename, "wb");
-        // if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-        //
-        // // write the number of points and the total time to file
-        // if (fwrite(&nelements, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-        // if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-        //
-        // // close file
-        // fclose(tfp);
-    }
-
     void Projectsynapses(DataBlock &Block)
     {
 
@@ -1702,7 +1506,7 @@ class BlockSegment : public DataBlock{
         long iy_padded = iy_unpadded + 1;
         long ix_padded = ix_unpadded + 1;
 
-        long cubesize = 10;
+        long cubesize = 15;
         bool projection_found = 0;
         long closest_index_padded = -1;
 
@@ -1911,12 +1715,12 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // needs to happen after PopulatePointCloud()
   PopulateOffsets(BlockA.padded_blocksize);
 
+  // BlockA.IDs_to_process.insert({149});
   // insert IDs that should be processed
-  // BlockA.IDs_to_process = BlockA.IDs_in_block;
-  // BlockA.IDs_to_process.erase(55);
-  // BlockA.IDs_to_process.erase(81);
-  // BlockA.IDs_to_process.erase(301);
-  BlockA.IDs_to_process.insert({149});
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
 
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
@@ -1931,9 +1735,6 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
       // write skeletons and widths, add anchor points to
       segA->WriteOutputfiles(prefix, BlockA);
-
-      // refine skeleton
-      // segA->RefineSkeleton(prefix, BlockA);
 
       delete segA;
 
