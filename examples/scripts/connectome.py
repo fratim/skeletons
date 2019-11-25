@@ -41,4 +41,4 @@ output_directories = [  'synapses_projected/',
 #
 #             wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
 
-wiring.RefineSkeleton(prefix, dataIO.OutputDirectory(prefix),149,0,0,0,1,1,1)
+wiring.RefineSkeleton(prefix, dataIO.OutputDirectory(prefix),0,0,0,1,1,1)
