@@ -5,10 +5,10 @@
 # block size
 512x512x512
 # input_labels directory
-/home/frtim/Documents/Code/skeletons/examples/segmentations
+/home/frtim/Documents/Code/skeletons/examples/segmentations/
 # synapses directory
-/home/frtim/Documents/Code/skeletons/examples/synapses_512
+/home/frtim/Documents/Code/skeletons/examples/synapses_512/
 # somae directory
-/home/frtim/Documents/Code/skeletons/examples/somae
-# skeleton directory
-/home/frtim/Documents/Code/skeletons/examples/skeletons
+/home/frtim/Documents/Code/skeletons/examples/somae/
+# output directory
+/home/frtim/Documents/Code/skeletons/examples/

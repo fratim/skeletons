@@ -10,6 +10,7 @@ examples/synapses_old
 examples/synapses_new
 examples/synapses_512
 examples/synapses_projected
+examples/output*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

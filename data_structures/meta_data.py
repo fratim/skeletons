@@ -36,8 +36,8 @@ class MetaData:
                     self.synapses_directory = str(value)
                 elif comment == '# somae directory':
                     self.somae_directory = str(value)
-                elif comment == '# skeleton directory':
-                    self.skeleton_directory = str(value)
+                elif comment == '# output directory':
+                    self.output_directory = str(value)
                 else:
                     raise ValueError("Unknown keyword in metafile")
 
@@ -59,5 +59,5 @@ class MetaData:
     def SomaeDirectory(self):
         return self.somae_directory
 
-    def SkeletonDirectory(self):
-        return self.skeleton_directory
+    def OutputDirectory(self):
+        return self.output_directory

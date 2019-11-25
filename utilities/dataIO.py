@@ -34,9 +34,9 @@ def SomaeDirectory(prefix):
     # return the filepath to the synapses (of each Neuron)
     return meta_data.MetaData(prefix).SomaeDirectory()
 
-def SkeletonDirectory(prefix):
+def OutputDirectory(prefix):
     # return the filepath to the synapses (of each Neuron)
-    return meta_data.MetaData(prefix).SkeletonDirectory()
+    return meta_data.MetaData(prefix).OutputDirectory()
 
 def ReadImage(filename):
     # return the image corresponding to this file

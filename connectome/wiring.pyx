@@ -14,12 +14,12 @@ from skeletons.utilities import dataIO
 
 
 cdef extern from 'cpp-wiring.h':
-    void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
-    void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float resolution[3], long blocksize_inp[3], long volumesize[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir);
+    void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3],
+            const char* synapses_dir, const char* somae_dir, const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp);
     void CppSkeletonRefinement(const char *prefix, long segment_ID_query, long block_ind_inp[3]);
 
 # extract the wiring diagram for this prefix and segment_ID
-def GenerateSkeleton(prefix, block_z, block_y, block_x):
+def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     # start running time statistics
     start_time = time.time()
 
@@ -46,14 +46,21 @@ def GenerateSkeleton(prefix, block_z, block_y, block_x):
     # the look up table is in the synapseaware/connectome folder
     lut_directory = os.path.dirname(__file__)
 
+    output_folder_z_minus = dataIO.OutputDirectory(prefix)+'output-'+str(block_z-1).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'
+    output_folder_y_minus = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y-1).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'
+    output_folder_x_minus = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x-1).zfill(4)+'x'+'/'
+
     # create c++ datablock and set all variables
     CPPcreateDataBlock(     prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]),
                             &(cpp_resolution[0]), &(cpp_blocksize_inp[0]), &(cpp_volumesize[0]), &(cpp_block_ind[0]),
-                            dataIO.SynapsesDirectory(prefix).encode('utf-8'),dataIO.SomaeDirectory(prefix).encode('utf-8'),dataIO.SkeletonDirectory(prefix).encode('utf-8'))
+                            dataIO.SynapsesDirectory(prefix).encode('utf-8'),dataIO.SomaeDirectory(prefix).encode('utf-8'),
+                            output_folder.encode('utf-8'),output_folder_z_minus.encode('utf-8'),output_folder_y_minus.encode('utf-8'),output_folder_x_minus.encode('utf-8'))
 
 
     # # call the topological skeleton algorithm
     # CppSkeletonGeneration(prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]))
+
+
 
     # print out statistics for wiring extraction
     print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))

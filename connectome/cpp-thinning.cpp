@@ -176,7 +176,10 @@ class DataBlock{
     long volume_sheet_size = -1;
     const char *synapses_directory;
     const char *somae_directory;
-    const char *skeleton_directory;
+    const char *output_directory;
+    const char *output_directory_z_neg;
+    const char *output_directory_y_neg;
+    const char *output_directory_x_neg;
 
   public:
     long padded_blocksize[3];
@@ -189,13 +192,14 @@ class DataBlock{
     std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
     std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
 
-    DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
+    DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir,
+              const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp){
 
       resolution[OR_Z] = input_resolution[OR_Z];
       resolution[OR_Y] = input_resolution[OR_Y];
       resolution[OR_X] = input_resolution[OR_X];
 
-      std::cout << "Resolution set to: " << resolution[OR_Z] << "," << resolution[OR_Y] << "," << resolution[OR_X] << "," << std::endl;
+      // std::cout << "Resolution set to: " << resolution[OR_Z] << "," << resolution[OR_Y] << "," << resolution[OR_X] << "," << std::endl;
 
       input_blocksize[OR_Z] = inp_blocksize[OR_Z];
       input_blocksize[OR_Y] = inp_blocksize[OR_Y];
@@ -211,30 +215,33 @@ class DataBlock{
       input_sheet_size = input_blocksize[OR_Y] * input_blocksize[OR_X];
       input_row_size = input_blocksize[OR_X];
 
-      std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
-      std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
-      std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
-      std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
-      std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
-      std::cout << "Rowsize input set to: " << input_row_size << std::endl;
+      // std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
+      // std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
+      // std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
+      // std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
+      // std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
+      // std::cout << "Rowsize input set to: " << input_row_size << std::endl;
 
       volumesize[OR_Z] = volume_size[OR_Z];
       volumesize[OR_Y] = volume_size[OR_Y];
       volumesize[OR_X] = volume_size[OR_X];
 
-      std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
+      // std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
 
       block_ind[OR_Z]= block_ind_inp[OR_Z];
       block_ind[OR_Y] = block_ind_inp[OR_Y];
       block_ind[OR_X] = block_ind_inp[OR_X];
 
-      std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
+      // std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
 
       synapses_directory = synapses_dir;
       somae_directory = somae_dir;
-      skeleton_directory = skeleton_dir;
+      output_directory = output_dir;
+      output_directory_z_neg = output_dir_z_inp;
+      output_directory_y_neg = output_dir_y_inp;
+      output_directory_x_neg = output_dir_x_inp;
 
-      std::cout << "Directories set. " << std::endl;
+      // std::cout << "Directories set. " << std::endl;
 
     }
 
@@ -244,7 +251,7 @@ class DataBlock{
       std::copy(std::begin(Block.volumesize), std::end(Block.volumesize), std::begin(volumesize));
       std::copy(std::begin(Block.resolution), std::end(Block.resolution), std::begin(resolution));
       std::copy(std::begin(Block.block_ind), std::end(Block.block_ind), std::begin(block_ind));
-      skeleton_directory = Block.skeleton_directory;
+      output_directory = Block.output_directory;
 
       padded_row_size = Block.padded_row_size;
       padded_sheet_size = Block.padded_sheet_size;
@@ -362,7 +369,7 @@ class DataBlock{
       {
         // make filename of adjacent z lock (in negative direction)
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", output_directory_z_neg, prefix, prefix, block_ind[OR_Z]-1, block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *fpzmax = fopen(output_filename_zmax, "rb");
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
@@ -425,7 +432,7 @@ class DataBlock{
       {
         // make filename of adjacent z lock (in negative direction)
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y]-1, block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", output_directory_y_neg, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y]-1, block_ind[OR_X]);
 
         FILE *fpzmax = fopen(output_filename_zmax, "rb");
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
@@ -488,7 +495,7 @@ class DataBlock{
       {
         // make filename of adjacent z lock (in negative direction)
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]-1);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", output_directory_x_neg, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]-1);
 
         FILE *fpzmax = fopen(output_filename_zmax, "rb");
         if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
@@ -555,7 +562,7 @@ class DataBlock{
       // write the zmax anchor points to a file (so far stored in vectors)
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -584,7 +591,7 @@ class DataBlock{
       // write the ymax anchor points to a file (so far stored in vectors)
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -612,7 +619,7 @@ class DataBlock{
       // write the xmax anchor points to a file (so far stored in vectors)
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -643,7 +650,7 @@ class DataBlock{
     void writeIDsToProcess(const char *prefix)
     {
       char output_filename_IDs[4096];
-      sprintf(output_filename_IDs, "%s/%s/%s-IDsProcessed-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+      sprintf(output_filename_IDs, "%s/IDs_processed/%s/%s-IDs_processed-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
       FILE *fpid = fopen(output_filename_IDs, "wb");
       if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }
@@ -666,7 +673,7 @@ class DataBlock{
       // write the zmin anchors that were seeded in this block
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Z-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_seeded/%s/%s-Anchors_Seeded_Z-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -696,7 +703,7 @@ class DataBlock{
       // write the ymin anchors that were seeded in this block
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_Y-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_seeded/%s/%s-Anchors_Seeded_Y-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -724,7 +731,7 @@ class DataBlock{
       // write the xmin anchors that were seeded in this block
       {
         char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/%s/%s-Anchors_Seeded_X-%04ldz-%04ldy-%04ldx.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_zmax, "%s/anchorpoints_seeded/%s/%s-Anchors_Seeded_X-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *zmaxfp = fopen(output_filename_zmax, "wb");
         if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
@@ -1199,7 +1206,7 @@ class BlockSegment : public DataBlock{
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "%s/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", skeleton_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
+        sprintf(output_filename, "%s/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
 
         // write the widths to file
         char widths_filename[4096];
@@ -1760,12 +1767,13 @@ static bool Simple26_6(unsigned int neighbors)
     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
 }
 
-void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir){
+void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3],
+        const char* synapses_dir, const char* somae_dir, const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp){
   // create new Datablock and set the input variables
 
   clock_t start_time_total = clock();
 
-  DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, skeleton_dir);
+  DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, output_dir, output_dir_z_inp, output_dir_y_inp, output_dir_x_inp);
 
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
 
