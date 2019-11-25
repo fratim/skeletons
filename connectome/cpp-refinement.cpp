@@ -128,24 +128,30 @@ void WriteHeaderSegID(FILE *fp, long &num, long&segID)
 
 void CppSkeletonRefinement(const char *prefix, long segment_ID_query, long block_ind_inp[3])
 {
-
-    block_ind[0]=block_ind_inp[0];
-    block_ind[1]=block_ind_inp[1];
-    block_ind[2]=block_ind_inp[2];
-
     // start timing statistics
     // clock_t start_time = clock();
     std::cout << "----------------------------------"<<std::endl;
-    std::cout << "processing block: "<<block_ind[0]<<","<< block_ind[1]<<","<< block_ind[2]<<std::endl;
 
     // clear the global variables
     std::unordered_map<long, char> segment = std::unordered_map<long, char>();
     std::unordered_set<long> synapses = std::unordered_set<long>();
     std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
 
-    // populate the point clouds with segment voxels and anchor points
-    ReadSynapses(prefix, segment, synapses, segment_ID_query);
-    ReadSkeleton(prefix, segment, segment_ID_query);
+    for (long bz = 0; bz<2; bz++){
+      for (long by = 0; by<2; by++){
+        for (long bx = 0; bx<2; bx++){
+
+          block_ind[0]=block_ind_inp[0]+bz;
+          block_ind[1]=block_ind_inp[1]+by;
+          block_ind[2]=block_ind_inp[2]+bx;
+
+          ReadSynapses(prefix, segment, synapses, segment_ID_query);
+          ReadSkeleton(prefix, segment, segment_ID_query);
+
+          std::cout << "processing block: "<<block_ind[0]<<","<< block_ind[1]<<","<< block_ind[2]<<std::endl;
+        }
+      }
+    }
 
     // set random somae
     // get the number of elements in the skeleton
@@ -271,9 +277,9 @@ void CppSkeletonRefinement(const char *prefix, long segment_ID_query, long block
     std::cout << "points after refinement: " << nskeleton_points << std::endl;
 
     char wiring_filename[4096];
-    sprintf(wiring_filename, "skeletons/%s/%s-connectomes-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], segment_ID_query);
+    sprintf(wiring_filename, "skeletons/%s/%s-connectomes-ID-%012ld.pts", prefix, prefix, segment_ID_query);
     char distance_filename[4096];
-    sprintf(distance_filename, "skeletons/%s/%s-distances-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], segment_ID_query);
+    sprintf(distance_filename, "skeletons/%s/%s-distances-ID-%012ld.pts", prefix, prefix, segment_ID_query);
 
     FILE *wfp = fopen(wiring_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
