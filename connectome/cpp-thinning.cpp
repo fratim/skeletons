@@ -232,7 +232,7 @@ class DataBlock{
       block_ind[OR_Y] = block_ind_inp[OR_Y];
       block_ind[OR_X] = block_ind_inp[OR_X];
 
-      // std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
+      std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
 
       synapses_directory = synapses_dir;
       somae_directory = somae_dir;
@@ -656,6 +656,9 @@ class DataBlock{
       if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }
 
       long num = IDs_to_process.size();
+
+      std::cout << "Writing processed IDs to file, n: " << num << std::endl;
+
       WriteHeader(fpid, num);
 
       for (std::unordered_set<long>::iterator iter = IDs_to_process.begin(); iter != IDs_to_process.end(); ++iter) {
@@ -812,7 +815,7 @@ class DataBlock{
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts", prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename, "%s/synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -820,6 +823,7 @@ class DataBlock{
         // write the characteristics header
         WriteHeader(wfp, n_neurons);
 
+        std::cout << "writing projected synapses to" << output_filename << std::endl;
 
         for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
             long seg_id = itr->first;

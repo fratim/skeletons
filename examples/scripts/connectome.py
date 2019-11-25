@@ -13,11 +13,6 @@ else:
 
 prefix = 'Zebrafinch'
 
-output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'
-
-#create output directories for this block
-if not os.path.exists(output_folder): os.mkdir(output_folder)
-
 output_directories = [  'synapses_projected/',
 'anchorpoints_computed/',
 'anchorpoints_seeded/',
@@ -31,10 +26,19 @@ output_directories = [  'synapses_projected/',
 'running_times/refinement/',
 'running_times/skeleton/']
 
-for output_directory in output_directories:
-    directory_path = output_folder+output_directory
-    if not os.path.exists(directory_path): os.mkdir(directory_path)
-    if not os.path.exists('{}/{}'.format(directory_path, prefix)): os.mkdir('{}/{}'.format(directory_path, prefix))
+# for bz in range(block_z+1):
+#     for by in range(block_y+1):
+#         for bx in range(block_x+1):
+#
+#             #create output directories for this block
+#             output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
+#             if not os.path.exists(output_folder): os.mkdir(output_folder)
+#
+#             for output_directory in output_directories:
+#                 directory_path = output_folder+output_directory
+#                 if not os.path.exists(directory_path): os.mkdir(directory_path)
+#                 if not os.path.exists('{}/{}'.format(directory_path, prefix)): os.mkdir('{}/{}'.format(directory_path, prefix))
+#
+#             wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
 
-wiring.GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x)
-# wiring.RefineSkeleton(prefix, 149, block_z, block_y, block_x)
+wiring.RefineSkeleton(prefix, dataIO.OutputDirectory(prefix),149,0,0,0,1,1,1)
