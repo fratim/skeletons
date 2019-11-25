@@ -14,13 +14,9 @@ from skeletons.utilities import dataIO
 
 
 cdef extern from 'cpp-wiring.h':
-    # void CppUpdateResolution(float resolution[3])
-    # void CppUpdateBlocksize(long blocksize_inp[3])
-    # void CppUpdateVolumesize(long volumesize[3])
-    # void CppUpdateBlockindices(long block_z, long block_y, long block_x)
     void CppSkeletonGeneration(const char *prefix, const char *lookup_table_directory, long *inp_labels)
-    # void CppUpdateDirectories(const char* synapses_dir, const char* somae_dir, const char* skeleton_dir)
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float resolution[3], long blocksize_inp[3], long volumesize[3], long block_ind[3], const char* synapses_dir, const char* somae_dir, const char* skeleton_dir);
+    void CppSkeletonRefinement(const char *prefix, long segment_ID_query, long block_ind_inp[3]);
 
 # extract the wiring diagram for this prefix and segment_ID
 def GenerateSkeleton(prefix, block_z, block_y, block_x):
@@ -61,3 +57,10 @@ def GenerateSkeleton(prefix, block_z, block_y, block_x):
 
     # print out statistics for wiring extraction
     print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))
+
+def RefineSkeleton(prefix, segment_ID_query, block_z, block_y, block_x):
+
+    # get block indices
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_block_ind = np.ascontiguousarray(np.array([block_z, block_y, block_x]), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_query_ID = np.ascontiguousarray(np.array([segment_ID_query]), dtype=ctypes.c_int64)
+    CppSkeletonRefinement(prefix.encode('utf-8'), cpp_query_ID, &(cpp_block_ind[0]))

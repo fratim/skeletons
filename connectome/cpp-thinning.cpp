@@ -805,7 +805,7 @@ class DataBlock{
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "%s/%s/%s-projectedSynapses-%04ldz-%04ldy-%04ldx.pts", synapses_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename, "synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts", prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -813,8 +813,12 @@ class DataBlock{
         // write the characteristics header
         WriteHeader(wfp, n_neurons);
 
+
         for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
             long seg_id = itr->first;
+
+            if (IDs_to_process.count(seg_id)==0) continue;
+
             long n_synapses = synapses[seg_id].size();
 
             if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
@@ -1537,8 +1541,6 @@ class BlockSegment : public DataBlock{
 
     }
 
-
-
     void WriteHeaderSegID(FILE *fp, long &num)
     {
       int check = 0;
@@ -1779,12 +1781,12 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   // needs to happen after PopulatePointCloud()
   PopulateOffsets(BlockA.padded_blocksize);
 
-  // BlockA.IDs_to_process.insert({149});
   // insert IDs that should be processed
-  BlockA.IDs_to_process = BlockA.IDs_in_block;
-  BlockA.IDs_to_process.erase(55);
-  BlockA.IDs_to_process.erase(81);
-  BlockA.IDs_to_process.erase(301);
+  BlockA.IDs_to_process.insert({149});
+  // BlockA.IDs_to_process = BlockA.IDs_in_block;
+  // BlockA.IDs_to_process.erase(55);
+  // BlockA.IDs_to_process.erase(81);
+  // BlockA.IDs_to_process.erase(301);
 
   BlockA.writeIDsToProcess(prefix);
 
