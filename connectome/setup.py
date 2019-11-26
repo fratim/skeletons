@@ -6,7 +6,7 @@ extensions = [
     Extension(
         name='wiring',
         include_dirs=[np.get_include()],
-        sources=['wiring.pyx', 'cpp-thinning.cpp', 'cpp-refinement.cpp', 'cpp-MinBinaryHeap.cpp'],
+        sources=['wiring.pyx', 'cpp-thinning.cpp', 'cpp-refinement.cpp', 'cpp-MinBinaryHeap.cpp', 'cpp-anchorpoints.cpp'],
         extra_compile_args=['-O4', '-std=c++0x'],
         language='c++'
     )

@@ -98,7 +98,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 {
   // start timing statistics
   // clock_t start_time = clock();
-  std::cout << "----------------------------------"<<std::endl;
 
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
@@ -135,6 +134,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long segment_ID_query = *iter;
+    std::cout << "----------------------------------"<<std::endl;
     std::cout << "processing: "<<segment_ID_query<<std::endl;
     // clear the global variables
     std::unordered_map<long, char> segment = std::unordered_map<long, char>();
@@ -154,7 +154,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
           ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
           ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
 
-          std::cout << "processing block: "<<block_ind[0]<<","<< block_ind[1]<<","<< block_ind[2]<<std::endl;
         }
       }
     }
@@ -458,57 +457,50 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
   char synapse_filename[4096];
   snprintf(synapse_filename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-  std::cout << "opening file" <<std::endl;
-
-
   FILE *fp = fopen(synapse_filename, "rb");
-  if (!fp) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
+  if (fp) {
 
-  std::cout << "reading header..." <<std::endl;
+    long nneurons;
+    ReadHeader(fp, nneurons);
 
-  long nneurons;
-  ReadHeader(fp, nneurons);
+    for (long iv = 0; iv < nneurons; ++iv) {
+        // get the label and number of synapses
+        long segment_ID;
+        long nsynapses;
 
-  std::cout << "read header" <<std::endl;
+        if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); exit(-1); }
+        if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
-  for (long iv = 0; iv < nneurons; ++iv) {
-      // get the label and number of synapses
-      long segment_ID;
-      long nsynapses;
+        // read in global indices
+        for (long is = 0; is < nsynapses; ++is) {
+            long iv_global;
+            if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
+        }
 
-      if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); exit(-1); }
-      if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
+        // ignore the local index
+        for (long is = 0; is < nsynapses; ++is) {
 
-      // read in global indices
-      for (long is = 0; is < nsynapses; ++is) {
-          long iv_global;
-          if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
-      }
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
-      // ignore the local index
-      for (long is = 0; is < nsynapses; ++is) {
+            if (segment_ID==segment_ID_query){
+              long iz_local, iy_local, ix_local;
+              IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
 
-          long iv_local;
-          if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
+              long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+              long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+              long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
 
-          if (segment_ID==segment_ID_query){
-            long iz_local, iy_local, ix_local;
-            IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
+              long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
 
-            long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-            long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-            long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+              long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+              segment[iv_global_padded]=3;
+              synapses.insert(iv_global_padded);
+            }
+        }
 
-            long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
-
-            long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-            segment[iv_global_padded]=3;
-            synapses.insert(iv_global_padded);
-          }
-      }
-
+    }
   }
-
   // close file
   fclose(fp);
 
@@ -521,45 +513,46 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
   snprintf(skeleton_filename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], segment_ID_query);
 
   FILE *fp = fopen(skeleton_filename, "rb");
-  if (!fp) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+  if (fp) {
 
-  // get the label and number of synapses
-  long input_neuron_id;
-  long nskeleton_points;
+    // get the label and number of synapses
+    long input_neuron_id;
+    long nskeleton_points;
 
-  ReadHeaderSegID(fp, nskeleton_points, input_neuron_id);
+    ReadHeaderSegID(fp, nskeleton_points, input_neuron_id);
 
-  if (segment_ID_query != input_neuron_id) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+    if (segment_ID_query != input_neuron_id) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
 
-  // read in the global coordinates
-  for (long is = 0; is < nskeleton_points; ++is) {
-      long iv_global;
-      if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+    // read in the global coordinates
+    for (long is = 0; is < nskeleton_points; ++is) {
+        long iv_global;
+        if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
 
+    }
+
+    // ignore the local ones
+    for (long is = 0; is < nskeleton_points; ++is) {
+        long iv_local;
+        if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+
+        long iz_local, iy_local, ix_local;
+        IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
+
+        long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
+        long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
+        long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
+
+        long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
+
+        long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+        segment[iv_global_padded]=1;
+    }
+
+    long checkvalue;
+    if (fread(&checkvalue, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
+    if (checkvalue != 2147483647) { fprintf(stderr, "Checkvalue for %s incorrect\n", skeleton_filename); exit(-1); }
+
+    // close file
+    fclose(fp);
   }
-
-  // ignore the local ones
-  for (long is = 0; is < nskeleton_points; ++is) {
-      long iv_local;
-      if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
-
-      long iz_local, iy_local, ix_local;
-      IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
-
-      long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-      long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-      long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-      long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
-
-      long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-      segment[iv_global_padded]=1;
-  }
-
-  long checkvalue;
-  if (fread(&checkvalue, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
-  if (checkvalue != 2147483647) { fprintf(stderr, "Checkvalue for %s incorrect\n", skeleton_filename); exit(-1); }
-
-  // close file
-  fclose(fp);
 }

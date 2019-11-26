@@ -15,7 +15,7 @@
 void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3],
         const char* synapses_dir, const char* somae_dir, const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp);
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir);
-
+void ComputeAnchorPoints(const char *prefix, const char* output_dir, long input_blocksize[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
 // universal variables and functions
 #define OR_Z 0
 #define OR_Y 1

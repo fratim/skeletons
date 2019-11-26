@@ -823,8 +823,6 @@ class DataBlock{
         // write the characteristics header
         WriteHeader(wfp, n_neurons);
 
-        std::cout << "writing projected synapses to" << output_filename << std::endl;
-
         for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
             long seg_id = itr->first;
 
@@ -1214,7 +1212,7 @@ class BlockSegment : public DataBlock{
 
         // write the widths to file
         char widths_filename[4096];
-        sprintf(widths_filename, "widths/%s/%06ld.pts", prefix, segment_ID);
+        sprintf(widths_filename, "%s/widths/%s/%06ld.pts", output_directory, prefix, segment_ID);
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -1794,11 +1792,11 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   PopulateOffsets(BlockA.padded_blocksize);
 
   // insert IDs that should be processed
-  BlockA.IDs_to_process.insert({149});
-  // BlockA.IDs_to_process = BlockA.IDs_in_block;
-  // BlockA.IDs_to_process.erase(55);
-  // BlockA.IDs_to_process.erase(81);
-  // BlockA.IDs_to_process.erase(301);
+  // BlockA.IDs_to_process.insert({149});
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
 
   BlockA.writeIDsToProcess(prefix);
 

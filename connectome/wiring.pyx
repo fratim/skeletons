@@ -17,6 +17,62 @@ cdef extern from 'cpp-wiring.h':
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3],
             const char* synapses_dir, const char* somae_dir, const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp);
     void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir);
+    void ComputeAnchorPoints(const char *prefix, const char* output_dir, long input_blocksize[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
+
+# save walls
+def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
+    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    data = dataIO.ReadH5File(fileName)
+    walls_folder = output_folder+'walls/'+prefix+'/'
+    dataset = 'main'
+    zmin_fp = walls_folder+'zMinWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    zmax_fp = walls_folder+'zMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    ymin_fp = walls_folder+'yMinWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    ymax_fp = walls_folder+'yMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    xmin_fp = walls_folder+'xMinWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    xmax_fp = walls_folder+'xMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    dataIO.WriteH5File(data[0,:,:], zmin_fp , dataset)
+    dataIO.WriteH5File(data[-1,:,:],zmax_fp, dataset)
+    dataIO.WriteH5File(data[:,0,:],ymin_fp, dataset)
+    dataIO.WriteH5File(data[:,-1,:],ymax_fp, dataset)
+    dataIO.WriteH5File(data[:,:,0],xmin_fp, dataset)
+    dataIO.WriteH5File(data[:,:,-1], xmax_fp, dataset)
+
+# save walls
+def MakeAnchorpoints(prefix, output_folder, block_z, block_y, block_x):
+    walls_folder_current = output_folder+'walls/'+prefix+'/'
+    zmax_fp = walls_folder_current+'zMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    ymax_fp = walls_folder_current+'yMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    xmax_fp = walls_folder_current+'xMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+
+    walls_folder_z = dataIO.OutputDirectory(prefix)+'output-'+str(block_z+1).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+    walls_folder_y = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y+1).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+    walls_folder_x = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x+1).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+
+    zmin_fp = walls_folder_z+'zMinWall'+str(block_z+1).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    ymin_fp = walls_folder_y+'yMinWall'+str(block_z).zfill(4)+"z-"+str(block_y+1).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    xmin_fp = walls_folder_x+'xMinWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x+1).zfill(4)+"x"+".h5"
+
+    print(dataIO.ReadH5File(zmin_fp).shape)
+    print(dataIO.ReadH5File(zmin_fp).shape)
+    print(dataIO.ReadH5File(ymin_fp).shape)
+    print(dataIO.ReadH5File(ymax_fp).shape)
+    print(dataIO.ReadH5File(xmin_fp).shape)
+    print(dataIO.ReadH5File(xmax_fp).shape)
+
+
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_zmin_wall = np.ascontiguousarray(dataIO.ReadH5File(zmin_fp), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_zmax_wall = np.ascontiguousarray(dataIO.ReadH5File(zmax_fp), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_ymin_wall = np.ascontiguousarray(dataIO.ReadH5File(ymin_fp), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_ymax_wall = np.ascontiguousarray(dataIO.ReadH5File(ymax_fp), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_xmin_wall = np.ascontiguousarray(dataIO.ReadH5File(xmin_fp), dtype=ctypes.c_int64)
+    cdef np.ndarray[long, ndim=2, mode='c'] cpp_xmax_wall = np.ascontiguousarray(dataIO.ReadH5File(xmax_fp), dtype=ctypes.c_int64)
+
+    # get blocksize
+    cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize = np.ascontiguousarray(dataIO.Blocksize(prefix), dtype=ctypes.c_int64)
+
+    ComputeAnchorPoints(prefix.encode('utf-8'), output_folder.encode('utf-8'), &(cpp_blocksize[0]), &(cpp_zmin_wall[0,0]), &(cpp_zmax_wall[0,0]), &(cpp_ymin_wall[0,0]), &(cpp_ymax_wall[0,0]), &(cpp_xmin_wall[0,0]), &(cpp_xmax_wall[0,0]));
+
 
 # extract the wiring diagram for this prefix and segment_ID
 def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
@@ -55,12 +111,6 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
                             &(cpp_resolution[0]), &(cpp_blocksize_inp[0]), &(cpp_volumesize[0]), &(cpp_block_ind[0]),
                             dataIO.SynapsesDirectory(prefix).encode('utf-8'),dataIO.SomaeDirectory(prefix).encode('utf-8'),
                             output_folder.encode('utf-8'),output_folder_z_minus.encode('utf-8'),output_folder_y_minus.encode('utf-8'),output_folder_x_minus.encode('utf-8'))
-
-
-    # # call the topological skeleton algorithm
-    # CppSkeletonGeneration(prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]))
-
-
 
     # print out statistics for wiring extraction
     print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))
