@@ -46,26 +46,26 @@ output_directories = [  'synapses_projected/',
 #             wiring.SaveWalls(prefix, output_folder, bz, by, bx)
 # print("total time save walls:" + str(time.time()-start_time_savewalls))
 
-# for bz in range(block_z+1):
-#     for by in range(block_y+1):
-#         for bx in range(block_x+1):
-#             output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
-#             wiring.MakeAnchorpoints(prefix, output_folder, bz, by, bx)
-#
-#
-# start_time_thinning = time.time()
-#
-# for bz in range(block_z+1):
-#     for by in range(block_y+1):
-#         for bx in range(block_x+1):
-#             output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
-#             wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
-#
-# print("total time thinning:" + str(time.time()-start_time_thinning))
+for bz in range(block_z+1):
+    for by in range(block_y+1):
+        for bx in range(block_x+1):
+            output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
+            wiring.MakeAnchorpoints(prefix, output_folder, bz, by, bx)
 
 
-start_time_refinement = time.time()
+start_time_thinning = time.time()
 
-wiring.RefineSkeleton(prefix, dataIO.OutputDirectory(prefix),0,0,0,1,1,1)
+for bz in range(block_z+1):
+    for by in range(block_y+1):
+        for bx in range(block_x+1):
+            output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
+            wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
 
-print("total time refinement:" + str(time.time()-start_time_refinement))
+print("total time thinning:" + str(time.time()-start_time_thinning))
+
+#
+# start_time_refinement = time.time()
+#
+# wiring.RefineSkeleton(prefix, dataIO.OutputDirectory(prefix),0,0,0,1,1,1)
+#
+# print("total time refinement:" + str(time.time()-start_time_refinement))

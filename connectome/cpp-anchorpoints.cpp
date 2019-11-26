@@ -399,7 +399,7 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
 
         std::cout<<"added point at: "<< iz <<","<<iy<<","<<ix<<std::endl;
 
-        long iv_local = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X]* + iy * inp_blocksize[OR_Y] + ix;
+        long iv_local = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
 
         if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
       }
