@@ -397,27 +397,11 @@ class DataBlock{
 
             long iy_padded = iy + 1;
             long ix_padded = ix + 1;
-            long iz_padded;
+            long iz_padded = iz + 1;
 
             long iv_padded;
             long iv_unpadded;
 
-            iz_padded = 1;
-            iz = 0;
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
-
-            iz_padded = 2;
-            iz = 1;
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
-
-            iz_padded = 3;
-            iz = 2;
             iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
             iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
             Pointclouds[seg_ID][iv_padded] = 3;
@@ -458,27 +442,11 @@ class DataBlock{
 
             long iy_padded = iy + 1;
             long ix_padded = ix + 1;
-            long iz_padded;
+            long iz_padded = iz + 1;
 
             long iv_padded;
             long iv_unpadded;
 
-            iz_padded = 1;
-            iz = 0;
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
-
-            iz_padded = 2;
-            iz = 1;
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            min_anchors_seeded[seg_ID][OR_Z].push_back(iv_unpadded);
-
-            iz_padded = 3;
-            iz = 2;
             iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
             iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
             Pointclouds[seg_ID][iv_padded] = 3;
@@ -490,131 +458,189 @@ class DataBlock{
         fclose(fpzmax);
       }
 
-      // read in y anchors
-    //   if (block_ind[OR_Y]>0)
-    //   {
-    //     // make filename of adjacent z lock (in negative direction)
-    //     char output_filename_zmax[4096];
-    //     sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Y-%04ldz-%04ldy-%04ldx.pts", output_directory_y_neg, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y]-1, block_ind[OR_X]);
-    //
-    //     FILE *fpzmax = fopen(output_filename_zmax, "rb");
-    //     if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-    //
-    //     long nsegments;
-    //     ReadHeader(fpzmax, nsegments);
-    //
-    //     for (long i=0; i<nsegments; i++) {
-    //
-    //       long seg_ID;
-    //       long n_anchors;
-    //
-    //       if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //       if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //
-    //       for (long pos=0; pos<n_anchors; pos++) {
-    //
-    //         long iv_local;
-    //         if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //
-    //         long iz, iy, ix;
-    //         IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-    //
-    //         long iz_padded = iz + 1;
-    //         long ix_padded = ix + 1;
-    //         long iy_padded;
-    //
-    //         long iv_padded;
-    //         long iv_unpadded;
-    //
-    //         iy_padded = 1;
-    //         iy = 0;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
-    //
-    //         iy_padded = 2;
-    //         iy = 1;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
-    //
-    //         iy_padded = 3;
-    //         iy = 2;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
-    //
-    //       }
-    //     }
-    //     // close file
-    //     fclose(fpzmax);
-    //   }
-    //
-    //   // read in y anchors
-    //   if (block_ind[OR_X]>0)
-    //   {
-    //     // make filename of adjacent z lock (in negative direction)
-    //     char output_filename_zmax[4096];
-    //     sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_X-%04ldz-%04ldy-%04ldx.pts", output_directory_x_neg, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]-1);
-    //
-    //     FILE *fpzmax = fopen(output_filename_zmax, "rb");
-    //     if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-    //
-    //     long nsegments;
-    //     ReadHeader(fpzmax, nsegments);
-    //
-    //     for (long i=0; i<nsegments; i++) {
-    //
-    //       long seg_ID;
-    //       long n_anchors;
-    //
-    //       if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //       if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //
-    //       for (long pos=0; pos<n_anchors; pos++) {
-    //
-    //         long iv_local;
-    //         if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-    //
-    //         long iz, iy, ix;
-    //         IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-    //
-    //         long iy_padded = iy + 1;
-    //         long iz_padded = iz + 1;
-    //
-    //         long iv_padded;
-    //         long iv_unpadded;
-    //         long ix_padded;
-    //
-    //         ix_padded = 1;
-    //         ix = 0;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
-    //
-    //         ix_padded = 2;
-    //         ix = 1;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
-    //
-    //         ix_padded = 3;
-    //         ix = 2;
-    //         iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-    //         iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-    //         Pointclouds[seg_ID][iv_padded] = 3;
-    //         min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
-    //       }
-    //     }
-    //
-    //   // close file
-    //   fclose(fpzmax);
-    // }
+      // read in y anchors (ymin)
+      if (block_ind[OR_Y]>0)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmin[4096];
+        sprintf(output_filename_zmin, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_YMin-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *fpzmax = fopen(output_filename_zmin, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmin); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long ix_padded = ix + 1;
+            long iz_padded = iz + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+          }
+        }
+
+        // close file
+        fclose(fpzmax);
+      }
+      // read in y anchors (ymax)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_YMax-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *fpzmax = fopen(output_filename_zmax, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long ix_padded = ix + 1;
+            long iz_padded = iz + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_Y].push_back(iv_unpadded);
+          }
+        }
+
+        // close file
+        fclose(fpzmax);
+      }
+
+      // read in y anchors (ymin)
+      if (block_ind[OR_X]>0)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmin[4096];
+        sprintf(output_filename_zmin, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_XMin-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *fpzmax = fopen(output_filename_zmin, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmin); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long ix_padded = ix + 1;
+            long iz_padded = iz + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
+          }
+        }
+
+        // close file
+        fclose(fpzmax);
+      }
+      // read in y anchors (ymax)
+      {
+        // make filename of adjacent z lock (in negative direction)
+        char output_filename_zmax[4096];
+        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_XMax-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *fpzmax = fopen(output_filename_zmax, "rb");
+        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+
+        long nsegments;
+        ReadHeader(fpzmax, nsegments);
+
+        for (long i=0; i<nsegments; i++) {
+
+          long seg_ID;
+          long n_anchors;
+
+          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+          for (long pos=0; pos<n_anchors; pos++) {
+
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
+
+            long iz, iy, ix;
+            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+            long iy_padded = iy + 1;
+            long ix_padded = ix + 1;
+            long iz_padded = iz + 1;
+
+            long iv_padded;
+            long iv_unpadded;
+
+            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+            Pointclouds[seg_ID][iv_padded] = 3;
+            min_anchors_seeded[seg_ID][OR_X].push_back(iv_unpadded);
+          }
+        }
+
+        // close file
+        fclose(fpzmax);
+      }
 
       return 1;
 
@@ -855,8 +881,6 @@ class DataBlock{
       if (fread(&y_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
       if (fread(&x_input_volume_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
 
-      std::cout<<"HOSSA 1" << std::endl;
-
       if (z_input_volume_size != volumesize[OR_Z]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
       if (y_input_volume_size != volumesize[OR_Y]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
       if (x_input_volume_size != volumesize[OR_X]) { fprintf(stderr, "Volume Size not equal to input volume size.\n"); exit(-1); }
@@ -865,8 +889,6 @@ class DataBlock{
       if (fread(&z_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
       if (fread(&y_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
       if (fread(&x_input_block_size, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read rty.\n"); exit(-1); }
-
-      std::cout<<"HOSSA 2" << std::endl;
 
       if (z_input_block_size != input_blocksize[OR_Z]) { fprintf(stderr, "Block Size not equal to input block size.\n"); exit(-1); }
       if (y_input_block_size != input_blocksize[OR_Y]) { fprintf(stderr, "Block Size not equal to input block size.\n"); exit(-1); }
@@ -1847,17 +1869,11 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
 
-  std::cout << "HOSSA A" << std::endl << std::flush;
-
   // read Synapses
   if (!BlockA.ReadSynapses(prefix)) exit(-1);
 
-  std::cout << "HOSSA B" << std::endl << std::flush;
-
   // read Anchor points (if block before does exist)
   if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
-
-  std::cout << "HOSSA C" << std::endl << std::flush;
 
   // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
