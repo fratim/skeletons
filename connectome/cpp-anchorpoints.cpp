@@ -125,6 +125,8 @@ int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 );
 void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &iv_centers);
 void Writeheader(FILE *fp, long &num);
 void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wall, long *z_max_wall);
+void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wall, long *y_max_wall);
+void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wall, long *x_max_wall);
 
 long volumesize_in[3] = {-1,-1,-1};
 long block_ind[3] = {-1,-1,-1};
@@ -143,6 +145,8 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   volumesize_in[OR_X] = volumesize_in_inp[OR_X];
 
   ProcessZAnchors(prefix, output_dir, z_min_wall,z_max_wall);
+  ProcessYAnchors(prefix, output_dir, y_min_wall,y_max_wall);
+  ProcessXAnchors(prefix, output_dir, x_min_wall,x_max_wall);
 
 }
 
@@ -181,21 +185,21 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
   }
   // write to file
   {
-    char output_filename_zmax[4096];
-    sprintf(output_filename_zmax, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+    char output_filename_max[4096];
+    sprintf(output_filename_max, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-    FILE *zmaxfp = fopen(output_filename_zmax, "wb");
-    if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+    FILE *maxfp = fopen(output_filename_max, "wb");
+    if (!maxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_max); exit(-1); }
 
-    char output_filename_zmin[4096];
-    sprintf(output_filename_zmin, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMin-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X]);
+    char output_filename_min[4096];
+    sprintf(output_filename_min, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMin-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X]);
 
-    FILE *zminfp = fopen(output_filename_zmin, "wb");
-    if (!zminfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmin); exit(-1); }
+    FILE *minfp = fopen(output_filename_min, "wb");
+    if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
     long nsegments = iu_centers.size();
-    Writeheader(zmaxfp, nsegments);
-    Writeheader(zminfp, nsegments);
+    Writeheader(maxfp, nsegments);
+    Writeheader(minfp, nsegments);
 
     for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
 
@@ -205,28 +209,200 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
       long n_anchors =  iu_centers[seg_ID].size();
       if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
 
-      if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
-      if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+      if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
 
-      if (fwrite(&seg_ID, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmin); exit(-1); }
-      if (fwrite(&n_anchors, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmin); exit(-1); }
+      if (fwrite(&seg_ID, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
 
       for (long pos=0; pos<n_anchors; pos++) {
         long iz = inp_blocksize[OR_Z]-1;
         long iy = iv_centers[seg_ID][pos];
         long ix = iu_centers[seg_ID][pos];
         long iv_local_max = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
-        if (fwrite(&iv_local_max, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&iv_local_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
 
         iz = 0;
         long iv_local_min = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
-        if (fwrite(&iv_local_min, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+        if (fwrite(&iv_local_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
 
       }
 
     }
-    fclose(zmaxfp);
-    fclose(zminfp);
+    fclose(maxfp);
+    fclose(minfp);
+
+  }
+
+}
+
+void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wall, long *y_max_wall){
+
+  long entries = (inp_blocksize[OR_Z]*inp_blocksize[OR_X]);
+  std::unordered_set<long> IDs_present = std::unordered_set<long>();
+  std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
+  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
+  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+
+  long current_ID;
+  int u_size = (int)inp_blocksize[OR_X]; // width
+  int v_size = (int)inp_blocksize[OR_Z]; // height
+  int depth = 1;
+
+  // compute anchors on the zmax plane and write them to the folder and the z max adjacent folder
+  for (long pos =0; pos<entries; pos++){
+    if (y_max_wall[pos]==y_min_wall[pos]) current_ID = y_max_wall[pos];
+    else current_ID = 0;
+
+    if (current_ID!=0){
+      if (IDs_present.find(current_ID)==IDs_present.end()){
+        IDs_present.insert(current_ID);
+        images[current_ID] = new PGMImage(u_size,v_size,depth);
+        images[current_ID]->data[pos]=current_ID;
+      }
+      else{
+        images[current_ID]->data[pos]=current_ID;
+      }
+    }
+  }
+
+  for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
+    ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
+  }
+  // write to file
+  {
+    char output_filename_max[4096];
+    sprintf(output_filename_max, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_YMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+    FILE *maxfp = fopen(output_filename_max, "wb");
+    if (!maxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_max); exit(-1); }
+
+    char output_filename_min[4096];
+    sprintf(output_filename_min, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_YMin-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y]+1, block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y]+1, block_ind[OR_X]);
+
+    FILE *minfp = fopen(output_filename_min, "wb");
+    if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
+
+    long nsegments = iu_centers.size();
+    Writeheader(maxfp, nsegments);
+    Writeheader(minfp, nsegments);
+
+    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+
+      long seg_ID = iter->first;
+
+      long n_centers;
+      long n_anchors =  iu_centers[seg_ID].size();
+      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
+
+      for (long pos=0; pos<n_anchors; pos++) {
+        long iz = iv_centers[seg_ID][pos];
+        long iy = inp_blocksize[OR_Y]-1;
+        long ix = iu_centers[seg_ID][pos];
+        long iv_local_max = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+        iy = 0;
+        long iv_local_min = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+      }
+
+    }
+    fclose(maxfp);
+    fclose(minfp);
+
+  }
+
+}
+
+void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wall, long *x_max_wall){
+
+  long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_Z]);
+  std::unordered_set<long> IDs_present = std::unordered_set<long>();
+  std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
+  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
+  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+
+  long current_ID;
+  int u_size = (int)inp_blocksize[OR_Y]; // width
+  int v_size = (int)inp_blocksize[OR_Z]; // height
+  int depth = 1;
+
+  // compute anchors on the zmax plane and write them to the folder and the z max adjacent folder
+  for (long pos =0; pos<entries; pos++){
+    if (x_max_wall[pos]==x_min_wall[pos]) current_ID = x_max_wall[pos];
+    else current_ID = 0;
+
+    if (current_ID!=0){
+      if (IDs_present.find(current_ID)==IDs_present.end()){
+        IDs_present.insert(current_ID);
+        images[current_ID] = new PGMImage(u_size,v_size,depth);
+        images[current_ID]->data[pos]=current_ID;
+      }
+      else{
+        images[current_ID]->data[pos]=current_ID;
+      }
+    }
+  }
+
+  for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
+    ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
+  }
+  // write to file
+  {
+    char output_filename_max[4096];
+    sprintf(output_filename_max, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_XMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+    FILE *maxfp = fopen(output_filename_max, "wb");
+    if (!maxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_max); exit(-1); }
+
+    char output_filename_min[4096];
+    sprintf(output_filename_min, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_XMin-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]+1, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]+1);
+
+    FILE *minfp = fopen(output_filename_min, "wb");
+    if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
+
+    long nsegments = iu_centers.size();
+    Writeheader(maxfp, nsegments);
+    Writeheader(minfp, nsegments);
+
+    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+
+      long seg_ID = iter->first;
+
+      long n_centers;
+      long n_anchors =  iu_centers[seg_ID].size();
+      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
+
+      for (long pos=0; pos<n_anchors; pos++) {
+        long iz = iv_centers[seg_ID][pos];
+        long iy = iu_centers[seg_ID][pos];
+        long ix = inp_blocksize[OR_X]-1;
+        long iv_local_max = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+        ix = 0;
+        long iv_local_min = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+
+      }
+
+    }
+    fclose(maxfp);
+    fclose(minfp);
 
   }
 
