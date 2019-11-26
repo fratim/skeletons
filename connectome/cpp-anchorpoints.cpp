@@ -7,15 +7,11 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
-#include <string>
 #include <unistd.h>
-#include "cpp-MinBinaryHeap.h"
-#include "cpp-wiring.h"
-#include <algorithm>
 #include "powersof2.h"
 #include <malloc.h>
-#include <queue>
 #include <string.h>
+#include <queue>
 
 #define CONTOUR_MASK 3
 #define OBJECT 1
