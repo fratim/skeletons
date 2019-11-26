@@ -124,6 +124,7 @@ unsigned long palagyi_fpta( PGMImage* img, queue<unsigned long> &contour, unsign
 int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 );
 void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &iv_centers);
 void Writeheader(FILE *fp, long &num);
+void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wall, long *z_max_wall);
 
 long volumesize_in[3] = {-1,-1,-1};
 long block_ind[3] = {-1,-1,-1};
@@ -140,6 +141,12 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   volumesize_in[OR_Z] = volumesize_in_inp[OR_Z];
   volumesize_in[OR_Y] = volumesize_in_inp[OR_Y];
   volumesize_in[OR_X] = volumesize_in_inp[OR_X];
+
+  ProcessZAnchors(prefix, output_dir, z_min_wall,z_max_wall);
+
+}
+
+void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wall, long *z_max_wall){
 
   long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_X]);
   std::unordered_set<long> IDs_present = std::unordered_set<long>();
