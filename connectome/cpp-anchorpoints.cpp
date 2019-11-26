@@ -26,155 +26,10 @@ class PGMImage {
  public:
    unsigned char* data;
    int width, height, depth;
-   PGMImage();
    PGMImage( int width, int height, int depth );
-   PGMImage( PGMImage &image );
    ~PGMImage();
-   void normalize();
-   void binarize(unsigned char threshold = 128);
    int createBorder( int bwidth, unsigned char color = 0 );
-   void separateHeader();
 };
-
-bool readPGM( char* filename, PGMImage* image ) {
- FILE *fp = NULL;
- char p5[4];
- int width, height, depth;
- char c[10];
-
- fp = fopen( filename, "rb"  );
- if ( !fp ) {
-   printf ( "ERROR: %s can not read\n", filename );
-   return false;
- }
-
- fscanf ( fp, "%s", &p5 );
- fscanf ( fp, "%d", &(image->width) );
- fscanf ( fp, "%d", &(image->height) );
- fscanf ( fp, "%d\n", &(image->depth) );
- //printf ( "Width: %d, Height: %d\n", image->width, image->height );
-
- if ( image->data != NULL ) {
-   //delete[] image->data;
-   free ( image->data );
-   image->data = NULL;
- }
- image->data = (unsigned char*) malloc ( image->width * image->height * sizeof( unsigned char ));
- unsigned long size =  image->width * image->height;
- if ( image->data != NULL ) {
-   for ( unsigned long i = 0; i < size; i++ ) image->data[ i ] = 0;
-/*
-   for ( unsigned long i = 0; i < size; i++ ) {
-       image->data[ i ] = (unsigned char) fgetc( fp );
-   }
-*/
-   fread( (unsigned char* ) image->data, sizeof( unsigned char ), image->width * image->height, fp );
- } else {
-     printf ("ERROR: readPGM  -- Not enougth memory\n ");
-     return false;
- }
-
- //printf ( "End of reading\n" );
-
- fflush(fp);
- fclose(fp);
- return true;
-}
-
-bool createPGM(PGMImage* image ) {
- if ( image->data != NULL ) {
-   //delete[] image->data;
-   free ( image->data );
-   image->data = NULL;
- }
- image->data = (unsigned char*) malloc ( image->width * image->height * sizeof( unsigned char ));
- unsigned long size =  image->width * image->height;
- std::cout << "creating dummy pgi" << std::endl <<std::flush;
-
- if ( image->data != NULL ) {
-   image->data[0]=0;
-   image->data[1]=1;
-   image->data[2]=1;
-   image->data[3]=0;
-   image->data[4]=0;
-
-   image->data[5]=0;
-   image->data[6]=1;
-   image->data[7]=1;
-   image->data[8]=1;
-   image->data[9]=0;
-
-   image->data[10]=0;
-   image->data[11]=0;
-   image->data[12]=0;
-   image->data[13]=0;
-   image->data[14]=0;
-
-   image->data[15]=3;
-   image->data[16]=0;
-   image->data[17]=2;
-   image->data[18]=2;
-   image->data[19]=0;
-
-   for ( unsigned long i = 0; i < size; i++ ) {
-     std::cout << (int)(image->data[i]);
-     if ((i+1)%(image->width)==0) std::cout << std::endl;
-   }
- } else {
-     printf ("ERROR: readPGM  -- Not enougth memory\n ");
-     return false;
- }
-
- printf ( "End of reading\n" );
- return true;
-}
-
-bool writePGM( char* filename, PGMImage* image ) {
- FILE *fp = NULL;
-
-
- fp = fopen( filename, "wb"  );
- if ( !fp ) {
-   printf ( "ERROR: %s can not write\n", filename );
-   return false;
- }
-
- fprintf ( fp, "P5\n%d %d\n%d\n", image->width, image->height, image->depth );
-
- unsigned long size =  image->width * image->height;
- std::cout << "creating dummy pgi" << std::endl <<std::flush;
-
- if ( image->data != NULL ) {
-   for ( unsigned long i = 0; i < size; i++ ) {
-     std::cout << (int)(image->data[i]);
-     if ((i+1)%(image->width)==0) std::cout << std::endl;
-   }
- }
-
- if ( image->data != NULL ) {
-   fwrite( (unsigned char*) image->data, sizeof( unsigned char ), image->width * image->height, fp );
-/*
-   unsigned long size = image->width * image->height;
-
-   for ( unsigned long i = 0; i < size; i++ ) {
-       fputc( image->data[ i ], fp );
-   }
-*/
-
- } else {
-     return false;
- }
- fflush(fp);
- fclose(fp);
- return true;
-}
-
-PGMImage::PGMImage() {
-   this->data = NULL;
-   this->width = 0;
-   this->height = 0;
-   this->depth = 0;
-}
 
 PGMImage::PGMImage( int width, int height, int depth ) {
  this->width = width;
@@ -195,52 +50,8 @@ PGMImage::PGMImage( int width, int height, int depth ) {
 
 }
 
-PGMImage::PGMImage( PGMImage &image ) {
- this->width = image.width;
- this->height = image.height;
- this->depth = image.depth;
-
- this->data = NULL;
- this->data = ( unsigned char* ) malloc ( width * height * sizeof( unsigned char ) );
- if ( this->data == NULL ) {
-   printf ("PGMImage: Allocation error. Not enough memory. \n");
-   return;
- }
- int size = width * height;
- for ( int i = 0; i < size; i++ ) {
-   this->data[ i ] = image.data[ i ];
- }
-
-}
-
 PGMImage::~PGMImage() {
    delete[] this->data;
-}
-
-void PGMImage::normalize() {
- int size = this->width * this->height;
- int max = 0;
- for ( int i = 0; i < size; i++ ) {
-   if ( this->data[ i ] > max ) max = this->data[i];
- }
- if ( max != 0 ) {
-   for ( int i = 0; i < size; i++ ) {
-     this->data[i] = this->data[i] * 255 / max;
-   }
- }
- //this->depth = max;
-}
-
-void PGMImage::binarize(unsigned char threshold) {
- int size = this->width * this->height;
- //this->normalize();
- for ( unsigned long i = 0; i < size; i++ ) {
-   if ( this->data[i] > threshold ) {
-     this->data[i] = 255;
-   } else {
-     this->data[i] = 0;
-   }
- }
 }
 
 int PGMImage::createBorder( int bwidth, unsigned char color ) {
@@ -337,7 +148,6 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_X]);
   std::unordered_set<long> IDs_present = std::unordered_set<long>();
   std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
-
   std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
 
@@ -346,6 +156,7 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   int v_size = (int)inp_blocksize[OR_Y]; // height
   int depth = 1;
 
+  // compute anchors on the zmax plane and write them to the folder and the z max adjacent folder
   for (long pos =0; pos<entries; pos++){
     if (z_max_wall[pos]==z_min_wall[pos]) current_ID = z_max_wall[pos];
     else current_ID = 0;
@@ -366,11 +177,6 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
   }
 
-  std::cout << "images found: " << images.size() <<std::endl;
-
-  std::cout << output_dir << std::endl;
-
-  /// Write anchors to file
   {
     char output_filename_zmax[4096];
     sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", output_dir, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
@@ -465,9 +271,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
         nskel++;
         iu_centers.push_back(index%img->width);
         iv_centers.push_back(index/img->width);
-        // img->data[index] = 255;
       } else {
-        // img->data[index] = 0;
       }
       index++;
     }
@@ -481,9 +285,9 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
 
   // printf( "\n%s :: ", argv[2] );
-  printf( "Number of iterations: %d ", iter );
-  printf( "#object: %d ", nobject );
-  printf( "#skeletal: %d ", nskel );
+  // printf( "Number of iterations: %d ", iter );
+  // printf( "#object: %d ", nobject );
+  // printf( "#skeletal: %d ", nskel );
 
   printf( "\n" );
 }
@@ -542,7 +346,6 @@ unsigned long palagyi_fpta( PGMImage* img, queue<unsigned long> &contour, unsign
   return length;
 
 }
-
 
 int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
   queue<unsigned long> contour;
