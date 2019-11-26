@@ -13,6 +13,7 @@ TODO:
 26. Dynamically allocate large objects
 27. Implement statistics for cubesize for synapse projection
 28. remove skeleton object, not needed anymore
+29. Update LUT path
 
 COMMENTS:
 2. Name specifications:

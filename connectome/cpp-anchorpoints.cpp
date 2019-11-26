@@ -16,7 +16,6 @@
 #include <malloc.h>
 #include <queue>
 #include <string.h>
-#include <time.h>
 
 #define CONTOUR_MASK 3
 #define OBJECT 1
@@ -316,22 +315,35 @@ int PGMImage::createBorder( int bwidth, unsigned char color ) {
 
 unsigned long palagyi_fpta( PGMImage* img, queue<unsigned long> &contour, unsigned char* lut );
 int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 );
-void ThinImages(PGMImage* img);
+void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &iv_centers);
+void Writeheader(FILE *fp, long &num);
 
-void ComputeAnchorPoints(const char *prefix, const char* output_dir, long input_blocksize_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall){
+long volumesize_in[3] = {-1,-1,-1};
+long block_ind[3] = {-1,-1,-1};
+long inp_blocksize[3] = {-1,-1,-1};
 
-  long input_blocksize[3];
-  input_blocksize[0] = input_blocksize_inp[0];
-  input_blocksize[1] = input_blocksize_inp[1];
-  input_blocksize[2] = input_blocksize_inp[2];
+void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long volumesize_in_inp[3], long blockind_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall){
 
-  long entries = (input_blocksize[OR_Y]*input_blocksize[OR_X]);
+  inp_blocksize[OR_Z] = inp_blocksize_inp[OR_Z];
+  inp_blocksize[OR_Y] = inp_blocksize_inp[OR_Y];
+  inp_blocksize[OR_X] = inp_blocksize_inp[OR_X];
+  block_ind[OR_Z] = blockind_inp[OR_Z];
+  block_ind[OR_Y] = blockind_inp[OR_Y];
+  block_ind[OR_X] = blockind_inp[OR_X];
+  volumesize_in[OR_Z] = volumesize_in_inp[OR_Z];
+  volumesize_in[OR_Y] = volumesize_in_inp[OR_Y];
+  volumesize_in[OR_X] = volumesize_in_inp[OR_X];
+
+  long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_X]);
   std::unordered_set<long> IDs_present = std::unordered_set<long>();
   std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
 
+  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
+  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+
   long current_ID;
-  int width = (int)input_blocksize[OR_X];
-  int height = (int)input_blocksize[OR_Y];
+  int u_size = (int)inp_blocksize[OR_X]; // width
+  int v_size = (int)inp_blocksize[OR_Y]; // height
   int depth = 1;
 
   for (long pos =0; pos<entries; pos++){
@@ -341,7 +353,7 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long input_
     if (current_ID!=0){
       if (IDs_present.find(current_ID)==IDs_present.end()){
         IDs_present.insert(current_ID);
-        images[current_ID] = new PGMImage(width,height,depth);
+        images[current_ID] = new PGMImage(u_size,v_size,depth);
         images[current_ID]->data[pos]=current_ID;
       }
       else{
@@ -351,18 +363,55 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long input_
   }
 
   for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
-    ThinImages(iter->second);
+    ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
   }
 
   std::cout << "images found: " << images.size() <<std::endl;
 
+  std::cout << output_dir << std::endl;
+
+  /// Write anchors to file
+  {
+    char output_filename_zmax[4096];
+    sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", output_dir, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+    FILE *zmaxfp = fopen(output_filename_zmax, "wb");
+    if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
+
+    long nsegments = iu_centers.size();
+    Writeheader(zmaxfp, nsegments);
+
+    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+
+      long seg_ID = iter->first;
+
+      long n_centers;
+      long n_anchors =  iu_centers[seg_ID].size();
+      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segemtn: %ld\n", seg_ID); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+
+      for (long pos=0; pos<n_anchors; pos++) {
+        long iz = inp_blocksize[OR_Z]-1;
+        long iy = iv_centers[seg_ID][pos];
+        long ix = iu_centers[seg_ID][pos];
+
+        std::cout<<"added point at: "<< iz <<","<<iy<<","<<ix<<std::endl;
+
+        long iv_local = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X]* + iy * inp_blocksize[OR_Y] + ix;
+
+        if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+      }
+
+    }
+    fclose(zmaxfp);
+
+  }
+
 }
 
-void ThinImages(PGMImage* img){
-
-  time_t start_time, end_time, start_thinning, end_thinning;
-
-  start_time = clock();
+void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &iv_centers){
 
   FILE* fp = NULL;
 
@@ -378,7 +427,6 @@ void ThinImages(PGMImage* img){
   }
 
   printf( "width: %d, height = %d\n", img->width, img->height );
-  std::cout << "HOSSA A" << std::endl << std::flush;
 
   //fread( lut, sizeof(unsigned char), 16777216, fp );
   unsigned long i = 0;
@@ -389,10 +437,6 @@ void ThinImages(PGMImage* img){
       if ( (bits & k) > 0 ) lut[i] = 1; else lut[i] = 0;
     }
   }
-
-  std::cout << "HOSSA B" << std::endl << std::flush;
-
-
 
   unsigned long nobject = 0;
   unsigned long index = 0;
@@ -408,11 +452,7 @@ void ThinImages(PGMImage* img){
 
   img->createBorder(3);
 
-  start_thinning = clock();
-
   int iter = fpta_thinning( img, lut, NULL );
-
-  end_thinning = clock();
 
   img->createBorder(-3);
 
@@ -423,33 +463,27 @@ void ThinImages(PGMImage* img){
       //if ( ((img->data[ index ] & CONTOUR_MASK) != 0) || ((img->data[index] & OBJECT)) != 0 ) {
       if ( (img->data[index] & OBJECT) == OBJECT) {
         nskel++;
-        img->data[index] = 255;
+        iu_centers.push_back(index%img->width);
+        iv_centers.push_back(index/img->width);
+        // img->data[index] = 255;
       } else {
-        img->data[index] = 0;
+        // img->data[index] = 0;
       }
       index++;
     }
   }
 
-  //
-  // writePGM(argv[2], img );
-
   delete img;
 
-
   free( lut );
-
   fflush(fp);
   fclose(fp);
 
 
-  end_time = clock();
   // printf( "\n%s :: ", argv[2] );
   printf( "Number of iterations: %d ", iter );
   printf( "#object: %d ", nobject );
   printf( "#skeletal: %d ", nskel );
-  printf( "Thinning time: %lf sec ", (double) ( end_thinning - start_thinning ) / CLOCKS_PER_SEC );
-  printf( "Elapsed time: %lf sec\n", (double) ( end_time - start_time ) / CLOCKS_PER_SEC );
 
   printf( "\n" );
 }
@@ -546,4 +580,22 @@ int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
 */
   return iter;
 
+}
+
+void Writeheader(FILE *fp, long &num)
+{
+
+  // write the header parameters to the top of the output file
+  int check = 0;
+  int size_l = sizeof(long);
+
+  check += fwrite(&(volumesize_in[OR_Z]), size_l, 1, fp);
+  check += fwrite(&(volumesize_in[OR_Y]), size_l, 1, fp);
+  check += fwrite(&(volumesize_in[OR_X]), size_l, 1, fp);
+  check += fwrite(&(inp_blocksize[OR_Z]), size_l, 1, fp);
+  check += fwrite(&(inp_blocksize[OR_Y]), size_l, 1, fp);
+  check += fwrite(&(inp_blocksize[OR_X]), size_l, 1, fp);
+  check += fwrite(&num, size_l, 1, fp);
+
+  if (check != 7) { fprintf(stderr, "Failed to write file in Writeheader\n"); exit(-1); }
 }
