@@ -40,14 +40,14 @@ def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
 
 # save walls
 def MakeAnchorpoints(prefix, output_folder, block_z, block_y, block_x):
-    walls_folder_current = output_folder+'walls/'+prefix+'/'
+    walls_folder_current = output_folder+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
     zmax_fp = walls_folder_current+'zMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     ymax_fp = walls_folder_current+'yMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     xmax_fp = walls_folder_current+'xMaxWall'+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
 
-    walls_folder_z = dataIO.OutputDirectory(prefix)+'output-'+str(block_z+1).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
-    walls_folder_y = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y+1).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
-    walls_folder_x = dataIO.OutputDirectory(prefix)+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x+1).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+    walls_folder_z = output_folder+'output-'+str(block_z+1).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+    walls_folder_y = output_folder+'output-'+str(block_z).zfill(4)+'z-'+str(block_y+1).zfill(4)+'y-'+str(block_x).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
+    walls_folder_x = output_folder+'output-'+str(block_z).zfill(4)+'z-'+str(block_y).zfill(4)+'y-'+str(block_x+1).zfill(4)+'x'+'/'+'walls/'+prefix+'/'
 
     zmin_fp = walls_folder_z+'zMinWall'+str(block_z+1).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     ymin_fp = walls_folder_y+'yMinWall'+str(block_z).zfill(4)+"z-"+str(block_y+1).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"

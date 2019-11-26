@@ -179,16 +179,23 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
   for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
   }
-
+  // write to file
   {
     char output_filename_zmax[4096];
-    sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_Z-%04ldz-%04ldy-%04ldx.pts", output_dir, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+    sprintf(output_filename_zmax, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
     FILE *zmaxfp = fopen(output_filename_zmax, "wb");
     if (!zmaxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmax); exit(-1); }
 
+    char output_filename_zmin[4096];
+    sprintf(output_filename_zmin, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMin-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z]+1, block_ind[OR_Y], block_ind[OR_X]);
+
+    FILE *zminfp = fopen(output_filename_zmin, "wb");
+    if (!zminfp) { fprintf(stderr, "Failed to open %s\n", output_filename_zmin); exit(-1); }
+
     long nsegments = iu_centers.size();
     Writeheader(zmaxfp, nsegments);
+    Writeheader(zminfp, nsegments);
 
     for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
 
@@ -196,25 +203,30 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
 
       long n_centers;
       long n_anchors =  iu_centers[seg_ID].size();
-      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segemtn: %ld\n", seg_ID); exit(-1); }
+      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
 
       if (fwrite(&seg_ID, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
       if (fwrite(&n_anchors, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
+
+      if (fwrite(&seg_ID, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmin); exit(-1); }
+      if (fwrite(&n_anchors, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmin); exit(-1); }
 
       for (long pos=0; pos<n_anchors; pos++) {
         long iz = inp_blocksize[OR_Z]-1;
         long iy = iv_centers[seg_ID][pos];
         long ix = iu_centers[seg_ID][pos];
+        long iv_local_max = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_max, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
 
-        std::cout<<"added point at: "<< iz <<","<<iy<<","<<ix<<std::endl;
+        iz = 0;
+        long iv_local_min = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
+        if (fwrite(&iv_local_min, sizeof(long), 1, zminfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
 
-        long iv_local = iz * inp_blocksize[OR_Y]*inp_blocksize[OR_X] + iy * inp_blocksize[OR_X] + ix;
-
-        if (fwrite(&iv_local, sizeof(long), 1, zmaxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_zmax); exit(-1); }
       }
 
     }
     fclose(zmaxfp);
+    fclose(zminfp);
 
   }
 
@@ -224,7 +236,6 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
   FILE* fp = NULL;
 
-	std::cout << "opening LUT" << std::endl << std::flush;
   fp = fopen( "/home/frtim/Documents/Code/skeletons/connectome/ronse_fpta.lut", "rb" );
 
   unsigned char* lut = NULL;
@@ -234,8 +245,6 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
     fflush(fp);
     fclose(fp);
   }
-
-  printf( "width: %d, height = %d\n", img->width, img->height );
 
   //fread( lut, sizeof(unsigned char), 16777216, fp );
   unsigned long i = 0;
@@ -292,7 +301,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
   // printf( "#object: %d ", nobject );
   // printf( "#skeletal: %d ", nskel );
 
-  printf( "\n" );
+  // printf( "\n" );
 }
 
 // iteration step
@@ -356,7 +365,6 @@ int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
   unsigned long size = w * h;
   int n4[4] = { -w, 1, w, -1 };
 
-  printf( "Thinning started...\n" );
   for ( unsigned long i = 0; i < size; i++ ) {
     if ( img->data[i] == OBJECT ) {
       for ( int j = 0; j < 4; j++ ) {

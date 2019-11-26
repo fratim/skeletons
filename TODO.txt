@@ -14,6 +14,8 @@ TODO:
 27. Implement statistics for cubesize for synapse projection
 28. remove skeleton object, not needed anymore
 29. Update LUT path
+30. Remove passing of 3 adjacent output directories, this is stupid
+31. Remove 1 step anchor computation
 
 COMMENTS:
 2. Name specifications:
