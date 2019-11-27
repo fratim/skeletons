@@ -32,4 +32,4 @@ IDEAS:
 5. Remove voxels on edges, to achieve splitting of structures that span over edges
 
 QUESTIONS:
-1. False Segmentations: What to do about it?
+1. Probelm with Neuron 72 gap: is ther maybe an error in the visualization?

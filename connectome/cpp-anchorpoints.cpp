@@ -24,7 +24,7 @@ class PGMImage {
    int width, height, depth;
    PGMImage( int width, int height, int depth );
    ~PGMImage();
-   int createBorder( int bwidth, unsigned char color = 0 );
+   void createBorder( int bwidth, unsigned char color = 0 );
 };
 
 PGMImage::PGMImage( int width, int height, int depth ) {
@@ -35,7 +35,8 @@ PGMImage::PGMImage( int width, int height, int depth ) {
  this->data = NULL;
  this->data = ( unsigned char* ) malloc ( width * height * sizeof( unsigned char ) );
  if ( this->data == NULL ) {
-   printf ("PGMImage: Allocation error. Not enough memory. \n");
+   fprintf(stderr, "PGMImage: Allocation error. Not enough memory. \n"); exit(-1);;
+
    return;
  }
  int size = width * height;
@@ -50,10 +51,9 @@ PGMImage::~PGMImage() {
    delete[] this->data;
 }
 
-int PGMImage::createBorder( int bwidth, unsigned char color ) {
+void PGMImage::createBorder( int bwidth, unsigned char color ) {
  if ( this->data == NULL ) {
-   printf( "ERROR: PGMImage::createBorder: data does not exist\n " );
-   return -1;
+   fprintf(stderr, "ERROR: PGMImage::createBorder: data does not exist\n "); exit(-1);;
  }
  int new_width, new_height;
  new_width = this->width + 2 * bwidth;
@@ -62,8 +62,7 @@ int PGMImage::createBorder( int bwidth, unsigned char color ) {
  unsigned char *temp;
  temp = ( unsigned char* ) malloc ( new_length * sizeof( unsigned char ) );
  if ( !temp ) {
-   printf( "ERROR: PGMImage::createBorder: not enough memory for temp array\n " );
-   return -1;
+   fprintf(stderr, "ERROR: PGMImage::createBorder: not enough memory for temp array\n "); exit(-1);;
  }
  unsigned long orig_index, new_index;
 
@@ -205,9 +204,8 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
 
       long seg_ID = iter->first;
 
-      long n_centers;
       long n_anchors =  iu_centers[seg_ID].size();
-      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
+      if (n_anchors != (long)iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
 
       if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
       if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -291,9 +289,8 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
 
       long seg_ID = iter->first;
 
-      long n_centers;
       long n_anchors =  iu_centers[seg_ID].size();
-      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
+      if (n_anchors != (long)iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
 
       if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
       if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -377,9 +374,8 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
 
       long seg_ID = iter->first;
 
-      long n_centers;
       long n_anchors =  iu_centers[seg_ID].size();
-      if (n_anchors != iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
+      if (n_anchors != (long)iv_centers[seg_ID].size()) { fprintf(stderr, "Different number of entries in iu iv segment: %ld\n", seg_ID); exit(-1); }
 
       if (fwrite(&seg_ID, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
       if (fwrite(&n_anchors, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -417,20 +413,22 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
   unsigned char* lut = NULL;
   lut = (unsigned char*) malloc ( 16777216 * sizeof(unsigned char) );
   if ( !lut ) {
-    printf( "ERROR: Can not allocate memory for LUT\n" );
+    fprintf(stderr, "Cannot allocate memory for LUT \n"); exit(-1);
     fflush(fp);
     fclose(fp);
   }
 
   //fread( lut, sizeof(unsigned char), 16777216, fp );
   unsigned long i = 0;
+  int read = 0;
   while( !feof(fp) ) {
     unsigned char bits;
-    fread( &bits, sizeof(unsigned char), 1, fp );
+    read += fread( &bits, sizeof(unsigned char), 1, fp );
     for ( unsigned int j = 0, k=1; j < 8; j++, k*=2, i++ ) {
       if ( (bits & k) > 0 ) lut[i] = 1; else lut[i] = 0;
     }
   }
+  if (read!= 2097152) { fprintf(stderr, "Failed to read LUT \n"); exit(-1); }
 
   unsigned long nobject = 0;
   unsigned long index = 0;
@@ -473,7 +471,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
 
   // printf( "\n%s :: ", argv[2] );
-  // printf( "Number of iterations: %d ", iter );
+  printf( "Number of iterations: %d ", iter );
   // printf( "#object: %d ", nobject );
   // printf( "#skeletal: %d ", nskel );
 

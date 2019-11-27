@@ -1882,16 +1882,16 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   PopulateOffsets(BlockA.padded_blocksize);
 
   // insert IDs that should be processed
-  BlockA.IDs_to_process.insert({29});
-  BlockA.IDs_to_process.insert({65});
-  BlockA.IDs_to_process.insert({72});
-  BlockA.IDs_to_process.insert({149});
-  BlockA.IDs_to_process.insert({136});
+  // BlockA.IDs_to_process.insert({29});
+  // BlockA.IDs_to_process.insert({65});
+  // BlockA.IDs_to_process.insert({72});
+  // BlockA.IDs_to_process.insert({149});
+  // BlockA.IDs_to_process.insert({136});
 
-  // BlockA.IDs_to_process = BlockA.IDs_in_block;
-  // BlockA.IDs_to_process.erase(55);
-  // BlockA.IDs_to_process.erase(81);
-  // BlockA.IDs_to_process.erase(301);
+  BlockA.IDs_to_process = BlockA.IDs_in_block;
+  BlockA.IDs_to_process.erase(55);
+  BlockA.IDs_to_process.erase(81);
+  BlockA.IDs_to_process.erase(301);
 
   BlockA.writeIDsToProcess(prefix);
 
