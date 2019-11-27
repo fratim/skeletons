@@ -109,7 +109,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
 
         char output_filename_IDs[4096];
-        sprintf(output_filename_IDs, "%s/output-%04ldz-%04ldy-%04ldx/IDs_processed/%s/%s-IDs_processed-%04ldz-%04ldy-%04ldx.pts", output_directory, bz, by, bx, prefix, prefix, bz,by,bx);
+        sprintf(output_filename_IDs, "%s/output-%04ldz-%04ldy-%04ldx/segment_IDs/%s/%s-IDs_processed-%04ldz-%04ldy-%04ldx.pts", output_directory, bz, by, bx, prefix, prefix, bz,by,bx);
 
         FILE *fpid = fopen(output_filename_IDs, "rb");
         if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }

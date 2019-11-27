@@ -120,7 +120,7 @@ void PGMImage::createBorder( int bwidth, unsigned char color ) {
 }
 
 unsigned long palagyi_fpta( PGMImage* img, queue<unsigned long> &contour, unsigned char* lut );
-int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 );
+void fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 );
 void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &iv_centers);
 void Writeheader(FILE *fp, long &num);
 void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wall, long *z_max_wall);
@@ -444,7 +444,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
   img->createBorder(3);
 
-  int iter = fpta_thinning( img, lut, NULL );
+  fpta_thinning( img, lut, NULL );
 
   img->createBorder(-3);
 
@@ -471,7 +471,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
 
   // printf( "\n%s :: ", argv[2] );
-  printf( "Number of iterations: %d ", iter );
+  // printf( "Number of iterations: %d ", iter );
   // printf( "#object: %d ", nobject );
   // printf( "#skeletal: %d ", nskel );
 
@@ -533,7 +533,7 @@ unsigned long palagyi_fpta( PGMImage* img, queue<unsigned long> &contour, unsign
 
 }
 
-int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
+void fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
   queue<unsigned long> contour;
   int w = img->width, h = img->height;
   unsigned long size = w * h;
@@ -566,12 +566,11 @@ int fpta_thinning( PGMImage* img, unsigned char *lut, unsigned char *lut2 ) {
     if ( (img->data[i] & OBJECT) == OBJECT ) img->data[i] = OBJECT;
   }
 */
-  return iter;
+  // return iter;
 
 }
 
-void Writeheader(FILE *fp, long &num)
-{
+void Writeheader(FILE *fp, long &num){
 
   // write the header parameters to the top of the output file
   int check = 0;
