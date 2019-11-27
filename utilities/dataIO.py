@@ -18,6 +18,14 @@ def Blocksize(prefix):
     # return the blocksize for this prefix
     return meta_data.MetaData(prefix).Blocksize()
 
+def StartBlocks(prefix):
+    # return the blocksize for this prefix
+    return meta_data.MetaData(prefix).StartBlocks()
+
+def NBlocks(prefix):
+    # return the blocksize for this prefix
+    return meta_data.MetaData(prefix).NBlocks()
+
 def Volumesize(prefix):
     # return the volumesize for this prefix
     return meta_data.MetaData(prefix).Volumesize()

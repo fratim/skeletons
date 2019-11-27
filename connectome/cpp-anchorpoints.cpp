@@ -131,7 +131,8 @@ long volumesize_in[3] = {-1,-1,-1};
 long block_ind[3] = {-1,-1,-1};
 long inp_blocksize[3] = {-1,-1,-1};
 
-void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long volumesize_in_inp[3], long blockind_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall){
+void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long blockind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
+        long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall){
 
   inp_blocksize[OR_Z] = inp_blocksize_inp[OR_Z];
   inp_blocksize[OR_Y] = inp_blocksize_inp[OR_Y];
@@ -143,9 +144,9 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   volumesize_in[OR_Y] = volumesize_in_inp[OR_Y];
   volumesize_in[OR_X] = volumesize_in_inp[OR_X];
 
-  ProcessZAnchors(prefix, output_dir, z_min_wall,z_max_wall);
-  ProcessYAnchors(prefix, output_dir, y_min_wall,y_max_wall);
-  ProcessXAnchors(prefix, output_dir, x_min_wall,x_max_wall);
+  if (block_ind[OR_Z]<block_ind_end_inp[OR_Z]) ProcessZAnchors(prefix, output_dir, z_min_wall,z_max_wall);
+  if (block_ind[OR_Y]<block_ind_end_inp[OR_Y]) ProcessYAnchors(prefix, output_dir, y_min_wall,y_max_wall);
+  if (block_ind[OR_X]<block_ind_end_inp[OR_X]) ProcessXAnchors(prefix, output_dir, x_min_wall,x_max_wall);
 
 }
 

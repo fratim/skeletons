@@ -30,6 +30,16 @@ class MetaData:
                     samples = value.split('x')
                     # need to use 2, 1, and 0 here since the outward facing convention is x,y,z, not z, y, x
                     self.block_size = (int(samples[2]), int(samples[1]), int(samples[0]))
+                elif comment == '# blocks start':
+                    # separate into individual dimensions
+                    samples = value.split('x')
+                    # need to use 2, 1, and 0 here since the outward facing convention is x,y,z, not z, y, x
+                    self.startblocks = (int(samples[2]), int(samples[1]), int(samples[0]))
+                elif comment == '# number of blocks':
+                    # separate into individual dimensions
+                    samples = value.split('x')
+                    # need to use 2, 1, and 0 here since the outward facing convention is x,y,z, not z, y, x
+                    self.nblocks = (int(samples[2]), int(samples[1]), int(samples[0]))
                 elif comment == '# input_labels directory':
                     self.input_labels_directory = str(value)
                 elif comment == '# synapses directory':
@@ -49,6 +59,12 @@ class MetaData:
 
     def Blocksize(self):
         return self.block_size
+
+    def StartBlocks(self):
+        return self.startblocks
+
+    def NBlocks(self):
+        return self.nblocks
 
     def InputlabelsDirectory(self):
         return self.input_labels_directory

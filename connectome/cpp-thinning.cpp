@@ -168,18 +168,18 @@ class DataBlock{
     long volumesize[3] = {-1,-1,-1};
     float resolution[3] = {-1,-1,-1};
     long block_ind[3] = {-1,-1,-1};
+    long block_ind_min[3] = {-1,-1,-1};
+    long block_ind_max[3] = {-1,-1,-1};
     long padded_row_size = -1;
     long padded_sheet_size = -1;
     long input_row_size = -1;
     long input_sheet_size = -1;
     long volume_row_size = -1;
     long volume_sheet_size = -1;
+    const char *prefix;
     const char *synapses_directory;
     const char *somae_directory;
     const char *output_directory;
-    const char *output_directory_z_neg;
-    const char *output_directory_y_neg;
-    const char *output_directory_x_neg;
 
   public:
     long padded_blocksize[3];
@@ -191,8 +191,8 @@ class DataBlock{
     std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
     std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
 
-    DataBlock(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* synapses_dir, const char* somae_dir,
-              const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp){
+    DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3],
+      long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* somae_dir, const char* output_dir){
 
       resolution[OR_Z] = input_resolution[OR_Z];
       resolution[OR_Y] = input_resolution[OR_Y];
@@ -231,14 +231,21 @@ class DataBlock{
       block_ind[OR_Y] = block_ind_inp[OR_Y];
       block_ind[OR_X] = block_ind_inp[OR_X];
 
+      block_ind_min[OR_Z]= block_ind_start_inp[OR_Z];
+      block_ind_min[OR_Y] = block_ind_start_inp[OR_Y];
+      block_ind_min[OR_X] = block_ind_start_inp[OR_X];
+
+      block_ind_max[OR_Z]= block_ind_end_inp[OR_Z];
+      block_ind_max[OR_Y] = block_ind_end_inp[OR_Y];
+      block_ind_max[OR_X] = block_ind_end_inp[OR_X];
+
       std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
+
+      prefix = prefix_inp;
 
       synapses_directory = synapses_dir;
       somae_directory = somae_dir;
       output_directory = output_dir;
-      output_directory_z_neg = output_dir_z_inp;
-      output_directory_y_neg = output_dir_y_inp;
-      output_directory_x_neg = output_dir_x_inp;
 
       // std::cout << "Directories set. " << std::endl;
 
@@ -250,7 +257,10 @@ class DataBlock{
       std::copy(std::begin(Block.volumesize), std::end(Block.volumesize), std::begin(volumesize));
       std::copy(std::begin(Block.resolution), std::end(Block.resolution), std::begin(resolution));
       std::copy(std::begin(Block.block_ind), std::end(Block.block_ind), std::begin(block_ind));
+      std::copy(std::begin(Block.block_ind_min), std::end(Block.block_ind_min), std::begin(block_ind_min));
+      std::copy(std::begin(Block.block_ind_max), std::end(Block.block_ind_max), std::begin(block_ind_max));
       output_directory = Block.output_directory;
+      prefix = Block.prefix;
 
       padded_row_size = Block.padded_row_size;
       padded_sheet_size = Block.padded_sheet_size;
@@ -301,7 +311,7 @@ class DataBlock{
 
     }
 
-    int ReadSynapses(const char *prefix)
+    int ReadSynapses(void)
     {
 
       // read the synapses
@@ -360,297 +370,106 @@ class DataBlock{
 
     }
 
-    int ReadAnchorpoints(const char *prefix)
+    int ReadAnchorpoints(void)
     {
 
       // read in z anchors (Zmin)
-      if (block_ind[OR_Z]>0)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmin[4096];
-        sprintf(output_filename_zmin, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_ZMin-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-        FILE *fpzmax = fopen(output_filename_zmin, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmin); return 0; }
-
-        std::cout << "Reading: " << output_filename_zmin << std::endl;
-
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
-
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
-      }
-      // read in z anchors (zmax)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_ZMax-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-        FILE *fpzmax = fopen(output_filename_zmax, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
-
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
+      if (block_ind[OR_Z]>block_ind_min[OR_Z]){
+        char anchor_ID[] = "Anchors_Comp_ZMin";
+        ReadAnchorFile(anchor_ID);
       }
 
-      // read in y anchors (ymin)
-      if (block_ind[OR_Y]>0)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmin[4096];
-        sprintf(output_filename_zmin, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_YMin-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-        FILE *fpzmax = fopen(output_filename_zmin, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmin); return 0; }
-
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
-
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
-      }
-      // read in y anchors (ymax)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_YMax-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-        FILE *fpzmax = fopen(output_filename_zmax, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
-
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
-
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
+      // read in z anchors (Zmax)
+      if (block_ind[OR_Z]<block_ind_max[OR_Z]){
+        char anchor_ID[] = "Anchors_Comp_ZMax";
+        ReadAnchorFile(anchor_ID);
       }
 
-      // read in y anchors (ymin)
-      if (block_ind[OR_X]>0)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmin[4096];
-        sprintf(output_filename_zmin, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_XMin-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-        FILE *fpzmax = fopen(output_filename_zmin, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmin); return 0; }
-
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
-
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmin); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
+      // read in z anchors (Ymin)
+      if (block_ind[OR_Y]>block_ind_min[OR_Y]){
+        char anchor_ID[] = "Anchors_Comp_YMin";
+        ReadAnchorFile(anchor_ID);
       }
-      // read in y anchors (ymax)
-      {
-        // make filename of adjacent z lock (in negative direction)
-        char output_filename_zmax[4096];
-        sprintf(output_filename_zmax, "%s/anchorpoints_computed/%s/%s-Anchors_Comp_XMax-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-        FILE *fpzmax = fopen(output_filename_zmax, "rb");
-        if (!fpzmax) { fprintf(stderr, "Failed to read %s.\n", output_filename_zmax); return 0; }
+      // read in z anchors (Ymax)
+      if (block_ind[OR_Y]<block_ind_max[OR_Y]){
+        char anchor_ID[] = "Anchors_Comp_YMax";
+        ReadAnchorFile(anchor_ID);
+      }
 
-        long nsegments;
-        ReadHeader(fpzmax, nsegments);
+      // read in z anchors (Xmin)
+      if (block_ind[OR_X]>block_ind_min[OR_X]){
+        char anchor_ID[] = "Anchors_Comp_XMin";
+        ReadAnchorFile(anchor_ID);
+      }
 
-        for (long i=0; i<nsegments; i++) {
-
-          long seg_ID;
-          long n_anchors;
-
-          if (fread(&seg_ID, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-          if (fread(&n_anchors, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-          for (long pos=0; pos<n_anchors; pos++) {
-
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fpzmax) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename_zmax); exit(-1); }
-
-            long iz, iy, ix;
-            IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
-
-            long iy_padded = iy + 1;
-            long ix_padded = ix + 1;
-            long iz_padded = iz + 1;
-
-            long iv_padded;
-            long iv_unpadded;
-
-            iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-            iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-            Pointclouds[seg_ID][iv_padded] = 3;
-            anchors_comp[seg_ID].push_back(iv_unpadded);
-          }
-        }
-
-        // close file
-        fclose(fpzmax);
+      // read in z anchors (Xmax)
+      if (block_ind[OR_X]<block_ind_max[OR_X]){
+        char anchor_ID[] = "Anchors_Comp_XMax";
+        ReadAnchorFile(anchor_ID);
       }
 
       return 1;
 
     }
 
-    void writeIDs(const char *prefix)
+    void ReadAnchorFile(const char* identifier){
+      // make filename of adjacent z lock (in negative direction)
+      char output_filename[4096];
+      sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-%s-%04ldz-%04ldy-%04ldx.pts",
+                                    output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, identifier,
+                                    block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+      FILE *fp = fopen(output_filename, "rb");
+      if (!fp) { fprintf(stderr, "Failed to read %s.\n", output_filename); exit(-1); }
+
+      std::cout << "Reading: " << output_filename << std::endl;
+
+      long nsegments;
+      ReadHeader(fp, nsegments);
+
+      for (long i=0; i<nsegments; i++) {
+
+        long seg_ID;
+        long n_anchors;
+
+        if (fread(&seg_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+        if (fread(&n_anchors, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+
+        for (long pos=0; pos<n_anchors; pos++) {
+
+          long iv_local;
+          if (fread(&iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+
+          long iz, iy, ix;
+          IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+
+          long iy_padded = iy + 1;
+          long ix_padded = ix + 1;
+          long iz_padded = iz + 1;
+
+          long iv_padded;
+          long iv_unpadded;
+
+          iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+          iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
+          Pointclouds[seg_ID][iv_padded] = 3;
+          anchors_comp[seg_ID].push_back(iv_unpadded);
+        }
+      }
+
+      // close file
+      fclose(fp);
+    }
+
+    void writeIDs(void)
     {
       {
         // write IDs that are processed
         char output_filename_IDs[4096];
-        sprintf(output_filename_IDs, "%s/segment_IDs/%s/%s-IDs_processed-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_IDs, "%s/output-%04ldz-%04ldy-%04ldx/segment_IDs/%s/%s-IDs_processed-%04ldz-%04ldy-%04ldx.pts",
+                output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+                prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *fpid = fopen(output_filename_IDs, "wb");
         if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }
@@ -671,7 +490,9 @@ class DataBlock{
       {
         // write all IDs present in this Block
         char output_filename_IDs[4096];
-        sprintf(output_filename_IDs, "%s/segment_IDs/%s/%s-IDs_present-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename_IDs, "%s/output-%04ldz-%04ldy-%04ldx/segment_IDs/%s/%s-IDs_present-%04ldz-%04ldy-%04ldx.pts",
+                output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+                prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *fpid = fopen(output_filename_IDs, "wb");
         if (!fpid) { fprintf(stderr, "Failed to open %s\n", output_filename_IDs); exit(-1); }
@@ -737,14 +558,16 @@ class DataBlock{
 
     }
 
-    void WriteProjectedSynapses(const char *prefix)
+    void WriteProjectedSynapses(void)
     {
         //get number of anchor points
         long n_neurons = IDs_to_process.size();
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "%s/synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+        sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/synapses_projected/%s/%s-synapses_projected-%04ldz-%04ldy-%04ldx.pts",
+              output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+              prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -819,7 +642,7 @@ class BlockSegment : public DataBlock{
 
     }
 
-    void SequentialThinning(const char *prefix, DataBlock &Block)
+    void SequentialThinning(DataBlock &Block)
     {
         // create a vector of surface voxels
         CollectSurfaceVoxels();
@@ -1021,7 +844,7 @@ class BlockSegment : public DataBlock{
         }
     }
 
-    void WriteOutputfiles(const char *prefix, DataBlock &Block)
+    void WriteOutputfiles(DataBlock &Block)
     {
 
         // count the number of remaining points
@@ -1039,11 +862,14 @@ class BlockSegment : public DataBlock{
 
         // create an output file for the points
         char output_filename[4096];
-        sprintf(output_filename, "%s/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
+        sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts",
+              output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+              prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X] ,segment_ID);
 
         // write the widths to file
         char widths_filename[4096];
-        sprintf(widths_filename, "%s/widths/%s/%06ld.pts", output_directory, prefix, segment_ID);
+        sprintf(widths_filename, "%s/output-%04ldz-%04ldy-%04ldx/widths/%s/%06ld.pts",
+                output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, segment_ID);
 
         FILE *wfp = fopen(output_filename, "wb");
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -1404,21 +1230,23 @@ static bool Simple26_6(unsigned int neighbors)
     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
 }
 
-void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind[3],
-        const char* synapses_dir, const char* somae_dir, const char* output_dir, const char* output_dir_z_inp, const char* output_dir_y_inp, const char* output_dir_x_inp){
+void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3],
+        long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
+        const char* synapses_dir, const char* somae_dir, const char* output_dir){
   // create new Datablock and set the input variables
 
   clock_t start_time_total = clock();
 
-  DataBlock BlockA(input_resolution, inp_blocksize, volume_size, block_ind, synapses_dir, somae_dir, output_dir, output_dir_z_inp, output_dir_y_inp, output_dir_x_inp);
+  DataBlock BlockA( prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp,
+                    block_ind_start_inp, block_ind_end_inp, synapses_dir, somae_dir, output_dir);
 
   BlockA.CppPopulatePointCloudFromH5(inp_labels);
 
   // read Synapses
-  if (!BlockA.ReadSynapses(prefix)) exit(-1);
+  if (!BlockA.ReadSynapses()) exit(-1);
 
   // read Anchor points (if block before does exist)
-  if (!BlockA.ReadAnchorpoints(prefix)) exit(-1);
+  if (!BlockA.ReadAnchorpoints()) exit(-1);
 
   // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
@@ -1438,7 +1266,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   BlockA.IDs_to_process.erase(81);
   BlockA.IDs_to_process.erase(301);
 
-  BlockA.writeIDs(prefix);
+  BlockA.writeIDs();
 
   std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
 
@@ -1449,10 +1277,10 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
       BlockSegment* segA = new BlockSegment(*itr, BlockA);
 
       // call the sequential thinning algorithm
-      segA->SequentialThinning(prefix, BlockA);
+      segA->SequentialThinning(BlockA);
 
       // write skeletons and widths, add anchor points to
-      segA->WriteOutputfiles(prefix, BlockA);
+      segA->WriteOutputfiles(BlockA);
 
       delete segA;
 
@@ -1461,7 +1289,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   }
 
   // write border anchor points to file
-  BlockA.WriteProjectedSynapses(prefix);
+  BlockA.WriteProjectedSynapses();
   double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
   std::cout << "time added summed: " << time_total << std::endl;
 

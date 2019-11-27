@@ -4,6 +4,10 @@
 5632x5632x6144
 # block size
 512x512x512
+# blocks start
+0x0x0
+# number of blocks
+2x2x2
 # input_labels directory
 /home/frtim/Documents/Code/skeletons/examples/segmentations/
 # synapses directory

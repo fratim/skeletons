@@ -6,16 +6,11 @@ TODO:
 15. Revive timing
 19. Talk to guy who did somae detection
 20. get rid off passing the prefix to many functions
-21. Change anchor points and zmax points
 22. Change how anchor points are saved, to not have to pass block reference to segment
-23. Project synapses on surface and update synapse files
-25. Implement checknumber at end of every written file, that hads to be read last to check completeness
+25. Implement checknumber at end of every written file, that has to be read last to check completeness
 26. Dynamically allocate large objects
-27. Implement statistics for cubesize for synapse projection
-28. remove skeleton object, not needed anymore
 29. Update LUT path
 30. Remove passing of 3 adjacent output directories, this is stupid
-31. Remove 1 step anchor computation
 
 COMMENTS:
 2. Name specifications:
