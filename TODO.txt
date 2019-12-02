@@ -1,16 +1,14 @@
 TODO:
 10. Initialize maps with specific size?
 11. Make variables const if possible
-12. Project synapses on surface
-14. Check blocksizes also for read write of border anchor points
 15. Revive timing
 19. Talk to guy who did somae detection
-20. get rid off passing the prefix to many functions
 22. Change how anchor points are saved, to not have to pass block reference to segment
 25. Implement checknumber at end of every written file, that has to be read last to check completeness
 26. Dynamically allocate large objects
 29. Update LUT path
-30. Remove passing of 3 adjacent output directories, this is stupid
+30. Solve issue with global coordinates (so far unused)
+31. Solve problem of not being able to immediately execute refinement step
 
 COMMENTS:
 2. Name specifications:
@@ -22,9 +20,5 @@ COMMENTS:
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
-2. Can we somehow tweak the bitwise comparison and get rid of the extra bordercomponent sets by simply changing the labels?
-3. Remove the removed surface points from the border points sets to achieve speed up
-5. Remove voxels on edges, to achieve splitting of structures that span over edges
 
 QUESTIONS:
-1. Probelm with Neuron 72 gap: is ther maybe an error in the visualization?

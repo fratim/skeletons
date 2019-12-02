@@ -55,7 +55,6 @@ n_blocks = dataIO.NBlocks(prefix)
 #             wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
 # print("total time thinning:" + str(time.time()-start_time_thinning))
 
-
 start_time_refinement = time.time()
 wiring.RefineSkeleton(  prefix, dataIO.OutputDirectory(prefix),start_blocks[0],start_blocks[1],start_blocks[2],
                         start_blocks[0]+n_blocks[0]-1,start_blocks[1]+n_blocks[1]-1,start_blocks[2]+n_blocks[2]-1)

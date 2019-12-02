@@ -423,8 +423,6 @@ class DataBlock{
       FILE *fp = fopen(output_filename, "rb");
       if (!fp) { fprintf(stderr, "Failed to read %s.\n", output_filename); exit(-1); }
 
-      std::cout << "Reading: " << output_filename << std::endl;
-
       long nsegments;
       ReadHeader(fp, nsegments);
 
