@@ -44,6 +44,18 @@ inline long IndicesToIndex(long ix, long iy, long iz, long sheet_size, long row_
     return iz * sheet_size + iy * row_size + ix;
 }
 
+inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3]){
+
+  long row_size = block_size[OR_X];
+  long sheet_size = block_size[OR_X]*block_size[OR_Y];
+
+  long iz_global = iv / sheet_size                                    + block_ind[OR_Z]*block_size[OR_Z];
+  long iy_global = (iv - (iv / sheet_size) * sheet_size) / row_size   + block_ind[OR_Y]*block_size[OR_Y];
+  long ix_global = iv % row_size                                      + block_ind[OR_X]*block_size[OR_X];
+
+  return iz_global * sheet_size + iy_global * row_size + ix_global;
+}
+
 inline long PadIndex(long index_unpadded, long unpadded_sheet_size, long unpadded_row_size, long padded_sheet_size, long padded_row_size)
 {
 
@@ -60,6 +72,16 @@ inline long PadIndex(long index_unpadded, long unpadded_sheet_size, long unpadde
     long index_padded = iz_padded * padded_sheet_size + iy_padded * padded_row_size + ix_padded;
 
     return index_padded;
+}
+
+inline long UnpadIndex(long index_padded, long unpadded_sheet_size, long unpadded_row_size, long padded_sheet_size, long padded_row_size)
+{
+
+    long iz_unpadded = index_padded / padded_sheet_size                                                               - 1;
+    long iy_unpadded = (index_padded - (index_padded / padded_sheet_size) * padded_sheet_size) / padded_row_size      - 1;
+    long ix_unpadded = index_padded % padded_row_size                                                                 - 1;
+
+    return iz_unpadded * unpadded_sheet_size + iy_unpadded * unpadded_row_size + ix_unpadded;
 }
 
 

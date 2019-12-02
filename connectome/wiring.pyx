@@ -122,7 +122,6 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
 
     # end blocks
     end_block_ind = np.array(dataIO.StartBlocks(prefix))+np.array(dataIO.NBlocks(prefix))-np.array((1,1,1))
-    print("block ind end:" + str(end_block_ind))
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_block_ind_end = np.ascontiguousarray(np.array(end_block_ind), dtype=ctypes.c_int64)
 
     # the look up table is in the synapseaware/connectome folder

@@ -86,32 +86,6 @@ void PGMImage::createBorder( int bwidth, unsigned char color ) {
    }
  }
 
-/*
- if ( bwidth > 0 ) {
-   for ( int y = 0; y < height; y++ ) {
-     for ( int x = 0; x < width; x++ ) {
-       orig_index = y * width + x;
-       // new_index = ( y + bwidth ) * (width + 2*bwidth ) + (x + bwidth);
-       int new_x, new_y;
-       new_x = x + bwidth;
-       new_y = y + bwidth;
-       new_index = new_y * new_width + new_x;
-       temp[ new_index ] = this->data[orig_index];
-     }
-   }
- } else {
-   for ( int y = 0; y < new_height; y++ ) {
-     for ( int x = 0; x < new_width; x++ ) {
-       int old_x = x + bwidth;
-       int old_y = y + bwidth;
-       orig_index = old_y * width + old_x;
-       new_index = y * new_width + x;
-       temp[ new_index ] = this->data[orig_index];
-     }
-   }
- }
-*/
-
  free ( data );
  data = temp;
  this->width += 2*bwidth;

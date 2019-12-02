@@ -281,14 +281,14 @@ class DataBlock{
         long y_max =input_blocksize[OR_Y]-1;
         long x_max =input_blocksize[OR_X]-1;
 
-        for (long voxel_index = 0; voxel_index < n_points; voxel_index++){
+        for (long up_iv_local = 0; up_iv_local < n_points; up_iv_local++){
 
           // get segment_ID of current index and skip if is zero
-          long curr_label = inp_labels[voxel_index];
+          long curr_label = inp_labels[up_iv_local];
           if (!curr_label) continue;
 
           // find the new voxel index
-          long iv = PadIndex(voxel_index, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+          long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
           // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
           if (Pointclouds.find(curr_label) == Pointclouds.end()) {
@@ -297,15 +297,15 @@ class DataBlock{
             IDs_in_block.insert(curr_label);
           }
 
-          Pointclouds[curr_label][iv] = 1;
+          Pointclouds[curr_label][p_iv_local] = 1;
 
           // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
           long ix, iy, iz;
-          IndexToIndices(voxel_index, ix, iy, iz, input_sheet_size, input_row_size);
+          IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size, input_row_size);
 
-          if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z].insert(iv);
-          else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y].insert(iv);
-          else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(iv);
+          if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z].insert(p_iv_local);
+          else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y].insert(p_iv_local);
+          else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(p_iv_local);
 
         }
 
@@ -324,7 +324,7 @@ class DataBlock{
       long nneurons;
       ReadHeader(fp, nneurons);
 
-      for (long iv = 0; iv < nneurons; ++iv) {
+      for (long n = 0; n < nneurons; ++n) {
           // get the label and number of synapses
           long segment_ID;
           long nsynapses;
@@ -341,21 +341,21 @@ class DataBlock{
           // add the local coordinates (offset by one in each direction)
           for (long is = 0; is < nsynapses; ++is) {
 
-              long linear_index;
-              if (fread(&linear_index, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
+              long up_iv_local;
+              if (fread(&up_iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename); return 0; }
               // add them to the synapses vector (unpadded)
 
               // find the new voxel index
-              long iv = PadIndex(linear_index, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+              long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
               // set ID of this index to 3 (==Synapse)
               // only add synapse if it is on the body
-              if (Pointclouds[segment_ID][iv] == 1){
-                Pointclouds[segment_ID][iv] = 3;
-                synapses[segment_ID].push_back(linear_index);
+              if (Pointclouds[segment_ID][p_iv_local] == 1){
+                Pointclouds[segment_ID][p_iv_local] = 3;
+                synapses[segment_ID].push_back(up_iv_local);
               }
               else {
-                synapses_off[segment_ID].push_back(linear_index);
+                synapses_off[segment_ID].push_back(up_iv_local);
               }
 
           }
@@ -413,7 +413,8 @@ class DataBlock{
 
     }
 
-    void ReadAnchorFile(const char* identifier){
+    void ReadAnchorFile(const char* identifier)
+    {
       // make filename of adjacent z lock (in negative direction)
       char output_filename[4096];
       sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-%s-%04ldz-%04ldy-%04ldx.pts",
@@ -436,23 +437,13 @@ class DataBlock{
 
         for (long pos=0; pos<n_anchors; pos++) {
 
-          long iv_local;
-          if (fread(&iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+          long up_iv_local;
+          if (fread(&up_iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
 
-          long iz, iy, ix;
-          IndexToIndices(iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+          long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
-          long iy_padded = iy + 1;
-          long ix_padded = ix + 1;
-          long iz_padded = iz + 1;
-
-          long iv_padded;
-          long iv_unpadded;
-
-          iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-          iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-          Pointclouds[seg_ID][iv_padded] = 3;
-          anchors_comp[seg_ID].push_back(iv_unpadded);
+          Pointclouds[seg_ID][p_iv_local] = 3;
+          anchors_comp[seg_ID].push_back(up_iv_local);
         }
       }
 
@@ -588,19 +579,11 @@ class DataBlock{
 
             for (std::vector<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2, ++pos){
 
-              long iv_local = *itr2;
+              long up_iv_local = *itr2;
+              long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
+              if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
-              long iz_local, iy_local, ix_local;
-              IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
-
-              long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-              long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-              long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-              long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
-              if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
-              index_local[pos] = iv_local;
+              index_local[pos] = up_iv_local;
             }
 
             for (int j=0; j<n_synapses; j++){
@@ -670,8 +653,8 @@ class BlockSegment : public DataBlock{
             long ix, iy, iz;
             IndexToIndices(index, ix, iy, iz, padded_sheet_size, padded_row_size);
             // check the 6 neighbors
-            for (long iv = 0; iv < NTHINNING_DIRECTIONS; ++iv) {
-                long neighbor_index = index + n6_offsets[iv];
+            for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
+                long neighbor_index = index + n6_offsets[dir];
 
                 long ii, ij, ik;
 
@@ -893,26 +876,17 @@ class BlockSegment : public DataBlock{
             // get the surface voxels
             ListElement *LE = (ListElement *) surface_voxels.first;
 
-            long index = LE->iv;
-            float width = widths[index];
+            long p_iv_local = LE->iv;
+            float width = widths[p_iv_local];
 
-            // get the coordinates for this skeleton point in the global frame
-            long iz_local = LE->iz - 1;
-            long iy_local = LE->iy - 1;
-            long ix_local = LE->ix - 1;
+            long up_iv_local = UnpadIndex(p_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
 
-            long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-            long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-            long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-            long iv_local = IndicesToIndex(ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
-            long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
-
-            if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-            if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+            if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
             if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-            index_local[counter_it]=iv_local;
+            index_local[counter_it]=up_iv_local;
 
             // remove this voxel
             RemoveSurfaceVoxel(LE, surface_voxels);
@@ -923,50 +897,30 @@ class BlockSegment : public DataBlock{
         long index_local_anchors_comp[n_anchors_comp];
         for (long pos=0; pos<n_anchors_comp; pos++) {
 
-          long iv_local = Block.anchors_comp[segment_ID][pos];
+          long up_iv_local = Block.anchors_comp[segment_ID][pos];
 
-          long iz_local, iy_local, ix_local;
-          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+          long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+          float width = widths[p_iv_local];
 
+          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
 
-          long iz_padded = iz_local + 1;
-          long iy_padded = iy_local + 1;
-          long ix_padded = ix_local + 1;
-
-          long iv_padded = IndicesToIndex(ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
-          float width = widths[iv_padded];
-
-          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
-
-          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-          if (fwrite(&iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
           if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
-          index_local_anchors_comp[pos] = iv_local;
+          index_local_anchors_comp[pos] = up_iv_local;
         }
 
         // write the synapses (global index)
         long index_local_synapses[n_synapses];
         for (long pos=0; pos<n_synapses; pos++) {
 
-          long iv_local = Block.synapses[segment_ID][pos];
+          long up_iv_local = Block.synapses[segment_ID][pos];
+          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
 
-          long iz_local, iy_local, ix_local;
-          IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size, input_row_size);
+          if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
-          long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-          long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-          long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-          long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, volume_sheet_size, volume_row_size);
-
-          if (fwrite(&iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
-          index_local_synapses[pos] = iv_local;
+          index_local_synapses[pos] = up_iv_local;
 
         }
 
@@ -1231,54 +1185,55 @@ static bool Simple26_6(unsigned int neighbors)
 void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3],
         long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
         const char* synapses_dir, const char* somae_dir, const char* output_dir){
-  // create new Datablock and set the input variables
 
   clock_t start_time_total = clock();
 
-  DataBlock BlockA( prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp,
-                    block_ind_start_inp, block_ind_end_inp, synapses_dir, somae_dir, output_dir);
+  // create new Datablock and set the input variables
+  DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp,
+                                      block_ind_start_inp, block_ind_end_inp, synapses_dir, somae_dir, output_dir);
 
-  BlockA.CppPopulatePointCloudFromH5(inp_labels);
+  // process the input labels
+  BlockA->CppPopulatePointCloudFromH5(inp_labels);
 
   // read Synapses
-  if (!BlockA.ReadSynapses()) exit(-1);
+  if (!BlockA->ReadSynapses()) exit(-1);
 
   // read Anchor points (if block before does exist)
-  if (!BlockA.ReadAnchorpoints()) exit(-1);
+  if (!BlockA->ReadAnchorpoints()) exit(-1);
 
   // initialize lookup tables
   InitializeLookupTables(lookup_table_directory);
 
   // needs to happen after PopulatePointCloud()
-  PopulateOffsets(BlockA.padded_blocksize);
+  PopulateOffsets(BlockA->padded_blocksize);
 
-  // insert IDs that should be processed
-  // BlockA.IDs_to_process.insert({29});
-  // BlockA.IDs_to_process.insert({65});
-  // BlockA.IDs_to_process.insert({72});
-  // BlockA.IDs_to_process.insert({149});
-  // BlockA.IDs_to_process.insert({136});
+  // insert IDs that should be processed (45 s for thinning)
+  BlockA->IDs_to_process.insert({29});
+  BlockA->IDs_to_process.insert({65});
+  BlockA->IDs_to_process.insert({72});
+  BlockA->IDs_to_process.insert({149});
+  BlockA->IDs_to_process.insert({136});
 
-  BlockA.IDs_to_process = BlockA.IDs_in_block;
-  BlockA.IDs_to_process.erase(55);
-  BlockA.IDs_to_process.erase(81);
-  BlockA.IDs_to_process.erase(301);
+  // BlockA->IDs_to_process = BlockA->IDs_in_block;
+  // BlockA->IDs_to_process.erase(55);
+  // BlockA->IDs_to_process.erase(81);
+  // BlockA->IDs_to_process.erase(301);
 
-  BlockA.writeIDs();
+  BlockA->writeIDs();
 
-  std::unordered_set<long>::iterator itr = BlockA.IDs_to_process.begin();
+  std::unordered_set<long>::iterator itr = BlockA->IDs_to_process.begin();
 
-  while (itr != BlockA.IDs_to_process.end())
+  while (itr != BlockA->IDs_to_process.end())
   {
 
       // initialize segment using the Block object and the segment ID to process
-      BlockSegment* segA = new BlockSegment(*itr, BlockA);
+      BlockSegment* segA = new BlockSegment(*itr, *BlockA);
 
       // call the sequential thinning algorithm
-      segA->SequentialThinning(BlockA);
+      segA->SequentialThinning(*BlockA);
 
       // write skeletons and widths, add anchor points to
-      segA->WriteOutputfiles(BlockA);
+      segA->WriteOutputfiles(*BlockA);
 
       delete segA;
 
@@ -1287,11 +1242,13 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   }
 
   // write border anchor points to file
-  BlockA.WriteProjectedSynapses();
+  BlockA->WriteProjectedSynapses();
   double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
   std::cout << "time added summed: " << time_total << std::endl;
 
+  delete BlockA;
 }
+
 
 // clock_t start_time = clock();
 // time_added += (double) (clock() - start_time) / CLOCKS_PER_SEC;

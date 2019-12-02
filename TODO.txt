@@ -16,6 +16,7 @@ COMMENTS:
     - segment: point cloud of one ID in a blocks
     - segment_ID: ID of the pointcloud (label)
     - Pointclouds: pointclouds (2D map)
+3. generated skeletons for first 8 blocks in 38.6 seconds
 
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
