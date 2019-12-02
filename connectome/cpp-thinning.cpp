@@ -225,7 +225,7 @@ class DataBlock{
       volumesize[OR_Y] = volume_size[OR_Y];
       volumesize[OR_X] = volume_size[OR_X];
 
-      // std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
+      std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
 
       block_ind[OR_Z]= block_ind_inp[OR_Z];
       block_ind[OR_Y] = block_ind_inp[OR_Y];
@@ -580,7 +580,7 @@ class DataBlock{
             for (std::vector<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2, ++pos){
 
               long up_iv_local = *itr2;
-              long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
+              long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
               if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
               index_local[pos] = up_iv_local;
@@ -880,7 +880,7 @@ class BlockSegment : public DataBlock{
             float width = widths[p_iv_local];
 
             long up_iv_local = UnpadIndex(p_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
+            long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
             if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
@@ -902,7 +902,7 @@ class BlockSegment : public DataBlock{
           long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
           float width = widths[p_iv_local];
 
-          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
+          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
           if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
@@ -916,7 +916,7 @@ class BlockSegment : public DataBlock{
         for (long pos=0; pos<n_synapses; pos++) {
 
           long up_iv_local = Block.synapses[segment_ID][pos];
-          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize);
+          long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 

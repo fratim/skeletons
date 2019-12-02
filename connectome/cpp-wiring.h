@@ -44,7 +44,7 @@ inline long IndicesToIndex(long ix, long iy, long iz, long sheet_size, long row_
     return iz * sheet_size + iy * row_size + ix;
 }
 
-inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3]){
+inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3], long volume_size[3]){
 
   long row_size = block_size[OR_X];
   long sheet_size = block_size[OR_X]*block_size[OR_Y];
@@ -53,7 +53,7 @@ inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3]){
   long iy_global = (iv - (iv / sheet_size) * sheet_size) / row_size   + block_ind[OR_Y]*block_size[OR_Y];
   long ix_global = iv % row_size                                      + block_ind[OR_X]*block_size[OR_X];
 
-  return iz_global * sheet_size + iy_global * row_size + ix_global;
+  return iz_global * volume_size[OR_X]*volume_size[OR_Y] + iy_global *volume_size[OR_X]  + ix_global;
 }
 
 inline long PadIndex(long index_unpadded, long unpadded_sheet_size, long unpadded_row_size, long padded_sheet_size, long padded_row_size)

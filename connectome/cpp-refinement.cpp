@@ -68,6 +68,8 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
   volumesize[OR_Y] = volume_size[OR_Y];
   volumesize[OR_X] = volume_size[OR_X];
 
+  std::cout << "Volumesize is: " << volumesize[OR_Z] << ","<< volumesize[OR_Y] << ","<< volumesize[OR_X] << std::endl;
+
   padded_volumesize[OR_Z] = volume_size[OR_Z]+2;
   padded_volumesize[OR_Y] = volume_size[OR_Y]+2;
   padded_volumesize[OR_X] = volume_size[OR_X]+2;
@@ -89,7 +91,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 
   output_directory = output_dir;
 
-  std::cout << "Block indices start set to: " << block_search_start[OR_Z] << "," << block_search_start[OR_Y] << "," << block_search_start[OR_X] << "," << std::endl;
+  std::cout << "Block indices start set to: " << block_search_start[OR_Z] << "," << block_search_start[OR_Y] << "," << block_search_start[OR_X] << std::endl;
 
 
 }
@@ -122,8 +124,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
           long seg_ID;
           if (fread(&seg_ID, sizeof(long), 1, fpid) != 1) { fprintf(stderr, "Failed to read to IDs in Block to %s \n", output_filename_IDs); exit(-1); }
           IDsToProcess.insert(seg_ID);
-          std::cout << "inserted: "<<seg_ID<<std::endl;
-
         }
         fclose(fpid);
 
@@ -309,8 +309,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       long iy_local_up = iy_global_up - block_search_start[OR_Y]*input_blocksize[OR_Y];
       long ix_local_up = ix_global_up - block_search_start[OR_X]*input_blocksize[OR_X];
 
-      // std::cout<<iz_local_up<<","<<iy_local_up<<","<<ix_local_up<<std::endl;
-
       long index_local_up = IndicesToIndex(ix_local_up, iy_local_up, iz_local_up, input_sheet_size_block, input_row_size_block);
       local_index[pos]=index_local_up;
 
@@ -473,30 +471,21 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
 
         // read in global indices
         for (long is = 0; is < nsynapses; ++is) {
-            long iv_global;
-            if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
-        }
+            long up_iv_global;
+            if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
 
+            if (segment_ID==segment_ID_query){
+              long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+              segment[p_iv_global]=3;
+              synapses.insert(p_iv_global);
+            }
+
+        }
         // ignore the local index
         for (long is = 0; is < nsynapses; ++is) {
-
             long iv_local;
             if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
-            if (segment_ID==segment_ID_query){
-              long iz_local, iy_local, ix_local;
-              IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
-
-              long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-              long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-              long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-              long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
-
-              long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-              segment[iv_global_padded]=3;
-              synapses.insert(iv_global_padded);
-            }
         }
 
     }
@@ -525,8 +514,10 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
 
     // read in the global coordinates
     for (long is = 0; is < nskeleton_points; ++is) {
-        long iv_global;
-        if (fread(&iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+        long up_iv_global;
+        if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+        long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+        segment[p_iv_global]=1;
 
     }
 
@@ -534,18 +525,6 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
     for (long is = 0; is < nskeleton_points; ++is) {
         long iv_local;
         if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
-
-        long iz_local, iy_local, ix_local;
-        IndexToIndices(iv_local, ix_local, iy_local, iz_local, input_sheet_size_block, input_row_size_block);
-
-        long iz_global = iz_local + block_ind[OR_Z]*input_blocksize[OR_Z];
-        long iy_global = iy_local + block_ind[OR_Y]*input_blocksize[OR_Y];
-        long ix_global = ix_local + block_ind[OR_X]*input_blocksize[OR_X];
-
-        long iv_global = IndicesToIndex(ix_global, iy_global, iz_global, input_sheet_size_volume, input_row_size_volume);
-
-        long iv_global_padded = PadIndex(iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-        segment[iv_global_padded]=1;
     }
 
     long checkvalue;
