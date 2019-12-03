@@ -426,6 +426,7 @@ class DataBlock{
 
       long nsegments;
       ReadHeader(fp, nsegments);
+      long checksum = 0;
 
       for (long i=0; i<nsegments; i++) {
 
@@ -435,10 +436,19 @@ class DataBlock{
         if (fread(&seg_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
         if (fread(&n_anchors, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
 
+        // ignore global indices
+        for (long pos=0; pos<n_anchors; pos++) {
+
+          long dummy;
+          if (fread(&dummy, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+          checksum += dummy;
+        }
+
         for (long pos=0; pos<n_anchors; pos++) {
 
           long up_iv_local;
           if (fread(&up_iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+          checksum += up_iv_local;
 
           long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
@@ -447,8 +457,14 @@ class DataBlock{
         }
       }
 
+      long checksum_read;
+      if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1);}
+      if (checksum!=checksum_read) { fprintf(stderr, "Read ERROR. Checksum incorrect for %s \n", output_filename); exit(-1);}
+
       // close file
       fclose(fp);
+
+
     }
 
     void writeIDs(void)
@@ -563,6 +579,7 @@ class DataBlock{
 
         // write the characteristics header
         WriteHeader(wfp, n_neurons);
+        long checksum = 0;
 
         for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
             long seg_id = itr->first;
@@ -573,7 +590,6 @@ class DataBlock{
 
             if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             if (fwrite(&n_synapses, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-
             long index_local[n_synapses];
             long pos = 0;
 
@@ -582,8 +598,10 @@ class DataBlock{
               long up_iv_local = *itr2;
               long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
               if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+              checksum += up_iv_global;
 
               index_local[pos] = up_iv_local;
+              checksum += up_iv_local;
             }
 
             for (int j=0; j<n_synapses; j++){
@@ -591,6 +609,9 @@ class DataBlock{
             }
 
         }
+
+        if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        fclose(wfp);
     }
 
 };
@@ -871,6 +892,9 @@ class BlockSegment : public DataBlock{
         long index_local[num];
         long counter_it = 0;
 
+        long checksum_outp = 0;
+        long checksum_width = 0;
+
         // write surface voxels (global index)
         while (surface_voxels.first != NULL) {
             // get the surface voxels
@@ -888,6 +912,11 @@ class BlockSegment : public DataBlock{
 
             index_local[counter_it]=up_iv_local;
 
+            checksum_outp += up_iv_global;
+            checksum_outp += up_iv_local;
+            checksum_width += up_iv_global;
+            checksum_width += width;
+
             // remove this voxel
             RemoveSurfaceVoxel(LE, surface_voxels);
             counter_it++;
@@ -898,17 +927,15 @@ class BlockSegment : public DataBlock{
         for (long pos=0; pos<n_anchors_comp; pos++) {
 
           long up_iv_local = Block.anchors_comp[segment_ID][pos];
-
-          long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-          float width = widths[p_iv_local];
-
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-          if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
           index_local_anchors_comp[pos] = up_iv_local;
+
+          checksum_outp += up_iv_global;
+          checksum_outp += up_iv_local;
+
         }
 
         // write the synapses (global index)
@@ -921,6 +948,9 @@ class BlockSegment : public DataBlock{
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
           index_local_synapses[pos] = up_iv_local;
+
+          checksum_outp += up_iv_global;
+          checksum_outp += up_iv_local;
 
         }
 
@@ -939,9 +969,9 @@ class BlockSegment : public DataBlock{
           if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
-        // write checkvalue at end
-        long checkvalue = 2147483647;
-        if (fwrite(&checkvalue, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+        if (fwrite(&checksum_outp, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        if (fwrite(&checksum_width, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
         // close the I/O files
         fclose(wfp);

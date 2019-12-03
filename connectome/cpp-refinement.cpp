@@ -295,22 +295,16 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     WriteHeaderSegID(dfp, nskeleton_points, segment_ID_query);
 
     long pos = 0;
-    long local_index[nskeleton_points];
+    long checksum_con = 0;
+    long checksum_dis = 0;
 
     for (std::unordered_set<long>::iterator it = wiring_diagram.begin(); it != wiring_diagram.end(); ++it, ++pos) {
       long index_global_up = *it;
       if (fwrite(&index_global_up, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
-
+      checksum_con += index_global_up;
       // get the upsampled location
       long ix_global_up, iy_global_up, iz_global_up;
       IndexToIndices(index_global_up, ix_global_up, iy_global_up, iz_global_up, input_sheet_size_volume, input_row_size_volume);
-
-      long iz_local_up = iz_global_up - block_search_start[OR_Z]*input_blocksize[OR_Z];
-      long iy_local_up = iy_global_up - block_search_start[OR_Y]*input_blocksize[OR_Y];
-      long ix_local_up = ix_global_up - block_search_start[OR_X]*input_blocksize[OR_X];
-
-      long index_local_up = IndicesToIndex(ix_local_up, iy_local_up, iz_local_up, input_sheet_size_block, input_row_size_block);
-      local_index[pos]=index_local_up;
 
       // need to repad everything
       long iz_padded_global = iz_global_up +1;
@@ -326,15 +320,14 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
       if (fwrite(&voxel_index, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
       if (fwrite(&distance, sizeof(double), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
-    }
+      checksum_dis += voxel_index;
+      checksum_dis += distance;
 
-    for(long i=0; i<nskeleton_points;i++){
-      if (fwrite(&local_index[i], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     }
 
     // write checkvalue at end
-    long checkvalue = 2147483647;
-    if (fwrite(&checkvalue, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", wiring_filename); exit(-1); }
+    if (fwrite(&checksum_con, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", wiring_filename); exit(-1); }
+    if (fwrite(&checksum_dis, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s\n", distance_filename); exit(-1); }
 
     fclose(wfp);
     fclose(dfp);
@@ -460,6 +453,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
 
     long nneurons;
     ReadHeader(fp, nneurons);
+    long checksum = 0;
 
     for (long iv = 0; iv < nneurons; ++iv) {
         // get the label and number of synapses
@@ -473,6 +467,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
         for (long is = 0; is < nsynapses; ++is) {
             long up_iv_global;
             if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
+            checksum += up_iv_global;
 
             if (segment_ID==segment_ID_query){
               long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
@@ -481,15 +476,23 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
             }
 
         }
+
         // ignore the local index
         for (long is = 0; is < nsynapses; ++is) {
             long iv_local;
             if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
-
+            checksum += iv_local;
         }
 
     }
+
+    long checksum_read;
+    if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", synapse_filename);  exit(-1); }
+    if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", synapse_filename); exit(-1); }
+
   }
+
+
   // close file
   fclose(fp);
 
@@ -509,6 +512,7 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
     long nskeleton_points;
 
     ReadHeaderSegID(fp, nskeleton_points, input_neuron_id);
+    long checksum = 0;
 
     if (segment_ID_query != input_neuron_id) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
 
@@ -518,6 +522,7 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
         if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
         long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
         segment[p_iv_global]=1;
+        checksum += up_iv_global;
 
     }
 
@@ -525,11 +530,13 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
     for (long is = 0; is < nskeleton_points; ++is) {
         long iv_local;
         if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+        checksum += iv_local;
+
     }
 
-    long checkvalue;
-    if (fread(&checkvalue, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
-    if (checkvalue != 2147483647) { fprintf(stderr, "Checkvalue for %s incorrect\n", skeleton_filename); exit(-1); }
+    long checksum_read;
+    if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
+    if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", skeleton_filename); exit(-1); }
 
     // close file
     fclose(fp);

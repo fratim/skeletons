@@ -8,7 +8,8 @@ TODO:
 26. Dynamically allocate large objects
 29. Update LUT path
 30. Solve issue with global coordinates (so far unused)
-31. Solve problem of not being able to immediately execute refinement step
+31. Solve problem of not being able to immediately execute refinement step (make functions static?)
+32. Possibly compute more anchor points by also thinning each individual surface
 
 COMMENTS:
 2. Name specifications:
@@ -16,7 +17,6 @@ COMMENTS:
     - segment: point cloud of one ID in a blocks
     - segment_ID: ID of the pointcloud (label)
     - Pointclouds: pointclouds (2D map)
-3. generated skeletons for first 8 blocks in 38.6 seconds
 
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components

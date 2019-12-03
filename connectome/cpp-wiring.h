@@ -37,14 +37,13 @@ inline void IndexToIndices(long iv, long &ix, long &iy, long &iz, long sheet_siz
     ix = iv % row_size;
 }
 
-
-
 inline long IndicesToIndex(long ix, long iy, long iz, long sheet_size, long row_size)
 {
     return iz * sheet_size + iy * row_size + ix;
 }
 
-inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3], long volume_size[3]){
+inline long IndexLocalToGlobal(long iv, long block_ind[3], long block_size[3], long volume_size[3])
+{
 
   long row_size = block_size[OR_X];
   long sheet_size = block_size[OR_X]*block_size[OR_Y];
