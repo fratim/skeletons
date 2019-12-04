@@ -2,8 +2,12 @@ import os
 import param
 import numpy as np
 import sys
+from skeletons.utilities import dataIO
 
-template = '''#!/bin/bash
+template =
+'''
+
+#!/bin/bash
 #
 # add all other SBATCH directives here
 #
@@ -11,8 +15,8 @@ template = '''#!/bin/bash
 #SBATCH -n 1                                                 # Number of cores
 #SBATCH -N 1                                                 # Ensure that all cores are on one matching
 #SBATCH --mem={MEMORY}                                       # CPU memory in MBs
-#SBATCH -t 0-{HOURS}:00                                            # time in dd-hh:mm to run the code for
-#SBATCH --mail-type=NONE                                   # send all email types (start, end, error, etc.)
+#SBATCH -t 0-{HOURS}:00                                      # time in dd-hh:mm to run the code for
+#SBATCH --mail-type=NONE                                     # send all email types (start, end, error, etc.)
 #SBATCH --mail-user=tfranzmeyer@g.harvard.edu                # email address to send to
 #SBATCH -o {OUTPUT_PATH}/{JOBNAME}.out                       # where to write the log files
 #SBATCH -e {ERROR_PATH}/{JOBNAME}.err                        # where to write the error files
@@ -47,7 +51,6 @@ def writeFile(filename, data):
         with open(filename, 'w') as fd:
             fd.write(data)
 
-
 if(len(sys.argv))!=5:
     raise ValueError(" Scripts needs 4 cluster partitions as input, put 0 if not less desired")
 else:
@@ -67,102 +70,124 @@ else:
         partitions[3] = sys.argv[4]
         n_part +=1
 
+start_blocks = dataIO.StartBlocks(prefix)
+n_blocks = dataIO.NBlocks(prefix)
+
 files_written = 0
+code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
+run_hours = "2"
+slurm_output_folder = "/n/home12/tfranzmeyer/slurms_skeletons"
+start_blocks = dataIO.StartBlocks(prefix)
+n_blocks = dataIO.NBlocks(prefix)
+error_path = dataIO.OutputDirectory(prefix) + "error_files/"
+output_path = dataIO.OutputDirectory(prefix) + "output_files/"
+template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
+template = template.replace('{HOURS}', run_hours)
+memory = 40000
 
-template = template.replace('{RUNCODEDIRECTORY}', param.code_run_path)
-template = template.replace('{HOURS}', param.run_hours)
 
-
-SLURM_OUTPUT_FOLDER = param.slurm_path
+SLURM_OUTPUT_FOLDER = slurm_path
 
 step01folderpath = SLURM_OUTPUT_FOLDER+"step01/"
-step02Afolderpath = SLURM_OUTPUT_FOLDER+"step02A/"
-step02Bfolderpath = SLURM_OUTPUT_FOLDER+"step02B/"
+step02folderpath = SLURM_OUTPUT_FOLDER+"step02/"
 step03folderpath = SLURM_OUTPUT_FOLDER+"step03/"
+step04folderpath = SLURM_OUTPUT_FOLDER+"step04/"
+step05folderpath = SLURM_OUTPUT_FOLDER+"step05/"
 
 makeFolder(step01folderpath)
 makeFolder(step02Afolderpath)
 makeFolder(step02Bfolderpath)
 makeFolder(step03folderpath)
 
-# Write Slurm for preparations file
-command = "preparation.py"
-jobname = "step00"+"_"+param.outp_ID
-
 # write slurm for step one
-for bz in range(param.z_start, param.z_start + param.n_blocks_z):
-    for by in range(param.y_start, param.y_start + param.n_blocks_y):
-        for bx in range(param.x_start, param.x_start + param.n_blocks_x):
-
-            command = "stepOne.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
-            jobname = "S01"+"_"+param.outp_ID+"_" +"z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
-
-            t = template
-            t = t.replace('{JOBNAME}', jobname)
-            t = t.replace('{COMMAND}', command)
-            t = t.replace('{ERROR_PATH}', param.error_path)
-            t = t.replace('{OUTPUT_PATH}', param.output_path)
-            t = t.replace('{MEMORY}', param.memory_step01)
-            t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
-            filename = step01folderpath + jobname + ".slurm"
-            writeFile(filename, t)
-            files_written += 1
-
-# write slurm for step two A
-for bz in range(param.z_start, param.z_start + param.n_blocks_z):
-    for by in range(param.y_start, param.y_start + param.n_blocks_y):
-        for bx in range(param.x_start, param.x_start + param.n_blocks_x):
-
-            command = "stepTwoA.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
-            jobname = "S2A"+param.outp_ID+"_" +"z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
-
-            t = template
-            t = t.replace('{JOBNAME}', jobname)
-            t = t.replace('{COMMAND}', command)
-            t = t.replace('{ERROR_PATH}', param.error_path)
-            t = t.replace('{OUTPUT_PATH}', param.output_path)
-            t = t.replace('{MEMORY}', param.memory_step02A)
-            t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
-
-            filename = step02Afolderpath + jobname + ".slurm"
-            writeFile(filename, t)
-            files_written += 1
-
-# Write Slurm for step two B
-command = "stepTwoB.py"
-jobname = "step02B"+"_"+param.outp_ID
+command = "step1.py"
+jobname = "S01"
 
 t = template
 t = t.replace('{JOBNAME}', jobname)
 t = t.replace('{COMMAND}', command)
-t = t.replace('{ERROR_PATH}', param.error_path)
-t = t.replace('{OUTPUT_PATH}', param.output_path)
-t = t.replace('{MEMORY}', param.memory_step02B)
+t = t.replace('{ERROR_PATH}', error_path)
+t = t.replace('{OUTPUT_PATH}', output_path)
+t = t.replace('{MEMORY}', memory)
 t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
-
-filename = step02Bfolderpath + jobname + ".slurm"
+filename = step01folderpath + jobname + ".slurm"
 writeFile(filename, t)
 files_written += 1
 
-# write slurm for step three
-for bz in range(param.z_start, param.z_start + param.n_blocks_z):
-    for by in range(param.y_start, param.y_start + param.n_blocks_y):
-        for bx in range(param.x_start, param.x_start + param.n_blocks_x):
+# write slurm for step two
+for bz in range(start_blocks[0], start_blocks[0] + n_blocks[0]):
+    for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
+        for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
 
-            command = "stepThree.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
-            jobname = "S3"+"_"+param.outp_ID+"_"+ "z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
+            command = "step2.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
+            jobname = "S2"+"_" +"z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
 
             t = template
             t = t.replace('{JOBNAME}', jobname)
             t = t.replace('{COMMAND}', command)
-            t = t.replace('{ERROR_PATH}', param.error_path)
-            t = t.replace('{OUTPUT_PATH}', param.output_path)
-            t = t.replace('{MEMORY}', param.memory_step03)
+            t = t.replace('{ERROR_PATH}', error_path)
+            t = t.replace('{OUTPUT_PATH}', output_path)
+            t = t.replace('{MEMORY}', memory)
+            t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
+
+            filename = step02folderpath + jobname + ".slurm"
+            writeFile(filename, t)
+            files_written += 1
+
+# write slurm for step three
+for bz in range(start_blocks[0], start_blocks[0] + n_blocks[0]):
+    for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
+        for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
+
+            command = "step3.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
+            jobname = "S3"+"_" +"z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
+
+            t = template
+            t = t.replace('{JOBNAME}', jobname)
+            t = t.replace('{COMMAND}', command)
+            t = t.replace('{ERROR_PATH}', error_path)
+            t = t.replace('{OUTPUT_PATH}', output_path)
+            t = t.replace('{MEMORY}', memory)
             t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
 
             filename = step03folderpath + jobname + ".slurm"
             writeFile(filename, t)
             files_written += 1
+
+# write slurm for step four
+for bz in range(start_blocks[0], start_blocks[0] + n_blocks[0]):
+    for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
+        for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
+
+            command = "step4.py" + " " + str(bz) + " " + str(by) + " " + str(bx)
+            jobname = "S4"+"_"+ "z"+str(bz).zfill(2)+"y"+str(by).zfill(2)+"x"+str(bx).zfill(2)
+
+            t = template
+            t = t.replace('{JOBNAME}', jobname)
+            t = t.replace('{COMMAND}', command)
+            t = t.replace('{ERROR_PATH}', error_path)
+            t = t.replace('{OUTPUT_PATH}', output_path)
+            t = t.replace('{MEMORY}', memory)
+            t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
+
+            filename = step04folderpath + jobname + ".slurm"
+            writeFile(filename, t)
+            files_written += 1
+
+# write slurm for step one
+command = "step5.py"
+jobname = "S05"
+
+t = template
+t = t.replace('{JOBNAME}', jobname)
+t = t.replace('{COMMAND}', command)
+t = t.replace('{ERROR_PATH}', error_path)
+t = t.replace('{OUTPUT_PATH}', output_path)
+t = t.replace('{MEMORY}', memory)
+t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
+filename = step05folderpath + jobname + ".slurm"
+writeFile(filename, t)
+files_written += 1
 
 
 print ("Files written: " + str(files_written))
