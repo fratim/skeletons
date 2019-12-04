@@ -4,7 +4,8 @@ import struct
 
 
 import numpy as np
-from PIL import Image
+#from PIL import Image
+
 
 
 from skeletons.data_structures import meta_data

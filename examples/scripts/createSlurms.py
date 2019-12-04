@@ -1,13 +1,9 @@
 import os
-import param
 import numpy as np
 import sys
 from skeletons.utilities import dataIO
 
-template =
-'''
-
-#!/bin/bash
+template ='''#!/bin/bash
 #
 # add all other SBATCH directives here
 #
@@ -27,11 +23,11 @@ module load cuda/9.0-fasrc02 cudnn/7.1_cuda9.0-fasrc01
 
 source activate fillholes
 
-export PYTHONPATH=$PYTHONPATH:/n/home12/tfranzmeyer/
+export PYTHONPATH=$PYTHONPATH:/n/home12/tfranzmeyer/Code/
 
 cd {RUNCODEDIRECTORY}
 
-python {COMMAND}
+python scripts/{COMMAND}
 
 echo "DONE"
 
@@ -70,20 +66,21 @@ else:
         partitions[3] = sys.argv[4]
         n_part +=1
 
-start_blocks = dataIO.StartBlocks(prefix)
-n_blocks = dataIO.NBlocks(prefix)
-
 files_written = 0
 code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
 run_hours = "2"
-slurm_output_folder = "/n/home12/tfranzmeyer/slurms_skeletons"
-start_blocks = dataIO.StartBlocks(prefix)
-n_blocks = dataIO.NBlocks(prefix)
+slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
+
+prefix = "Zebrafinch"
+
 error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
 template = template.replace('{HOURS}', run_hours)
-memory = 40000
+memory = str(40000)
+
+start_blocks = dataIO.StartBlocks(prefix)
+n_blocks = dataIO.NBlocks(prefix)
 
 
 SLURM_OUTPUT_FOLDER = slurm_path
@@ -95,9 +92,10 @@ step04folderpath = SLURM_OUTPUT_FOLDER+"step04/"
 step05folderpath = SLURM_OUTPUT_FOLDER+"step05/"
 
 makeFolder(step01folderpath)
-makeFolder(step02Afolderpath)
-makeFolder(step02Bfolderpath)
+makeFolder(step02folderpath)
 makeFolder(step03folderpath)
+makeFolder(step04folderpath)
+makeFolder(step05folderpath)
 
 # write slurm for step one
 command = "step1.py"

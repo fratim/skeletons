@@ -7,12 +7,12 @@
 # blocks start
 0x0x0
 # number of blocks
-2x2x2
+11x12x12
 # input_labels directory
-/home/frtim/Documents/Code/skeletons/examples/segmentations/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/blocks_512_512_512/
 # synapses directory
-/home/frtim/Documents/Code/skeletons/examples/synapses_512/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/synapses_512/
 # somae directory
 /home/frtim/Documents/Code/skeletons/examples/somae/
 # output directory
-/home/frtim/Documents/Code/skeletons/examples/output/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/skeleton_output_all/
