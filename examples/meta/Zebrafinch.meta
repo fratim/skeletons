@@ -7,7 +7,7 @@
 # blocks start
 0x0x0
 # number of blocks
-11x12x12
+11x11x12
 # input_labels directory
 /n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/blocks_512_512_512/
 # synapses directory

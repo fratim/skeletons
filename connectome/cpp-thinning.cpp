@@ -1020,28 +1020,28 @@ class BlockSegment : public DataBlock{
       std::cout << "Projecting n synapses: " << Block.synapses_off[segment_ID].size() << std::endl;
 
       for (std::vector<long>::iterator it = Block.synapses_off[segment_ID].begin(); it != Block.synapses_off[segment_ID].end(); ++it){
-
         long linear_index = *it;
-
-        long iz_unpadded, iy_unpadded, ix_unpadded;
+	long iz_unpadded, iy_unpadded, ix_unpadded;
         IndexToIndices(linear_index, ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
-        // std::cout << "Original: " << iz_unpadded <<","<< iy_unpadded<<","<<ix_unpadded << std::endl;
         long iz_padded = iz_unpadded + 1;
         long iy_padded = iy_unpadded + 1;
         long ix_padded = ix_unpadded + 1;
-
         long cubesize = 3;
         bool projection_found = 0;
+        bool unable_to_project = 0;
         long closest_index_padded = -1;
-
-        float* i1 = std::min_element(resolution, resolution+2);
+	float* i1 = std::min_element(resolution, resolution+2);
         float resolution_min = *i1;
 
-        while (projection_found==0){
+        while (projection_found==0&&unable_to_project==0){
 
           cubesize = (long)(cubesize*1.5);
           double min_distance = (double)(cubesize*resolution_min);
-          if (min_distance>(resolution_min*30)){ fprintf(stderr, "Fail in finding projection point, search distance too large.\n"); exit(-1); }
+          if (min_distance>(resolution_min*30)){std::cout << "WARNING: Projection Synapses distance very large: "<< min_distance << std::endl;  }
+          if (min_distance>(resolution_min*200)){
+		unable_to_project = 1;
+		std::cout << "Failed to find projection point, search distance too large" << std::endl;
+		}
 
           for (long iw = iz_padded - cubesize; iw <= iz_padded + cubesize; ++iw) {
               for (long iv = iy_padded - cubesize; iv <= iy_padded + cubesize; ++iv) {
@@ -1070,7 +1070,10 @@ class BlockSegment : public DataBlock{
           }
         }
 
-        if (closest_index_padded == -1){ fprintf(stderr, "Fail in finding projection point.\n"); exit(-1); }
+        if (unable_to_project==1){ 
+	std::cout << "Failed to find  projection point" << std::endl;
+	}
+	else if (projection_found==1){
         // std::cout << "Projection found with cubesize: " << cubesize << std::endl;
         Block.Pointclouds[segment_ID][closest_index_padded] = 3;
         segment[closest_index_padded] = 3;
@@ -1083,9 +1086,8 @@ class BlockSegment : public DataBlock{
 
         long projected_index = IndicesToIndex(ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
         Block.synapses[segment_ID].push_back(projected_index);
-
-    }
-
+    	}
+     }
   }
 
 };
