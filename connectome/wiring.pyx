@@ -14,7 +14,7 @@ from skeletons.utilities import dataIO
 
 
 cdef extern from 'cpp-wiring.h':
-    void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3],
+    void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
             long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
             const char* synapses_dir, const char* somae_dir, const char* output_dir);
     void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],
@@ -102,6 +102,11 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     data = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 
+    # load somae
+    fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/Zebrafinch-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    data_somae = dataIO.ReadH5File(fileName)
+    cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)
+
     # get Resolution from meta file
     cdef np.ndarray[float, ndim=1, mode='c'] cpp_resolution = np.ascontiguousarray(dataIO.Resolution(prefix)).astype(np.float32)
 
@@ -128,7 +133,7 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     lut_directory = os.path.dirname(__file__)
 
     # create c++ datablock and set all variables
-    CPPcreateDataBlock(     prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]), &(cpp_resolution[0]), &(cpp_blocksize_inp[0]),
+    CPPcreateDataBlock(     prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]), &(cpp_inp_somae[0,0,0]), &(cpp_resolution[0]), &(cpp_blocksize_inp[0]),
                             &(cpp_volumesize[0]), &(cpp_block_ind[0]), &(cpp_block_ind_start[0]), &(cpp_block_ind_end[0]),
                             dataIO.SynapsesDirectory(prefix).encode('utf-8'),dataIO.SomaeDirectory(prefix).encode('utf-8'),
                             output_folder.encode('utf-8'))

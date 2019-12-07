@@ -140,8 +140,7 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
   int u_size = (int)inp_blocksize[OR_X]; // width
   int v_size = (int)inp_blocksize[OR_Y]; // height
   int depth = 1;
-  
-  std::cout << "HOSSA A" <<std::endl;  
+
 
   // compute anchors on the zmax plane and write them to the folder and the z max adjacent folder
   for (long pos =0; pos<entries; pos++){
@@ -160,18 +159,13 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
     }
   }
 
-  std::cout << "HOSSA B" <<std::endl;
-  std::cout << "Images size: " << images.size() << std::endl << std::flush;
 
   for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
-    std::cout << "HOSSA C" <<std::endl << std::flush;
 
   }
   // write to file
   {
-    std::cout << "HOSSA D" <<std::endl << std::flush;
-
     char output_filename_max[4096];
     sprintf(output_filename_max, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_ZMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 

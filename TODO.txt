@@ -10,6 +10,9 @@ TODO:
 30. Solve issue with global coordinates (so far unused)
 31. Solve problem of not being able to immediately execute refinement step (make functions static?)
 32. Possibly compute more anchor points by also thinning each individual surface
+33. Read in / pass downsample factor of somae data
+34. Write script to have all projected synapses in one file
+35. in refinement: change to read in synapses for all IDs at the same time
 
 COMMENTS:
 2. Name specifications:
@@ -23,3 +26,5 @@ IDEAS:
    in advance (then check both LUT on iteration step)
 
 QUESTIONS:
+1. How to handle synapses that cannot be mapped?
+2. Should we have a max distance to map synapses?

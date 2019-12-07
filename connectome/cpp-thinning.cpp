@@ -311,6 +311,91 @@ class DataBlock{
 
     }
 
+    void CppPopulateSomaeFromH5(long *inp_somae)
+    {
+        long dsp = 8;
+        long input_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp, input_blocksize[OR_Y]/dsp, input_blocksize[OR_X]/dsp};
+        long input_sheet_size_dsp = input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
+        long input_row_size_dsp = input_blocksize_dsp[OR_X];
+
+        long n_points = input_blocksize_dsp[0]*input_blocksize_dsp[1]*input_blocksize_dsp[2];
+
+        std::cout << "n_points somae is: " << n_points << std::endl << std::flush;
+
+        std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
+
+        for (long up_iv_local = 0; up_iv_local < n_points; up_iv_local++){
+
+          // get segment_ID of current index and skip if is zero
+          long curr_label = inp_somae[up_iv_local];
+          if (!curr_label) continue;
+
+          // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
+          if (Pointclouds.find(curr_label) == Pointclouds.end()) {
+            fprintf(stderr, "No pointcloud existent for this somae ID.\n");
+            exit(-1);
+          }
+
+          // get downsampled coordinates
+          long ix_dsp, iy_dsp, iz_dsp;
+          IndexToIndices(up_iv_local, ix_dsp, iy_dsp, iz_dsp, input_sheet_size_dsp, input_row_size_dsp);
+
+          // get normal coordinates
+          long ix = ix_dsp*dsp;
+          long iy = iy_dsp*dsp;
+          long iz = iz_dsp*dsp;
+
+
+          // add points as somae
+          for (int iw = iz; iw<iz+dsp; iw++){
+            for (int iv = iy; iv<iy+dsp; iv++){
+              for (int iu = ix; iu<ix+dsp; iu++)
+              {
+
+                // find the new voxel index
+                long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+                long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+
+                // check if voxel is on surface
+                bool isSurface = 0;
+
+                // check if this is a surface voxel
+                for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
+
+                    long neighbor_index = p_iv_local_add + n6_offsets[dir];
+
+                    long ii, ij, ik;
+
+                    IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
+
+                    // skip the fake boundary elements
+                    if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
+                    if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
+                    if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
+
+                    if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
+                        isSurface = 1;
+                        break;
+                    }
+                }
+
+                if (isSurface){
+                  Pointclouds[curr_label][p_iv_local_add] = 4;
+                  somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+                }
+                else{
+                  Pointclouds[curr_label][p_iv_local_add] = 0;
+                }
+
+              }
+            }
+          }
+        }
+
+        WriteSomaeSurface(somae_surfacepoints);
+
+    }
+
     int ReadSynapses(void)
     {
 
@@ -605,6 +690,54 @@ class DataBlock{
             }
 
             for (int j=0; j<n_synapses; j++){
+              if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            }
+
+        }
+
+        if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        fclose(wfp);
+    }
+
+    void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints)
+    {
+        //get number of anchor points
+        long n_neurons = somae_surfacepoints.size();
+
+        // create an output file for the points
+        char output_filename[4096];
+        sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts",
+              output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+              prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+        FILE *wfp = fopen(output_filename, "wb");
+        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+        // write the characteristics header
+        WriteHeader(wfp, n_neurons);
+        long checksum = 0;
+
+        for (std::unordered_map<long,std::vector<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+            long seg_id = itr->first;
+            long n_points = somae_surfacepoints[seg_id].size();
+
+            if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            long index_local[n_points];
+            long pos = 0;
+
+            for (std::vector<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
+
+              long up_iv_local = *itr2;
+              long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
+              if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+              checksum += up_iv_global;
+
+              index_local[pos] = up_iv_local;
+              checksum += up_iv_local;
+            }
+
+            for (int j=0; j<n_points; j++){
               if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             }
 
@@ -1070,7 +1203,7 @@ class BlockSegment : public DataBlock{
           }
         }
 
-        if (unable_to_project==1){ 
+        if (unable_to_project==1){
 	std::cout << "Failed to find  projection point" << std::endl;
 	}
 	else if (projection_found==1){
@@ -1214,7 +1347,7 @@ static bool Simple26_6(unsigned int neighbors)
     return lut_simple[(neighbors >> 3)] & char_mask[neighbors % 8];
 }
 
-void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, float input_resolution[3],
+void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
         long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
         const char* synapses_dir, const char* somae_dir, const char* output_dir){
 
@@ -1226,6 +1359,9 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
 
   // process the input labels
   BlockA->CppPopulatePointCloudFromH5(inp_labels);
+
+  // process Somae
+  // BlockA->CppPopulateSomaeFromH5(inp_somae);
 
   // read Synapses
   if (!BlockA->ReadSynapses()) exit(-1);
@@ -1240,13 +1376,13 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   PopulateOffsets(BlockA->padded_blocksize);
 
   // insert IDs that should be processed (45 s for thinning)
-  //BlockA->IDs_to_process.insert({29});
-  //BlockA->IDs_to_process.insert({65});
-  //BlockA->IDs_to_process.insert({72});
-  //BlockA->IDs_to_process.insert({149});
-  //BlockA->IDs_to_process.insert({136});
+  BlockA->IDs_to_process.insert({55});
+  BlockA->IDs_to_process.insert({81});
+  BlockA->IDs_to_process.insert({72});
+  BlockA->IDs_to_process.insert({149});
+  BlockA->IDs_to_process.insert({136});
 
-  BlockA->IDs_to_process = BlockA->IDs_in_block;
+  // BlockA->IDs_to_process = BlockA->IDs_in_block;
   // BlockA->IDs_to_process.erase(55);
   // BlockA->IDs_to_process.erase(81);
   // BlockA->IDs_to_process.erase(301);

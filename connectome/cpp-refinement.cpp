@@ -20,6 +20,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, std::unordered_set<long> &synapses, long segment_ID_query, long (&block_ind)[3]);
 void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3]);
 
 float resolution[3] = {-1,-1,-1};
 long input_blocksize[3] = {-1,-1,-1};
@@ -153,6 +154,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
           ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
           ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
+          ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
 
         }
       }
@@ -161,15 +163,15 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     // set random somae
     // get the number of elements in the skeleton
     long nelements = segment.size();
-    long nsynapses = synapses.size();
+    // long nsynapses = synapses.size();
 
     std::cout << "points before refinement: "<<nelements<<std::endl;
     std::cout << "Synapses: "<<synapses.size()<<std::endl;
 
-    if (nsynapses>0) {
-      std::unordered_set<long>::iterator it2 = synapses.begin();
-      segment[*it2]=4;
-    }
+    // if (nsynapses>0) {
+    //   std::unordered_set<long>::iterator it2 = synapses.begin();
+    //   segment[*it2]=4;
+    // }
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
     if (!voxel_data) exit(-1);
@@ -193,8 +195,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         voxel_data[index].distance = 0.0;
         voxel_data[index].visited = true;
         voxel_heap.Insert(index, &(voxel_data[index]));
-
-        std::cout << "detected soma at: " << index << std::endl;
       }
     }
 
@@ -489,6 +489,62 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
     long checksum_read;
     if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", synapse_filename);  exit(-1); }
     if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", synapse_filename); exit(-1); }
+
+  }
+
+
+  // close file
+  fclose(fp);
+
+}
+
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3])
+{
+
+  // read the synapses
+  char somaefilename[4096];
+  snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+  FILE *fp = fopen(somaefilename, "rb");
+  if (fp) {
+
+    long nneurons;
+    ReadHeader(fp, nneurons);
+    long checksum = 0;
+
+    for (long iv = 0; iv < nneurons; ++iv) {
+        // get the label and number of synapses
+        long segment_ID;
+        long n_points;
+
+        if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename); exit(-1); }
+        if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
+
+        // read in global indices
+        for (long is = 0; is < n_points; ++is) {
+            long up_iv_global;
+            if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1);}
+            checksum += up_iv_global;
+
+            if (segment_ID==segment_ID_query){
+              long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+              segment[p_iv_global]=4;
+            }
+
+        }
+
+        // ignore the local index
+        for (long is = 0; is < n_points; ++is) {
+            long iv_local;
+            if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
+            checksum += iv_local;
+        }
+
+    }
+
+    long checksum_read;
+    if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", somaefilename);  exit(-1); }
+    if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", somaefilename); exit(-1); }
 
   }
 
