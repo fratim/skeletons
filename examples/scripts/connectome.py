@@ -28,6 +28,10 @@ output_folder_skeletons = dataIO.OutputDirectory(prefix)+'skeletons/'
 if not os.path.exists(output_folder_skeletons): os.mkdir(output_folder_skeletons)
 if not os.path.exists('{}/{}'.format(output_folder_skeletons, prefix)): os.mkdir('{}/{}'.format(output_folder_skeletons, prefix))
 
+output_folder_times = dataIO.OutputDirectory(prefix)+'running_times/'
+if not os.path.exists(output_folder_times): os.mkdir(output_folder_times)
+if not os.path.exists('{}/{}'.format(output_folder_times, prefix)): os.mkdir('{}/{}'.format(output_folder_times, prefix))
+
 for bz in range(start_blocks[0], start_blocks[0]+n_blocks[0]):
     for by in range(start_blocks[2], start_blocks[1]+n_blocks[1]):
         for bx in range(start_blocks[2], start_blocks[2]+n_blocks[2]):
