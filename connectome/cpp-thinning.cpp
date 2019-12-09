@@ -313,6 +313,7 @@ class DataBlock{
 
     void CppPopulateSomaeFromH5(long *inp_somae)
     {
+
         long dsp = 8;
         long input_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp, input_blocksize[OR_Y]/dsp, input_blocksize[OR_X]/dsp};
         long input_sheet_size_dsp = input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
@@ -323,6 +324,8 @@ class DataBlock{
         std::cout << "n_points somae is: " << n_points << std::endl << std::flush;
 
         std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
+        std::unordered_map<long,std::unordered_map<short,long>> somae_center = std::unordered_map<long,std::unordered_map<short,long>>();
+        std::unordered_map<short,long> n_points_somae = std::unordered_map<short,long>();
 
         for (long up_iv_local = 0; up_iv_local < n_points; up_iv_local++){
 
@@ -352,6 +355,11 @@ class DataBlock{
               for (int iu = ix; iu<ix+dsp; iu++)
               {
 
+                somae_center[curr_label][OR_Z] += iw;
+                somae_center[curr_label][OR_Y] += iv;
+                somae_center[curr_label][OR_X] += iu;
+                n_points_somae[curr_label] += 1;
+
                 // find the new voxel index
                 long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
                 long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
@@ -379,6 +387,7 @@ class DataBlock{
                     }
                 }
 
+
                 if (isSurface){
                   Pointclouds[curr_label][p_iv_local_add] = 4;
                   somae_surfacepoints[curr_label].push_back(up_iv_local_add);
@@ -392,7 +401,7 @@ class DataBlock{
           }
         }
 
-        WriteSomaeSurface(somae_surfacepoints);
+        WriteSomaeSurface(somae_surfacepoints, somae_center, n_points_somae);
 
     }
 
@@ -699,7 +708,8 @@ class DataBlock{
         fclose(wfp);
     }
 
-    void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints)
+    void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints,
+                            std::unordered_map<long,std::unordered_map<short,long>> somae_center, std::unordered_map<short,long> n_points_somae)
     {
         //get number of anchor points
         long n_neurons = somae_surfacepoints.size();
@@ -719,12 +729,27 @@ class DataBlock{
 
         for (std::unordered_map<long,std::vector<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
             long seg_id = itr->first;
-            long n_points = somae_surfacepoints[seg_id].size();
+            long n_points = somae_surfacepoints[seg_id].size()+1; // first indedx is index of center
 
             if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
             long index_local[n_points];
-            long pos = 0;
+
+            somae_center[seg_id][OR_Z] /= n_points_somae[seg_id];
+            somae_center[seg_id][OR_Y] /= n_points_somae[seg_id];
+            somae_center[seg_id][OR_X] /= n_points_somae[seg_id];
+
+            std::cout << "Center: "<<somae_center[seg_id][OR_Z]<<", "<<somae_center[seg_id][OR_Y]<<", "<<somae_center[seg_id][OR_X];
+
+            long up_iv_local_center = IndicesToIndex(somae_center[seg_id][OR_X], somae_center[seg_id][OR_Y], somae_center[seg_id][OR_Z], input_sheet_size, input_row_size);
+            long up_iv_global_center = IndexLocalToGlobal(up_iv_local_center, block_ind, input_blocksize, volumesize);
+            if (fwrite(&up_iv_global_center, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+            index_local[0] = up_iv_local_center;
+            long pos = 1;
+
+            checksum += up_iv_global_center;
+            checksum += up_iv_local_center;
+
 
             for (std::vector<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
 
@@ -1361,7 +1386,7 @@ void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, 
   BlockA->CppPopulatePointCloudFromH5(inp_labels);
 
   // process Somae
-  // BlockA->CppPopulateSomaeFromH5(inp_somae);
+  BlockA->CppPopulateSomaeFromH5(inp_somae);
 
   // read Synapses
   if (!BlockA->ReadSynapses()) exit(-1);
