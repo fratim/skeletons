@@ -5,6 +5,7 @@ TODO:
 26. Dynamically allocate large objects
 33. Read in / pass downsample factor of somae data
 34. Write script to have all projected synapses in one file
+35. Accelerate the adding of somae pixels (so far checking all 512 points (8**2))
 
 COMMENTS:
 2. Name specifications:

@@ -114,12 +114,12 @@ static void PopulateOffsets(long padded_blocksize[3])
 
   // use this order to go UP, DOWN, NORTH, SOUTH, EAST, WEST
   // DO NOT CHANGE THIS ORDERING
-  n6_offsets[0] = -1 * padded_blocksize[OR_X];
-  n6_offsets[1] = padded_blocksize[OR_X];
-  n6_offsets[2] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-  n6_offsets[3] = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-  n6_offsets[4] = +1;
-  n6_offsets[5] = -1;
+  n6_offsets[0] = -1 * padded_blocksize[OR_X]; //neg y direction
+  n6_offsets[1] = padded_blocksize[OR_X]; // neg y direction
+  n6_offsets[2] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X]; // neg z direction
+  n6_offsets[3] = padded_blocksize[OR_Y] * padded_blocksize[OR_X]; // pos z direction
+  n6_offsets[4] = +1; // pos x direction
+  n6_offsets[5] = -1; // neg x direction
 }
 
 // very simple double linked list data structure
@@ -333,7 +333,6 @@ public:
 
     std::unordered_map<long, std::unordered_set<long>> deletable_indices = std::unordered_map<long, std::unordered_set<long>>();
     std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
-    std::unordered_map<long,std::unordered_map<short,long>> somae_center = std::unordered_map<long,std::unordered_map<short,long>>();
 
     for (long up_iv_local = 0; up_iv_local < n_points; up_iv_local++){
 
@@ -362,17 +361,24 @@ public:
           for (int iu = ix; iu<ix+dsp; iu++)
           {
 
-            somae_center[curr_label][OR_Z] += iw;
-            somae_center[curr_label][OR_Y] += iv;
-            somae_center[curr_label][OR_X] += iu;
             n_points_somae[curr_label] += 1;
 
             // find the new voxel index
             long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
-            // check if voxel is on surface
             bool isSurface = 0;
+            //
+            // // check if voxel is on surface
+            // bool isSurface_z = 0;
+            // bool isSurface_y = 0;
+            // bool isSurface_x = 0;
+            //
+            // long neighbor_index_z = p_iv_local_add + n6_offsets[2]
+            // long neighbor_index_y = p_iv_local_add + n6_offsets[0]
+            // long neighbor_index_x = p_iv_local_add + n6_offsets[5]
+            //
+            // if
 
             // check if this is a surface voxel
             for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
@@ -388,7 +394,8 @@ public:
               if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
               if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
 
-              if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
+              // if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
+              if (Pointclouds[curr_label][neighbor_index] == 0) {
                 isSurface = 1;
                 break;
               }
@@ -416,7 +423,7 @@ public:
       }
     }
 
-    WriteSomaeSurface(somae_surfacepoints, somae_center, n_points_somae);
+    WriteSomaeSurface(somae_surfacepoints);
 
   }
 
@@ -723,8 +730,7 @@ public:
     fclose(wfp);
   }
 
-  void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints,
-    std::unordered_map<long,std::unordered_map<short,long>> somae_center, std::unordered_map<short,long> n_points_somae)
+  void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints)
     {
 
       //get number of anchor points
@@ -750,19 +756,8 @@ public:
         if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
-
         std::vector<long> index_local = std::vector<long>();
 
-        // somae_center[seg_id][OR_Z] /= n_points_somae[seg_id];
-        // somae_center[seg_id][OR_Y] /= n_points_somae[seg_id];
-        // somae_center[seg_id][OR_X] /= n_points_somae[seg_id];
-
-        // std::cout << "Center: "<<somae_center[seg_id][OR_Z]<<", "<<somae_center[seg_id][OR_Y]<<", "<<somae_center[seg_id][OR_X];
-
-        // long up_iv_local_center = IndicesToIndex(somae_center[seg_id][OR_X], somae_center[seg_id][OR_Y], somae_center[seg_id][OR_Z], input_sheet_size, input_row_size);
-        // long up_iv_global_center = IndexLocalToGlobal(up_iv_local_center, block_ind, input_blocksize, volumesize);
-        // if (fwrite(&up_iv_global_center, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        // index_local[0] = up_iv_local_center;
         long pos = 0;
 
         // checksum += up_iv_global_center;
@@ -910,7 +905,6 @@ public:
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
             if (Simple26_6(neighbors)) {
               // delete the simple point
-              // segment.erase(index);
               segment[index]=0;
               // add the new surface voxels
               for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
