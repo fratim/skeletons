@@ -914,7 +914,7 @@ public:
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
             if (Simple26_6(neighbors)) {
               // delete the simple point
-              segment[index] = 0;
+              segment.erase(index);
               // add the new surface voxels
               for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
                 long neighbor_index = index + n6_offsets[ip];
