@@ -1,18 +1,10 @@
 TODO:
 10. Initialize maps with specific size?
-11. Make variables const if possible
 15. Revive timing
-19. Talk to guy who did somae detection
 22. Change how anchor points are saved, to not have to pass block reference to segment
-25. Implement checknumber at end of every written file, that has to be read last to check completeness
 26. Dynamically allocate large objects
-29. Update LUT path
-30. Solve issue with global coordinates (so far unused)
-31. Solve problem of not being able to immediately execute refinement step (make functions static?)
-32. Possibly compute more anchor points by also thinning each individual surface
 33. Read in / pass downsample factor of somae data
 34. Write script to have all projected synapses in one file
-35. in refinement: change to read in synapses for all IDs at the same time
 
 COMMENTS:
 2. Name specifications:

@@ -283,7 +283,7 @@ public:
 
     long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
 
-    std::cout << "n_points is: " << n_points << std::endl << std::flush;
+    std::cout << "n_points is: " << n_points << std::endl;
 
     long z_max =input_blocksize[OR_Z]-1;
     long y_max =input_blocksize[OR_Y]-1;
@@ -329,7 +329,7 @@ public:
 
     long n_points = input_blocksize_dsp[0]*input_blocksize_dsp[1]*input_blocksize_dsp[2];
 
-    std::cout << "n_points somae is: " << n_points << std::endl << std::flush;
+    std::cout << "n_points somae is: " << n_points << std::endl;
 
     std::unordered_map<long, std::unordered_set<long>> deletable_indices = std::unordered_map<long, std::unordered_set<long>>();
     std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
@@ -401,7 +401,6 @@ public:
               n_points_somae_surface[curr_label]+=1;
             }
             else{
-              // Pointclouds[curr_label].erase(p_iv_local_add);
               deletable_indices[curr_label].insert(p_iv_local_add);
             }
 
@@ -412,11 +411,9 @@ public:
 
     for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = deletable_indices.begin(); itr!=deletable_indices.end(); ++itr){
       long label = itr->first;
-      std::cout << "Size before: " << Pointclouds[label].size() << std::endl << std::flush;
       for (std::unordered_set<long>::iterator itr2 = deletable_indices[label].begin(); itr2!=deletable_indices[label].end(); ++itr2){
           Pointclouds[label].erase(*itr2);
       }
-      std::cout << "Size after: " << Pointclouds[label].size() << std::endl << std::flush;
     }
 
     WriteSomaeSurface(somae_surfacepoints, somae_center, n_points_somae);
@@ -730,7 +727,6 @@ public:
     std::unordered_map<long,std::unordered_map<short,long>> somae_center, std::unordered_map<short,long> n_points_somae)
     {
 
-      std::cout << "HOSSA A" << std::endl << std::flush;
       //get number of anchor points
       long n_neurons = somae_surfacepoints.size();
 
@@ -914,7 +910,8 @@ public:
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
             if (Simple26_6(neighbors)) {
               // delete the simple point
-              segment.erase(index);
+              // segment.erase(index);
+              segment[index]=0;
               // add the new surface voxels
               for (long ip = 0; ip < NTHINNING_DIRECTIONS; ++ip) {
                 long neighbor_index = index + n6_offsets[ip];

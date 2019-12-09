@@ -160,18 +160,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       }
     }
 
-    // set random somae
-    // get the number of elements in the skeleton
     long nelements = segment.size();
-    // long nsynapses = synapses.size();
 
     std::cout << "points before refinement: "<<nelements<<std::endl;
     std::cout << "Synapses: "<<synapses.size()<<std::endl;
-
-    // if (nsynapses>0) {
-    //   std::unordered_set<long>::iterator it2 = synapses.begin();
-    //   segment[*it2]=4;
-    // }
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
     if (!voxel_data) exit(-1);
@@ -335,20 +327,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     delete[] voxel_data;
   }
 
-  // double total_time = (double) (clock() - start_time) / CLOCKS_PER_SEC;
-
-  // char time_filename[4096];
-  // sprintf(time_filename, "running_times/refinement/%s-%06ld.time", prefix, segment_ID_query);
-  //
-  // FILE *tfp = fopen(time_filename, "wb");
-  // if (!tfp) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-  //
-  // // write the number of points and the total time to file
-  // if (fwrite(&nelements, sizeof(long), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-  // if (fwrite(&total_time, sizeof(double), 1, tfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", time_filename); exit(-1); }
-  //
-  // // close file
-  // fclose(tfp);
 }
 
 void WriteHeader(FILE *fp, long &num)
