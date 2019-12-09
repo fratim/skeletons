@@ -412,17 +412,14 @@ public:
 
     for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = deletable_indices.begin(); itr!=deletable_indices.end(); ++itr){
       long label = itr->first;
+      std::cout << "Size before: " << Pointclouds[label].size() << std::endl << std::flush;
       for (std::unordered_set<long>::iterator itr2 = deletable_indices[label].begin(); itr2!=deletable_indices[label].end(); ++itr2){
           Pointclouds[label].erase(*itr2);
       }
+      std::cout << "Size after: " << Pointclouds[label].size() << std::endl << std::flush;
     }
 
-
-    std::cout << "Writing somae surface" << std::endl << std::flush;
-
     WriteSomaeSurface(somae_surfacepoints, somae_center, n_points_somae);
-
-    std::cout << "Wrote somae surface" << std::endl <<std::flush;
 
   }
 
@@ -758,7 +755,7 @@ public:
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
 
-        std::vecotr<long> index_local = std::vecotr<long>();
+        std::vector<long> index_local = std::vector<long>();
 
         // somae_center[seg_id][OR_Z] /= n_points_somae[seg_id];
         // somae_center[seg_id][OR_Y] /= n_points_somae[seg_id];
