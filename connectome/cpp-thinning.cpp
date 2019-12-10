@@ -350,19 +350,6 @@ public:
       long ix_dsp, iy_dsp, iz_dsp;
       IndexToIndices(up_iv_local, ix_dsp, iy_dsp, iz_dsp, input_sheet_size_dsp, input_row_size_dsp);
 
-      long neighbor_index_z = up_iv_local +  -1 * input_blocksize_dsp[OR_Y] * input_blocksize_dsp[OR_X];
-      long neighbor_index_y = up_iv_local + -1 * input_blocksize_dsp[OR_X];
-      long neighbor_index_x = up_iv_local + -1;
-
-      // check if voxel is on surface
-      bool isSurface_z = 0;
-      bool isSurface_y = 0;
-      bool isSurface_x = 0;
-
-      if (inp_somae[neighbor_index_z] != curr_label) isSurface_z = 1;
-      if (inp_somae[neighbor_index_y] != curr_label) isSurface_y = 1;
-      if (inp_somae[neighbor_index_x] != curr_label) isSurface_x = 1;
-
       // get normal coordinates
       long ix = ix_dsp*dsp;
       long iy = iy_dsp*dsp;
@@ -373,6 +360,19 @@ public:
       // find the new voxel index
       long up_iv_local_add = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
       long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+
+      // check if voxel is on surface
+      bool isSurface_z = 0;
+      bool isSurface_y = 0;
+      bool isSurface_x = 0;
+
+      long neighbor_index_z = p_iv_local_add + n6_offsets[2];
+      long neighbor_index_y = p_iv_local_add + n6_offsets[0];
+      long neighbor_index_x = p_iv_local_add + n6_offsets[5];
+
+      if (Pointclouds[curr_label][neighbor_index_z] == 0) isSurface_z = 1;
+      if (Pointclouds[curr_label][neighbor_index_y] == 0) isSurface_y = 1;
+      if (Pointclouds[curr_label][neighbor_index_x] == 0) isSurface_x = 1;
 
       if (isSurface_z){
         long ii, ij, ik;
