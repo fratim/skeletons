@@ -360,25 +360,14 @@ public:
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++)
           {
-
-            n_points_somae[curr_label] += 1;
-
             // find the new voxel index
             long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
+            if (!Pointclouds[curr_label][p_iv_local_add]) continue;
+            n_points_somae[curr_label] += 1;
+
             bool isSurface = 0;
-            //
-            // // check if voxel is on surface
-            // bool isSurface_z = 0;
-            // bool isSurface_y = 0;
-            // bool isSurface_x = 0;
-            //
-            // long neighbor_index_z = p_iv_local_add + n6_offsets[2]
-            // long neighbor_index_y = p_iv_local_add + n6_offsets[0]
-            // long neighbor_index_x = p_iv_local_add + n6_offsets[5]
-            //
-            // if
 
             // check if this is a surface voxel
             for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
@@ -1412,16 +1401,8 @@ public:
         PopulateOffsets(BlockA->padded_blocksize);
 
         // insert IDs that should be processed (45 s for thinning)
-        BlockA->IDs_to_process.insert({55});
-        BlockA->IDs_to_process.insert({81});
-        BlockA->IDs_to_process.insert({72});
-        BlockA->IDs_to_process.insert({149});
-        BlockA->IDs_to_process.insert({136});
 
-        // BlockA->IDs_to_process = BlockA->IDs_in_block;
-        // BlockA->IDs_to_process.erase(55);
-        // BlockA->IDs_to_process.erase(81);
-        // BlockA->IDs_to_process.erase(301);
+        BlockA->IDs_to_process = BlockA->IDs_in_block;
 
         BlockA->writeIDs();
 
