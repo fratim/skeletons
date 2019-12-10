@@ -340,7 +340,7 @@ public:
       long curr_label = inp_somae[up_iv_local];
       if (!curr_label) continue;
 
-      // check if pointcloud of this segment_ID already exists, if not give error
+      // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
         fprintf(stderr, "No pointcloud existent for this somae ID.\n");
         exit(-1);
@@ -355,157 +355,65 @@ public:
       long iy = iy_dsp*dsp;
       long iz = iz_dsp*dsp;
 
-      n_points_somae[curr_label] += 1;
-
-      // find the new voxel index
-      long up_iv_local_add = IndicesToIndex(ix, iy, iz, input_sheet_size, input_row_size);
-      long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-
-      // check if voxel is on surface
-      bool isSurface_z = 0;
-      bool isSurface_y = 0;
-      bool isSurface_x = 0;
-
-      long neighbor_index_z = p_iv_local_add + n6_offsets[2];
-      long neighbor_index_y = p_iv_local_add + n6_offsets[0];
-      long neighbor_index_x = p_iv_local_add + n6_offsets[5];
-
-      if (Pointclouds[curr_label][neighbor_index_z] == 0) isSurface_z = 1;
-      if (Pointclouds[curr_label][neighbor_index_y] == 0) isSurface_y = 1;
-      if (Pointclouds[curr_label][neighbor_index_x] == 0) isSurface_x = 1;
-
-      if (isSurface_z){
-        long ii, ij, ik;
-        IndexToIndices(neighbor_index_z, ii, ij, ik, padded_sheet_size, padded_row_size);
-        // skip the fake boundary elements
-        if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-        if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-        if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-
+      // add points as somae
+      for (int iw = iz; iw<iz+dsp; iw++){
         for (int iv = iy; iv<iy+dsp; iv++){
-          for (int iu = ix; iu<ix+dsp; iu++){
-            int iw = iz;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-          }
-        }
-      }
+          for (int iu = ix; iu<ix+dsp; iu++)
+          {
 
-      else{
-        for (int iv = iy; iv<iy+dsp; iv++){
-          for (int iu = ix; iu<ix+dsp; iu++){
-            int iw = iz;
-              up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-              p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            n_points_somae[curr_label] += 1;
+
+            // find the new voxel index
+            long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+
+            bool isSurface = 0;
+            //
+            // // check if voxel is on surface
+            // bool isSurface_z = 0;
+            // bool isSurface_y = 0;
+            // bool isSurface_x = 0;
+            //
+            // long neighbor_index_z = p_iv_local_add + n6_offsets[2]
+            // long neighbor_index_y = p_iv_local_add + n6_offsets[0]
+            // long neighbor_index_x = p_iv_local_add + n6_offsets[5]
+            //
+            // if
+
+            // check if this is a surface voxel
+            for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
+
+              long neighbor_index = p_iv_local_add + n6_offsets[dir];
+
+              long ii, ij, ik;
+
+              IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
+
+              // skip the fake boundary elements
+              if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
+              if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
+              if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
+
+              // if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
+              if (Pointclouds[curr_label][neighbor_index] == 0) {
+                isSurface = 1;
+                break;
+              }
+            }
+
+
+            if (isSurface){
+              Pointclouds[curr_label][p_iv_local_add] = 4;
+              somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+              n_points_somae_surface[curr_label]+=1;
+            }
+            else{
               deletable_indices[curr_label].insert(p_iv_local_add);
+            }
+
           }
         }
       }
-
-      if (isSurface_y){
-        long ii, ij, ik;
-        IndexToIndices(neighbor_index_z, ii, ij, ik, padded_sheet_size, padded_row_size);
-        // skip the fake boundary elements
-        if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-        if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-        if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-
-        for (int iw = iz; iw<iz+dsp; iw++){
-          for (int iu = ix; iu<ix+dsp; iu++){
-            int iv = iy;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-          }
-        }
-      }
-
-      else{
-        for (int iw = iz; iw<iz+dsp; iw++){
-          for (int iu = ix; iu<ix+dsp; iu++){
-            int iv = iy;
-              up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-              p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-              deletable_indices[curr_label].insert(p_iv_local_add);
-          }
-        }
-      }
-
-      if (isSurface_x){
-        long ii, ij, ik;
-        IndexToIndices(neighbor_index_z, ii, ij, ik, padded_sheet_size, padded_row_size);
-        // skip the fake boundary elements
-        if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-        if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-        if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-
-        for (int iw = iz; iw<iz+dsp; iw++){
-          for (int iv = iy; iv<iy+dsp; iv++){
-            int iu = ix;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-          }
-        }
-      }
-
-      else{
-        for (int iw = iz; iw<iz+dsp; iw++){
-          for (int iv = iy; iv<iy+dsp; iv++){
-            int iu = ix;
-              up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-              p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-              deletable_indices[curr_label].insert(p_iv_local_add);
-          }
-        }
-      }
-
-      for (int iw = iz+1; iw<iz+dsp; iw++){
-        for (int iv = iy+1; iv<iy+dsp; iv++){
-          for (int iu = ix+1; iu<ix+dsp; iu++){
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
-          }
-        }
-      }
-
-
-      // // check if this is a surface voxel
-      // for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
-      //
-      //   long neighbor_index = p_iv_local_add + n6_offsets[dir];
-      //
-      //   long ii, ij, ik;
-      //
-      //   IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
-      //
-      //   // skip the fake boundary elements
-      //   if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-      //   if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-      //   if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-      //
-      //   // if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
-      //   if (Pointclouds[curr_label][neighbor_index] == 0) {
-      //     isSurface = 1;
-      //     break;
-      //   }
-      // }
-      //
-      //
-      // if (isSurface){
-      //   Pointclouds[curr_label][p_iv_local_add] = 4;
-      //   somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-      //   n_points_somae_surface[curr_label]+=1;
-      // }
-      // else{
-      //   deletable_indices[curr_label].insert(p_iv_local_add);
-      // }
-
     }
 
     for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = deletable_indices.begin(); itr!=deletable_indices.end(); ++itr){
@@ -514,8 +422,6 @@ public:
           Pointclouds[label].erase(*itr2);
       }
     }
-
-    std::cout << "DONE LOADING SOMAE" << std::endl;
 
     WriteSomaeSurface(somae_surfacepoints);
 
