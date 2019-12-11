@@ -100,12 +100,30 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir)
 {
   // start timing statistics
-  // clock_t start_time = clock();
+  double time_total = 0;
+  double time_read_IDstoProcess = 0;
+  double time_read_Synapses = 0;
+  double time_read_Skeleton = 0;
+  double time_read_SomaeSurface = 0;
+  double time_dijkstra = 0;
+  double time_write = 0;
+
+  clock_t start_time_total = 0;
+  clock_t start_time_read_IDstoProcess = 0;
+  clock_t start_time_read_Synapses = 0;
+  clock_t start_time_read_Skeleton = 0;
+  clock_t start_time_read_SomaeSurface = 0;
+  clock_t start_time_dijkstra = 0;
+  clock_t start_time_write = 0;
+
+  start_time_total = clock();
+
 
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
   std::unordered_set<long> IDsToProcess = std::unordered_set<long>();
 
+  start_time_read_IDstoProcess = clock();
   for (long bz = block_search_start[OR_Z]; bz<block_search_end[OR_Z]+1; bz++){
     for (long by =  block_search_start[OR_Y]; by<block_search_end[OR_Y]+1; by++){
       for (long bx =  block_search_start[OR_X]; bx<block_search_end[OR_X]+1; bx++){
@@ -131,6 +149,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       }
     }
   }
+  time_read_IDstoProcess += (double) (clock() - start_time_read_IDstoProcess) / CLOCKS_PER_SEC;
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
@@ -152,13 +171,21 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
           block_ind[1]=by;
           block_ind[2]=bx;
 
+          start_time_read_Synapses = clock();
           ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
+          time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
+          start_time_read_Skeleton = clock();
           ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
+          time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
+          start_time_read_SomaeSurface = clock();
           ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
+          time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
         }
       }
     }
+
+    start_time_dijkstra = clock();
 
     long nelements = segment.size();
 
@@ -272,6 +299,9 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     long nskeleton_points = wiring_diagram.size();
     std::cout << "points after refinement: " << nskeleton_points << std::endl;
 
+    time_dijkstra += (double) (clock() - start_time_dijkstra) / CLOCKS_PER_SEC;
+    start_time_write = clock();
+
     char wiring_filename[4096];
     sprintf(wiring_filename, "%s/skeletons/%s/%s-connectomes-ID-%012ld.pts", output_directory, prefix, prefix, segment_ID_query);
     char distance_filename[4096];
@@ -281,7 +311,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     if (!wfp) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     FILE *dfp = fopen(distance_filename, "wb");
     if (!dfp) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
-
 
     WriteHeaderSegID(wfp, nskeleton_points, segment_ID_query);
     WriteHeaderSegID(dfp, nskeleton_points, segment_ID_query);
@@ -325,6 +354,21 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     fclose(dfp);
 
     delete[] voxel_data;
+
+    time_write += (double) (clock() - start_time_write) / CLOCKS_PER_SEC;
+
+  }
+
+  time_total += (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
+
+  {
+    char output_filename[4096];
+    sprintf(output_filename, "%s/running_times/%s/%s-refinement_times.pts", output_dir, prefix, prefix);
+    std::cout << "Writing time for block to : " << output_filename << std::endl;
+    FILE * fptime = fopen (output_filename,"a");
+    fprintf(fptime,"time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write \n");
+    fprintf(fptime,"%8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, \n",time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write);
+    fclose(fptime);
   }
 
 }
