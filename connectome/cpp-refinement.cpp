@@ -4,6 +4,7 @@
 #include "cpp-wiring.h"
 #include <algorithm>
 #include <unistd.h>
+#include <time.h>
 
 struct DijkstraData {
     long iv;

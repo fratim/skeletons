@@ -1386,7 +1386,7 @@ public:
         BlockA->CppPopulatePointCloudFromH5(inp_labels);
 
         // process Somae
-        BlockA->CppPopulateSomaeFromH5(inp_somae);
+        //BlockA->CppPopulateSomaeFromH5(inp_somae);
 
         // read Synapses
         if (!BlockA->ReadSynapses()) exit(-1);
