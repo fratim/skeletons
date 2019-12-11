@@ -99,7 +99,7 @@ makeFolder(step05folderpath)
 
 # write slurm for step one
 command = "step1.py"
-jobname = "S01"
+jobname = "S1"
 
 t = template
 t = t.replace('{JOBNAME}', jobname)
@@ -174,7 +174,7 @@ for bz in range(start_blocks[0], start_blocks[0] + n_blocks[0]):
 
 # write slurm for step one
 command = "step5.py"
-jobname = "S05"
+jobname = "S5"
 
 t = template
 t = t.replace('{JOBNAME}', jobname)
