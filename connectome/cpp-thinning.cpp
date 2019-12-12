@@ -334,10 +334,12 @@ public:
     std::unordered_map<long, std::unordered_set<long>> deletable_indices = std::unordered_map<long, std::unordered_set<long>>();
     std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
 
-    for (long up_iv_local = 0; up_iv_local < n_points; up_iv_local++){
+    for (long up_iv_local_dsp = 0; up_iv_local_dsp < n_points; up_iv_local_dsp++){
+
+      if (up_iv_local_dsp%10000==0) std::cout << up_iv_local_dsp << std::endl;
 
       // get segment_ID of current index and skip if is zero
-      long curr_label = inp_somae[up_iv_local];
+      long curr_label = inp_somae[up_iv_local_dsp];
       if (!curr_label) continue;
 
       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
@@ -348,7 +350,36 @@ public:
 
       // get downsampled coordinates
       long ix_dsp, iy_dsp, iz_dsp;
-      IndexToIndices(up_iv_local, ix_dsp, iy_dsp, iz_dsp, input_sheet_size_dsp, input_row_size_dsp);
+      IndexToIndices(up_iv_local_dsp, ix_dsp, iy_dsp, iz_dsp, input_sheet_size_dsp, input_row_size_dsp);
+
+      long n6_offsets_dsp[6];
+      n6_offsets_dsp[0] = -1 * input_blocksize_dsp[OR_X]; //neg y direction
+      n6_offsets_dsp[1] = input_blocksize_dsp[OR_X]; // neg y direction
+      n6_offsets_dsp[2] = -1 * input_blocksize_dsp[OR_Y] * input_blocksize_dsp[OR_X]; // neg z direction
+      n6_offsets_dsp[3] = input_blocksize_dsp[OR_Y] * input_blocksize_dsp[OR_X]; // pos z direction
+      n6_offsets_dsp[4] = +1; // pos x direction
+      n6_offsets_dsp[5] = -1; // neg x direction
+
+      bool isSurface = 0;
+      // check if this is a surface voxel
+
+      for (long dir = 0; dir < NTHINNING_DIRECTIONS; dir++) {
+
+        long neighbor_index = up_iv_local_dsp + n6_offsets_dsp[dir];
+        long ii, ij, ik;
+
+        IndexToIndices(neighbor_index, ii, ij, ik, input_sheet_size_dsp, input_row_size_dsp);
+
+        // skip the fake boundary elements
+        if ((ii == 0) or (ii == input_blocksize_dsp[OR_X] - 1)) continue;
+        if ((ij == 0) or (ij == input_blocksize_dsp[OR_Y] - 1)) continue;
+        if ((ik == 0) or (ik == input_blocksize_dsp[OR_Z] - 1)) continue;
+
+        if (inp_somae[neighbor_index] != curr_label) {
+          isSurface = 1;
+          break;
+        }
+      }
 
       // get normal coordinates
       long ix = ix_dsp*dsp;
@@ -364,32 +395,7 @@ public:
             long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
 
-            if (!Pointclouds[curr_label][p_iv_local_add]) continue;
             n_points_somae[curr_label] += 1;
-
-            bool isSurface = 0;
-
-            // check if this is a surface voxel
-            for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
-
-              long neighbor_index = p_iv_local_add + n6_offsets[dir];
-
-              long ii, ij, ik;
-
-              IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
-
-              // skip the fake boundary elements
-              if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
-              if ((ij == 0) or (ij == padded_blocksize[OR_Y] - 1)) continue;
-              if ((ik == 0) or (ik == padded_blocksize[OR_Z] - 1)) continue;
-
-              // if (Pointclouds[curr_label].find(neighbor_index) == Pointclouds[curr_label].end()) {
-              if (Pointclouds[curr_label][neighbor_index] == 0) {
-                isSurface = 1;
-                break;
-              }
-            }
-
 
             if (isSurface){
               Pointclouds[curr_label][p_iv_local_add] = 4;
@@ -400,17 +406,26 @@ public:
               deletable_indices[curr_label].insert(p_iv_local_add);
             }
 
+
           }
         }
       }
     }
 
+    std::cout << "deletable points:" << std::endl;
+
     for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = deletable_indices.begin(); itr!=deletable_indices.end(); ++itr){
       long label = itr->first;
+      std::cout << "Seg ID: " << label << std::endl;
+      std::cout << "points: " << deletable_indices[label].size() << std::endl;
+
       for (std::unordered_set<long>::iterator itr2 = deletable_indices[label].begin(); itr2!=deletable_indices[label].end(); ++itr2){
           Pointclouds[label].erase(*itr2);
       }
     }
+
+
+    std::cout << "surface points:" << std::endl;
 
     WriteSomaeSurface(somae_surfacepoints);
 
@@ -741,6 +756,9 @@ public:
       for (std::unordered_map<long,std::vector<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
         long seg_id = itr->first;
         long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
+
+        std::cout << "Seg ID: " << seg_id << std::endl;
+        std::cout << "points: " << n_points << std::endl;
 
         if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
@@ -1386,7 +1404,7 @@ public:
         BlockA->CppPopulatePointCloudFromH5(inp_labels);
 
         // process Somae
-        //BlockA->CppPopulateSomaeFromH5(inp_somae);
+        BlockA->CppPopulateSomaeFromH5(inp_somae);
 
         // read Synapses
         if (!BlockA->ReadSynapses()) exit(-1);
