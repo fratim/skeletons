@@ -156,19 +156,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   time_read_IDstoProcess += (double) (clock() - start_time_read_IDstoProcess) / CLOCKS_PER_SEC;
 
-<<<<<<< HEAD
-    long segment_ID_query = *iter;
-    std::cout << "----------------------------------"<<std::endl;
-    std::cout << "processing: "<<segment_ID_query<<std::endl;
-
-    // clear the global variables
-    std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-    std::unordered_set<long> synapses = std::unordered_set<long>();
-    std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
-=======
   std::unordered_map<long, std::unordered_map<long, char>> segment = std::unordered_map<long, std::unordered_map<long, char>>();
   std::unordered_map<long, std::unordered_set<long>> synapses = std::unordered_map<long, std::unordered_set<long>>();
->>>>>>> 41fe088e6cbb0ef247fa2ac9e169cd7a1784bbcb
 
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
     for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
@@ -180,31 +169,16 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         block_ind[1]=by;
         block_ind[2]=bx;
 
-<<<<<<< HEAD
-          start_time_read_Synapses = clock();
-          ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
-          time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
-          start_time_read_Skeleton = clock();
-          ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
-          time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
-
-          start_time_read_SomaeSurface = clock();
-	  if (detectSomae) ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
-	  time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
-
-	  }
-=======
         start_time_read_Synapses = clock();
-        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
+        ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
         time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
         start_time_read_Skeleton = clock();
-        ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
+        ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
-        ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
+        if (detectSomae) ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
         time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
->>>>>>> 41fe088e6cbb0ef247fa2ac9e169cd7a1784bbcb
       }
     }
   }
