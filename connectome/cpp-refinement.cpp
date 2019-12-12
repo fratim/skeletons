@@ -25,7 +25,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses);
 void WriteSomaeSurfaces(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces);
 
-bool detectSomae = 0;
+bool detectSomae = 1;
 
 float resolution[3] = {-1,-1,-1};
 long input_blocksize[3] = {-1,-1,-1};
