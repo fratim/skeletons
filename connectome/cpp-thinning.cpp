@@ -324,8 +324,11 @@ public:
 
     long dsp = 8;
     long input_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp, input_blocksize[OR_Y]/dsp, input_blocksize[OR_X]/dsp};
+    long padded_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp+2, input_blocksize[OR_Y]/dsp+2, input_blocksize[OR_X]/dsp+2};
     long input_sheet_size_dsp = input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
     long input_row_size_dsp = input_blocksize_dsp[OR_X];
+    long padded_sheet_size_dsp = padded_blocksize_dsp[OR_Y]*padded_blocksize_dsp[OR_X];
+    long padded_row_size_dsp = padded_blocksize_dsp[OR_X];
 
     long n_points = input_blocksize_dsp[0]*input_blocksize_dsp[1]*input_blocksize_dsp[2];
 
@@ -353,29 +356,32 @@ public:
       IndexToIndices(up_iv_local_dsp, ix_dsp, iy_dsp, iz_dsp, input_sheet_size_dsp, input_row_size_dsp);
 
       long n6_offsets_dsp[6];
-      n6_offsets_dsp[0] = -1 * input_blocksize_dsp[OR_X]; //neg y direction
-      n6_offsets_dsp[1] = input_blocksize_dsp[OR_X]; // neg y direction
-      n6_offsets_dsp[2] = -1 * input_blocksize_dsp[OR_Y] * input_blocksize_dsp[OR_X]; // neg z direction
-      n6_offsets_dsp[3] = input_blocksize_dsp[OR_Y] * input_blocksize_dsp[OR_X]; // pos z direction
+      n6_offsets_dsp[0] = -1 * padded_blocksize_dsp[OR_X]; //neg y direction
+      n6_offsets_dsp[1] = padded_blocksize_dsp[OR_X]; // neg y direction
+      n6_offsets_dsp[2] = -1 * padded_blocksize_dsp[OR_Y] * padded_blocksize_dsp[OR_X]; // neg z direction
+      n6_offsets_dsp[3] = padded_blocksize_dsp[OR_Y] * padded_blocksize_dsp[OR_X]; // pos z direction
       n6_offsets_dsp[4] = +1; // pos x direction
       n6_offsets_dsp[5] = -1; // neg x direction
 
-      bool isSurface = 0;
       // check if this is a surface voxel
+      bool isSurface = 0;
+
+      long p_iv_local_dsp = PadIndex(up_iv_local_dsp, input_sheet_size_dsp, input_row_size_dsp, padded_sheet_size_dsp, padded_row_size_dsp);
 
       for (long dir = 0; dir < NTHINNING_DIRECTIONS; dir++) {
 
-        long neighbor_index = up_iv_local_dsp + n6_offsets_dsp[dir];
+        long p_neighbor_index = p_iv_local_dsp + n6_offsets_dsp[dir];
+
+        // skip the boundary elements
         long ii, ij, ik;
+        IndexToIndices(p_neighbor_index, ii, ij, ik, padded_sheet_size_dsp, padded_row_size_dsp);
+        if ((ii == 0) or (ii == padded_blocksize_dsp[OR_X] - 1)) continue;
+        if ((ij == 0) or (ij == padded_blocksize_dsp[OR_Y] - 1)) continue;
+        if ((ik == 0) or (ik == padded_blocksize_dsp[OR_Z] - 1)) continue;
 
-        IndexToIndices(neighbor_index, ii, ij, ik, input_sheet_size_dsp, input_row_size_dsp);
+        long up_neighbor_index = UnpadIndex(p_neighbor_index, input_sheet_size_dsp, input_row_size_dsp, padded_sheet_size_dsp, padded_row_size_dsp);
 
-        // skip the fake boundary elements
-        if ((ii == 0) or (ii == input_blocksize_dsp[OR_X] - 1)) continue;
-        if ((ij == 0) or (ij == input_blocksize_dsp[OR_Y] - 1)) continue;
-        if ((ik == 0) or (ik == input_blocksize_dsp[OR_Z] - 1)) continue;
-
-        if (inp_somae[neighbor_index] != curr_label) {
+        if (inp_somae[up_neighbor_index] != curr_label) {
           isSurface = 1;
           break;
         }
@@ -1419,7 +1425,10 @@ public:
         PopulateOffsets(BlockA->padded_blocksize);
 
         // insert IDs that should be processed (45 s for thinning)
-        BlockA->IDs_to_process = BlockA->IDs_in_block;
+        // BlockA->IDs_to_process = BlockA->IDs_in_block;
+        BlockA->IDs_to_process.insert(301);
+        BlockA->IDs_to_process.insert(81);
+        BlockA->IDs_to_process.insert(55);
 
         BlockA->writeIDs();
 
