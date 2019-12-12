@@ -170,13 +170,17 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         block_ind[2]=bx;
 
         start_time_read_Synapses = clock();
-        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
+        ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
         time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
         start_time_read_Skeleton = clock();
-        ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
+        ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
+<<<<<<< HEAD
         if (detectSomae) ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
+=======
+        if (detectSomae) ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
+>>>>>>> 7d5137b09cc2e80f7ac608a3a8a537dd33c3070e
         time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
       }
