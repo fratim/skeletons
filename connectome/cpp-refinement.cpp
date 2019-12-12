@@ -17,10 +17,11 @@ void ReadHeader(FILE *fp, long &num);
 void WriteHeaderSegID(FILE *fp, long &num, long&segID);
 void ReadHeaderSegID(FILE *fp, long &num, long&segID);
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir);
-void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, std::unordered_set<long> &synapses, long segment_ID_query, long (&block_ind)[3]);
-void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3]);
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3]);
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses);
 
 float resolution[3] = {-1,-1,-1};
 long input_blocksize[3] = {-1,-1,-1};
@@ -124,9 +125,9 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   std::unordered_set<long> IDsToProcess = std::unordered_set<long>();
 
   start_time_read_IDstoProcess = clock();
-  for (long bz = block_search_start[OR_Z]; bz<block_search_end[OR_Z]+1; bz++){
-    for (long by =  block_search_start[OR_Y]; by<block_search_end[OR_Y]+1; by++){
-      for (long bx =  block_search_start[OR_X]; bx<block_search_end[OR_X]+1; bx++){
+  for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
+    for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
+      for (long bx =  block_search_start[OR_X]; bx<=block_search_end[OR_X]; bx++){
 
 
         char output_filename_IDs[4096];
@@ -149,59 +150,61 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       }
     }
   }
+
   time_read_IDstoProcess += (double) (clock() - start_time_read_IDstoProcess) / CLOCKS_PER_SEC;
+
+  std::unordered_map<long, std::unordered_map<long, char>> segment = std::unordered_map<long, std::unordered_map<long, char>>();
+  std::unordered_map<long, std::unordered_set<long>> synapses = std::unordered_map<long, std::unordered_set<long>>();
+
+  for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
+    for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
+      for (long bx =  block_search_start[OR_X]; bx<=block_search_end[OR_X]; bx++){
+
+        long block_ind[3];
+
+        block_ind[0]=bz;
+        block_ind[1]=by;
+        block_ind[2]=bx;
+
+        start_time_read_Synapses = clock();
+        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
+        time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
+        start_time_read_Skeleton = clock();
+        ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
+        time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
+        start_time_read_SomaeSurface = clock();
+        ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
+        time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
+
+      }
+    }
+  }
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
-    long segment_ID_query = *iter;
+    long ID_query = *iter;
     std::cout << "----------------------------------"<<std::endl;
-    std::cout << "processing: "<<segment_ID_query<<std::endl;
-    // clear the global variables
-    std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-    std::unordered_set<long> synapses = std::unordered_set<long>();
+    std::cout << "processing: "<<ID_query<<std::endl;
+
     std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
-
-    for (long bz = block_search_start[OR_Z]; bz<block_search_end[OR_Z]+1; bz++){
-      for (long by =  block_search_start[OR_Y]; by<block_search_end[OR_Y]+1; by++){
-        for (long bx =  block_search_start[OR_X]; bx<block_search_end[OR_X]+1; bx++){
-
-          long block_ind[3];
-
-          block_ind[0]=bz;
-          block_ind[1]=by;
-          block_ind[2]=bx;
-
-          start_time_read_Synapses = clock();
-          ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
-          time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
-          start_time_read_Skeleton = clock();
-          ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
-          time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
-          start_time_read_SomaeSurface = clock();
-          ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
-          time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
-
-        }
-      }
-    }
 
     start_time_dijkstra = clock();
 
-    long nelements = segment.size();
+    long nelements = segment[ID_query].size();
 
     std::cout << "points before refinement: "<<nelements<<std::endl;
-    std::cout << "Synapses: "<<synapses.size()<<std::endl;
+    std::cout << "Synapses: "<<synapses[ID_query].size()<<std::endl;
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
     if (!voxel_data) exit(-1);
 
     // initialize the priority queue
     DijkstraData tmp;
-    MinBinaryHeap<DijkstraData *> voxel_heap(&tmp, (&tmp.distance), segment.size());
+    MinBinaryHeap<DijkstraData *> voxel_heap(&tmp, (&tmp.distance), segment[ID_query].size());
 
     // initialize all data
     long index = 0;
-    for (std::unordered_map<long, char>::iterator it = segment.begin(); it != segment.end(); ++it, ++index) {
+    for (std::unordered_map<long, char>::iterator it = segment[ID_query].begin(); it != segment[ID_query].end(); ++it, ++index) {
       voxel_data[index].iv = it->first;
       voxel_data[index].prev = NULL;
       voxel_data[index].distance = infinity;
@@ -234,7 +237,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
             long neighbor_index = IndicesToIndex(iu, iv, iw, padded_sheet_size_volume, padded_row_size_volume);
 
             // skip if background
-            if (!segment[neighbor_index])continue;
+            if (!segment[ID_query][neighbor_index])continue;
 
             // get the corresponding neighbor data
             long dijkstra_index = dijkstra_map[neighbor_index];
@@ -271,7 +274,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     std::unordered_set<long> wiring_diagram = std::unordered_set<long>();
 
     // go through all of the synapses and add all of the skeleton points to the source
-    for (std::unordered_set<long>::iterator it = synapses.begin(); it != synapses.end(); ++it) {
+    for (std::unordered_set<long>::iterator it = synapses[ID_query].begin(); it != synapses[ID_query].end(); ++it) {
       // get the voxel and corresponding entry in the dijkstra data frame
       long voxel_index = *it;
       long dijkstra_index = dijkstra_map[voxel_index];
@@ -303,17 +306,17 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     start_time_write = clock();
 
     char wiring_filename[4096];
-    sprintf(wiring_filename, "%s/skeletons/%s/%s-connectomes-ID-%012ld.pts", output_directory, prefix, prefix, segment_ID_query);
+    sprintf(wiring_filename, "%s/skeletons/%s/%s-connectomes-ID-%012ld.pts", output_directory, prefix, prefix, ID_query);
     char distance_filename[4096];
-    sprintf(distance_filename, "%s/skeletons/%s/%s-distances-ID-%012ld.pts", output_directory, prefix, prefix, segment_ID_query);
+    sprintf(distance_filename, "%s/skeletons/%s/%s-distances-ID-%012ld.pts", output_directory, prefix, prefix, ID_query);
 
     FILE *wfp = fopen(wiring_filename, "wb");
     if (!wfp) { fprintf(stderr, "Failed to write to %s.\n", wiring_filename); exit(-1); }
     FILE *dfp = fopen(distance_filename, "wb");
     if (!dfp) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
 
-    WriteHeaderSegID(wfp, nskeleton_points, segment_ID_query);
-    WriteHeaderSegID(dfp, nskeleton_points, segment_ID_query);
+    WriteHeaderSegID(wfp, nskeleton_points, ID_query);
+    WriteHeaderSegID(dfp, nskeleton_points, ID_query);
 
     long pos = 0;
     long checksum_con = 0;
@@ -370,6 +373,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     fprintf(fptime,"%8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, \n",time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write);
     fclose(fptime);
   }
+
+  WriteProjectedSynapses(prefix, synapses);
 
 }
 
@@ -463,7 +468,7 @@ void WriteHeaderSegID(FILE *fp, long &num, long&segID)
   if (check != 8) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
 }
 
-void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, std::unordered_set<long> &synapses, long segment_ID_query, long (&block_ind)[3])
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -485,16 +490,19 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
         if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename); exit(-1); }
         if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
+        bool isQuery = 0;
+        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
+
         // read in global indices
         for (long is = 0; is < nsynapses; ++is) {
             long up_iv_global;
             if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1);}
             checksum += up_iv_global;
 
-            if (segment_ID==segment_ID_query){
+            if (isQuery){
               long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-              segment[p_iv_global]=3;
-              synapses.insert(p_iv_global);
+              segment[segment_ID][p_iv_global]=3;
+              synapses[segment_ID].insert(p_iv_global);
             }
 
         }
@@ -520,7 +528,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, char> &segment, s
 
 }
 
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3])
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -542,15 +550,18 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segmen
         if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename); exit(-1); }
         if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
 
+        bool isQuery = 0;
+        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
+
         // read in global indices
         for (long is = 0; is < n_points; ++is) {
             long up_iv_global;
             if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1);}
             checksum += up_iv_global;
 
-            if (segment_ID==segment_ID_query){
+            if (isQuery){
               long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-              segment[p_iv_global]=4;
+              segment[segment_ID][p_iv_global]=4;
             }
 
         }
@@ -576,47 +587,91 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segmen
 
 }
 
-void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3])
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
-  // read the synapses
-  char skeleton_filename[4096];
-  snprintf(skeleton_filename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], segment_ID_query);
 
-  FILE *fp = fopen(skeleton_filename, "rb");
-  if (fp) {
+  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
-    // get the label and number of synapses
-    long input_neuron_id;
-    long nskeleton_points;
+    long ID_query = *iter;
 
-    ReadHeaderSegID(fp, nskeleton_points, input_neuron_id);
-    long checksum = 0;
+    // read the synapses
+    char skeleton_filename[4096];
+    snprintf(skeleton_filename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/skeleton/%s/%s-skeleton-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], ID_query);
 
-    if (segment_ID_query != input_neuron_id) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+    FILE *fp = fopen(skeleton_filename, "rb");
+    if (fp) {
 
-    // read in the global coordinates
-    for (long is = 0; is < nskeleton_points; ++is) {
-        long up_iv_global;
-        if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
-        long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-        segment[p_iv_global]=1;
-        checksum += up_iv_global;
+      // get the label and number of synapses
+      long segment_ID;
+      long nskeleton_points;
 
+      ReadHeaderSegID(fp, nskeleton_points, segment_ID);
+      long checksum = 0;
+
+      if (ID_query != segment_ID) { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+
+      // read in the global coordinates
+      for (long is = 0; is < nskeleton_points; ++is) {
+          long up_iv_global;
+          if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+          long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+          segment[segment_ID][p_iv_global]=1;
+          checksum += up_iv_global;
+
+      }
+
+      // ignore the local ones
+      for (long is = 0; is < nskeleton_points; ++is) {
+          long iv_local;
+          if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
+          checksum += iv_local;
+
+      }
+
+      long checksum_read;
+      if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
+      if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", skeleton_filename); exit(-1); }
+
+      // close file
+      fclose(fp);
     }
-
-    // ignore the local ones
-    for (long is = 0; is < nskeleton_points; ++is) {
-        long iv_local;
-        if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", skeleton_filename);  exit(-1); }
-        checksum += iv_local;
-
-    }
-
-    long checksum_read;
-    if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", skeleton_filename);  exit(-1); }
-    if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", skeleton_filename); exit(-1); }
-
-    // close file
-    fclose(fp);
   }
+}
+
+void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses)
+{
+  //get number of anchor points
+  long n_neurons = synapses.size();
+
+  // create an output file for the points
+  char output_filename[4096];
+  sprintf(output_filename, "%s/synapses_projected/%s/%s-synapses_projected.pts", output_directory, prefix, prefix);
+
+  FILE *wfp = fopen(output_filename, "wb");
+  if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+  // write the characteristics header
+  WriteHeader(wfp, n_neurons);
+  long checksum = 0;
+
+  for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
+    long seg_id = itr->first;
+
+    long n_synapses = synapses[seg_id].size();
+
+    if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&n_synapses, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+    for (std::unordered_set<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2){
+
+      long p_iv_global = *itr2;
+      long up_iv_global = UnpadIndex(p_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+      if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      checksum += up_iv_global;
+    }
+
+  }
+
+  if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+  fclose(wfp);
 }

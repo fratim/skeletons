@@ -7,6 +7,10 @@ TODO:
 34. Write script to have all projected synapses in one file
 35. Accelerate the adding of somae pixels (so far checking all 512 points (8**2))
 
+Ask alex about gaps in proofread computation
+ask donglai about gt somae
+ask alex about brain connectome data
+
 COMMENTS:
 2. Name specifications:
     - input labels: labels_inp
