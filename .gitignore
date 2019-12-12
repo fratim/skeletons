@@ -12,6 +12,7 @@ examples/synapses_512
 examples/synapses_projected
 examples/output*
 examples/tmp*
+examples/skeletons_somaedet_on/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
