@@ -203,7 +203,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     if (!detectSomae){
       if (synapses[ID_query].size()>0) {
         std::unordered_set<long>::iterator it2 = synapses[ID_query].begin();
-        segment[*it2]=4;
+        segment[ID_query][*it2]=4;
       }
     }
 
