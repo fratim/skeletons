@@ -176,16 +176,14 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
-<<<<<<< HEAD
         if (detectSomae) ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
-=======
-        if (detectSomae) ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
->>>>>>> 7d5137b09cc2e80f7ac608a3a8a537dd33c3070e
         time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
       }
     }
   }
+
+  WriteProjectedSynapses(prefix, synapses);
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
@@ -387,8 +385,6 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     fprintf(fptime,"%8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, \n",time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write);
     fclose(fptime);
   }
-
-  WriteProjectedSynapses(prefix, synapses);
 
 }
 
