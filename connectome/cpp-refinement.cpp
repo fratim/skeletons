@@ -21,7 +21,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses);
 
 bool detectSomae = 0;
@@ -158,6 +158,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   std::unordered_map<long, std::unordered_map<long, char>> segment = std::unordered_map<long, std::unordered_map<long, char>>();
   std::unordered_map<long, std::unordered_set<long>> synapses = std::unordered_map<long, std::unordered_set<long>>();
+  std::unordered_map<long, std::unordered_set<long>> somae_surfaces = std::unordered_map<long, std::unordered_set<long>>();
 
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
     for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
@@ -176,7 +177,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
-        if (detectSomae) ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
+        if (detectSomae) ReadSomaeSurface(prefix, segment, somae_surfaces, IDsToProcess, block_ind);
         time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
       }
@@ -538,7 +539,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
 
 }
 
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -574,6 +575,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
             if (isQuery){
               long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
               segment[segment_ID][p_iv_global]=4;
+              somae_surfaces[segment_ID].insert(p_iv_global);
             }
 
         }
@@ -675,6 +677,44 @@ void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::un
     if (fwrite(&n_synapses, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
     for (std::unordered_set<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2){
+
+      long p_iv_global = *itr2;
+      long up_iv_global = UnpadIndex(p_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+      if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      checksum += up_iv_global;
+    }
+
+  }
+
+  if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+  fclose(wfp);
+}
+
+void WriteSurfaces(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces)
+{
+  //get number of anchor points
+  long n_neurons = somae_surfaces.size();
+
+  // create an output file for the points
+  char output_filename[4096];
+  sprintf(output_filename, "%s/somae_surfaces/%s/%s-somae_surfaces.pts", output_directory, prefix, prefix);
+
+  FILE *wfp = fopen(output_filename, "wb");
+  if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+  // write the characteristics header
+  WriteHeader(wfp, n_neurons);
+  long checksum = 0;
+
+  for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfaces.begin(); itr!=somae_surfaces.end(); ++itr){
+    long seg_id = itr->first;
+
+    long n_synapses = somae_surfaces[seg_id].size();
+
+    if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    if (fwrite(&n_synapses, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+
+    for (std::unordered_set<long>::iterator itr2 = somae_surfaces[seg_id].begin(); itr2!=somae_surfaces[seg_id].end(); ++itr2){
 
       long p_iv_global = *itr2;
       long up_iv_global = UnpadIndex(p_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
