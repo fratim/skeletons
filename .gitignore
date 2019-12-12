@@ -14,6 +14,8 @@ examples/output*
 examples/tmp*
 examples/skeletons_somaedet_on/
 examples/synapses_projected_Zebrafinch/
+examples/somae_surfaces/
+examples/skeletons_somaedet_off/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

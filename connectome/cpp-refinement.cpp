@@ -548,8 +548,6 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
   char somaefilename[4096];
   snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-  std::cout << somaefilename << std::endl << std::flush;
-
   FILE *fp = fopen(somaefilename, "rb");
   if (fp) {
 
@@ -566,7 +564,9 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
         if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
 
         bool isQuery = 0;
-        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
+        if (IDsToProcess.count(segment_ID) != 0) isQuery = 1;
+
+        std::cout << "isQuery: " << isQuery << std::endl;
 
         // read in global indices
         for (long is = 0; is < n_points; ++is) {
