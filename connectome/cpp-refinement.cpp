@@ -170,10 +170,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         block_ind[2]=bx;
 
         start_time_read_Synapses = clock();
-        ReadSynapses(prefix, segment, synapses, segment_ID_query, block_ind);
+        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
         time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
         start_time_read_Skeleton = clock();
-        ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
+        ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
         if (detectSomae) ReadSomaeSurface(prefix, segment, IDsToProcess, block_ind);
@@ -201,8 +201,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     std::cout << "Synapses: "<<synapses[ID_query].size()<<std::endl;
 
     if (!detectSomae){
-      if (synapses.size()>0) {
-        std::unordered_set<long>::iterator it2 = synapses.begin();
+      if (synapses[ID_query].size()>0) {
+        std::unordered_set<long>::iterator it2 = synapses[ID_query].begin();
         segment[*it2]=4;
       }
     }
