@@ -548,14 +548,22 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
   char somaefilename[4096];
   snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
+  std::cout << somaefilename << std::endl;
+
   FILE *fp = fopen(somaefilename, "rb");
   if (fp) {
 
+    std::cout << "reading..." << std::endl;
+
     long nneurons;
+
     ReadHeader(fp, nneurons);
     long checksum = 0;
+    std::cout << "nneurons: "<< nneurons << std::endl;
 
     for (long iv = 0; iv < nneurons; ++iv) {
+
+	std::cout << "HOSSA A!" << std::endl;
         // get the label and number of synapses
         long segment_ID;
         long n_points;
