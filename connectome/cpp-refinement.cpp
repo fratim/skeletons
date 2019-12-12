@@ -23,6 +23,8 @@ void ReadSkeleton(const char *prefix, std::unordered_map<long, char> &segment, l
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
 void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segment, long segment_ID_query, long (&block_ind)[3]);
 
+bool detectSomae = 0;
+
 float resolution[3] = {-1,-1,-1};
 long input_blocksize[3] = {-1,-1,-1};
 long padded_blocksize[3] = {-1,-1,-1};
@@ -157,6 +159,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     long segment_ID_query = *iter;
     std::cout << "----------------------------------"<<std::endl;
     std::cout << "processing: "<<segment_ID_query<<std::endl;
+
     // clear the global variables
     std::unordered_map<long, char> segment = std::unordered_map<long, char>();
     std::unordered_set<long> synapses = std::unordered_set<long>();
@@ -178,11 +181,12 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
           start_time_read_Skeleton = clock();
           ReadSkeleton(prefix, segment, segment_ID_query, block_ind);
           time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
-          start_time_read_SomaeSurface = clock();
-          ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
-          time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
 
-        }
+          start_time_read_SomaeSurface = clock();
+	  if (detectSomae) ReadSomaeSurface(prefix, segment, segment_ID_query, block_ind);
+	  time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
+
+	  }
       }
     }
 
@@ -192,6 +196,13 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
     std::cout << "points before refinement: "<<nelements<<std::endl;
     std::cout << "Synapses: "<<synapses.size()<<std::endl;
+
+    if (!detectSomae){
+      if (synapses.size()>0) {
+        std::unordered_set<long>::iterator it2 = synapses.begin();
+        segment[*it2]=4;
+      }
+    }
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
     if (!voxel_data) exit(-1);
@@ -527,6 +538,8 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, char> &segmen
   // read the synapses
   char somaefilename[4096];
   snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+
+  std::cout << somaefilename << std::endl << std::flush;
 
   FILE *fp = fopen(somaefilename, "rb");
   if (fp) {
