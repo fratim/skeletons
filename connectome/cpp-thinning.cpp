@@ -1627,7 +1627,7 @@ public:
 
         {
           char output_filename[4096];
-          sprintf(output_filename, "%s/running_times/%s/%s-total_time.pts", output_dir, prefix, prefix);
+          sprintf(output_filename, "%s/running_times/%s/%s-total_time_thinning.pts", output_dir, prefix, prefix);
           std::cout << "Writing time for block to : " << output_filename << std::endl;
           FILE * fptime = fopen (output_filename,"a");
           fprintf(fptime,"%12.2f, %04ld, %04ld, %04ld\n",time_total, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
