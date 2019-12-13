@@ -364,7 +364,12 @@ public:
       n6_offsets_dsp[5] = -1; // neg x direction
 
       // check if this is a surface voxel
-      bool isSurface = 0;
+      bool isSurface_z_pos = 0;
+      bool isSurface_y_pos = 0;
+      bool isSurface_x_pos = 0;
+      bool isSurface_z_neg = 0;
+      bool isSurface_y_neg = 0;
+      bool isSurface_x_neg = 0;
 
       long p_iv_local_dsp = PadIndex(up_iv_local_dsp, input_sheet_size_dsp, input_row_size_dsp, padded_sheet_size_dsp, padded_row_size_dsp);
 
@@ -382,8 +387,12 @@ public:
         long up_neighbor_index = UnpadIndex(p_neighbor_index, input_sheet_size_dsp, input_row_size_dsp, padded_sheet_size_dsp, padded_row_size_dsp);
 
         if (inp_somae[up_neighbor_index] != curr_label) {
-          isSurface = 1;
-          break;
+          if (dir==0) isSurface_y_neg = 1;
+          if (dir==1) isSurface_y_pos = 1;
+          if (dir==2) isSurface_z_neg = 1;
+          if (dir==3) isSurface_z_pos = 1;
+          if (dir==4) isSurface_x_pos = 1;
+          if (dir==5) isSurface_x_neg = 1;
         }
       }
 
@@ -393,30 +402,181 @@ public:
       long iz = iz_dsp*dsp;
 
       // add points as somae
-      for (int iw = iz; iw<iz+dsp; iw++){
+      // for (int iw = iz; iw<iz+dsp; iw++){
+      //   for (int iv = iy; iv<iy+dsp; iv++){
+      //     for (int iu = ix; iu<ix+dsp; iu++)
+      //     {
+      //       // find the new voxel index
+      //       long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+      //       long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+      //
+      //       n_points_somae[curr_label] += 1;
+      //
+      //       if (isSurface){
+      //         Pointclouds[curr_label][p_iv_local_add] = 4;
+      //         somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+      //         n_points_somae_surface[curr_label]+=1;
+      //       }
+      //       else{
+      //         deletable_indices[curr_label].insert(p_iv_local_add);
+      //       }
+      //     }
+      //   }
+
+      long up_iv_local_add;
+      long p_iv_local_add;
+      if (isSurface_z_neg){
         for (int iv = iy; iv<iy+dsp; iv++){
-          for (int iu = ix; iu<ix+dsp; iu++)
-          {
-            // find the new voxel index
-            long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iw = iz;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
 
-            n_points_somae[curr_label] += 1;
+      else{
+        for (int iv = iy; iv<iy+dsp; iv++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iw = iz;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
 
-            if (isSurface){
-              Pointclouds[curr_label][p_iv_local_add] = 4;
-              somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-              n_points_somae_surface[curr_label]+=1;
-            }
-            else{
-              deletable_indices[curr_label].insert(p_iv_local_add);
-            }
+      if (isSurface_y_neg){
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iv = iy;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
 
+      else{
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iv = iy;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
 
+      if (isSurface_x_neg){
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iv = iy; iv<iy+dsp; iv++){
+            int iu = ix;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
+
+      else{
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iv = iy; iv<iy+dsp; iv++){
+            int iu = ix;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
+
+      if (isSurface_z_pos){
+        for (int iv = iy; iv<iy+dsp; iv++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iw = iz+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
+
+      else{
+        for (int iv = iy; iv<iy+dsp; iv++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iw = iz+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
+
+      if (isSurface_y_pos){
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iv = iy+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
+
+      else{
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iu = ix; iu<ix+dsp; iu++){
+            int iv = iy+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
+
+      if (isSurface_x_pos){
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iv = iy; iv<iy+dsp; iv++){
+            int iu = ix+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+          }
+        }
+      }
+
+      else{
+        for (int iw = iz; iw<iz+dsp; iw++){
+          for (int iv = iy; iv<iy+dsp; iv++){
+            int iu = ix+dsp-1;
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
+          }
+        }
+      }
+
+      for (int iw = iz+1; iw<iz+dsp-1; iw++){
+        for (int iv = iy+1; iv<iy+dsp-1; iv++){
+          for (int iu = ix+1; iu<ix+dsp-1; iu++){
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            deletable_indices[curr_label].insert(p_iv_local_add);
           }
         }
       }
     }
+
+
+
+
 
     std::cout << "deletable points:" << std::endl;
 
@@ -426,7 +586,7 @@ public:
       std::cout << "points: " << deletable_indices[label].size() << std::endl;
 
       for (std::unordered_set<long>::iterator itr2 = deletable_indices[label].begin(); itr2!=deletable_indices[label].end(); ++itr2){
-          Pointclouds[label].erase(*itr2);
+        Pointclouds[label].erase(*itr2);
       }
     }
 

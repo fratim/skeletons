@@ -8,8 +8,8 @@ TODO:
 35. Accelerate the adding of somae pixels (so far checking all 512 points (8**2))
 
 Ask alex about gaps in proofread computation
-ask donglai about gt somae
-ask alex about brain connectome data
+Ask donglai about gt somae
+Ask alex about brain connectome data
 
 COMMENTS:
 2. Name specifications:
@@ -21,7 +21,10 @@ COMMENTS:
 IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
+2. Place somae detection before read in of labels to speed up
 
 QUESTIONS:
 1. How to handle synapses that cannot be mapped?
 2. Should we have a max distance to map synapses?
+
+Meeting Donglai:
