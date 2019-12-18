@@ -4,9 +4,8 @@ TODO:
 22. Change how anchor points are saved, to not have to pass block reference to segment
 26. Dynamically allocate large objects
 33. Read in / pass downsample factor of somae data
-34. Write script to have all projected synapses in one file
-35. Accelerate the adding of somae pixels (so far checking all 512 points (8**2))
-
+35. Accelerate the adding of somae pixels - new ideas?
+36. make sure thinnig on surfaces is correct, check all 6 directions
 Ask alex about gaps in proofread computation
 Ask donglai about gt somae
 Ask alex about brain connectome data
@@ -22,9 +21,11 @@ IDEAS:
 1. Generate 2nd LUT for border component configurations and mark border components
    in advance (then check both LUT on iteration step)
 2. Place somae detection before read in of labels to speed up
-
+3. http://www.bmva.org/bmvc/2013/Papers/paper0032/paper0032.pdf
 QUESTIONS:
 1. How to handle synapses that cannot be mapped?
 2. Should we have a max distance to map synapses?
+
+
 
 Meeting Donglai:
