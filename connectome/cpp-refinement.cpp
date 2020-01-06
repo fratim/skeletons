@@ -553,18 +553,14 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
   FILE *fp = fopen(somaefilename, "rb");
   if (fp) {
 
-    std::cout << "reading..." << std::endl;
-
-    long nneurons;
+        long nneurons;
 
     ReadHeader(fp, nneurons);
     long checksum = 0;
-    std::cout << "nneurons: "<< nneurons << std::endl;
-
+    
     for (long iv = 0; iv < nneurons; ++iv) {
 
-	std::cout << "HOSSA A!" << std::endl;
-        // get the label and number of synapses
+	// get the label and number of synapses
         long segment_ID;
         long n_points;
 
@@ -573,8 +569,6 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
         bool isQuery = 0;
         if (IDsToProcess.count(segment_ID) != 0) isQuery = 1;
-
-        std::cout << "isQuery: " << isQuery << std::endl;
 
         // read in global indices
         for (long is = 0; is < n_points; ++is) {
