@@ -196,6 +196,8 @@ public:
   std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<short,long> n_points_somae = std::unordered_map<short,long>();
   std::unordered_map<short,long> n_points_somae_surface = std::unordered_map<short,long>();
+  std::unordered_map<long, std::unordered_set<long>> somae_interiorpoints = std::unordered_map<long, std::unordered_set<long>>();
+  std::unordered_map<long, std::unordered_set<long>> somae_surfacepoints = std::unordered_map<long, std::unordered_set<long>>();
 
   DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* somae_dir, const char* output_dir){
 
@@ -305,7 +307,10 @@ public:
         IDs_in_block.insert(curr_label);
       }
 
-      Pointclouds[curr_label][p_iv_local] = 1;
+
+      if (somae_interiorpoints[curr_label].find(p_iv_local)==somae_interiorpoints[curr_label].end()){
+        Pointclouds[curr_label][p_iv_local] = 1;
+      }
 
       // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
       long ix, iy, iz;
@@ -316,6 +321,18 @@ public:
       else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(p_iv_local);
 
     }
+
+    for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+      long label = itr->first;
+      std::cout << "Seg ID: " << label << std::endl;
+      std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
+      long p_iv_local;
+      for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[label].begin(); itr2!=somae_surfacepoints[label].end(); ++itr2){
+        p_iv_local = PadIndex(*itr2, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+        Pointclouds[label][p_iv_local] = 4;
+      }
+    }
+
 
   }
 
@@ -334,9 +351,6 @@ public:
 
     std::cout << "n_points somae is: " << n_points << std::endl;
 
-    std::unordered_map<long, std::unordered_set<long>> deletable_indices = std::unordered_map<long, std::unordered_set<long>>();
-    std::unordered_map<long, std::vector<long>> somae_surfacepoints = std::unordered_map<long, std::vector<long>>();
-
     for (long up_iv_local_dsp = 0; up_iv_local_dsp < n_points; up_iv_local_dsp++){
 
       if (up_iv_local_dsp%10000==0) std::cout << up_iv_local_dsp << std::endl;
@@ -345,11 +359,11 @@ public:
       long curr_label = inp_somae[up_iv_local_dsp];
       if (!curr_label) continue;
 
-      // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
-      if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-        fprintf(stderr, "No pointcloud existent for this somae ID.\n");
-        exit(-1);
-      }
+      // // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
+      // if (Pointclouds.find(curr_label) == Pointclouds.end()) {
+      //   fprintf(stderr, "No pointcloud existent for this somae ID.\n");
+      //   exit(-1);
+      // }
 
       // get downsampled coordinates
       long ix_dsp, iy_dsp, iz_dsp;
@@ -401,28 +415,6 @@ public:
       long iy = iy_dsp*dsp;
       long iz = iz_dsp*dsp;
 
-      // add points as somae
-      // for (int iw = iz; iw<iz+dsp; iw++){
-      //   for (int iv = iy; iv<iy+dsp; iv++){
-      //     for (int iu = ix; iu<ix+dsp; iu++)
-      //     {
-      //       // find the new voxel index
-      //       long up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-      //       long p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-      //
-      //       n_points_somae[curr_label] += 1;
-      //
-      //       if (isSurface){
-      //         Pointclouds[curr_label][p_iv_local_add] = 4;
-      //         somae_surfacepoints[curr_label].push_back(up_iv_local_add);
-      //         n_points_somae_surface[curr_label]+=1;
-      //       }
-      //       else{
-      //         deletable_indices[curr_label].insert(p_iv_local_add);
-      //       }
-      //     }
-      //   }
-
       long up_iv_local_add;
       long p_iv_local_add;
       if (isSurface_z_neg){
@@ -431,8 +423,8 @@ public:
             int iw = iz;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -443,7 +435,7 @@ public:
             int iw = iz;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -454,8 +446,8 @@ public:
             int iv = iy;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -466,7 +458,7 @@ public:
             int iv = iy;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -477,8 +469,8 @@ public:
             int iu = ix;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -489,7 +481,7 @@ public:
             int iu = ix;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -500,8 +492,8 @@ public:
             int iw = iz+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -512,7 +504,7 @@ public:
             int iw = iz+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -523,8 +515,8 @@ public:
             int iv = iy+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -535,7 +527,7 @@ public:
             int iv = iy+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -546,8 +538,8 @@ public:
             int iu = ix+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            Pointclouds[curr_label][p_iv_local_add] = 4;
-            somae_surfacepoints[curr_label].push_back(up_iv_local_add);
+            // Pointclouds[curr_label][p_iv_local_add] = 4;
+            somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
         }
       }
@@ -558,7 +550,7 @@ public:
             int iu = ix+dsp-1;
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -568,7 +560,7 @@ public:
           for (int iu = ix+1; iu<ix+dsp-1; iu++){
             up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
             p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
-            deletable_indices[curr_label].insert(p_iv_local_add);
+            somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
@@ -578,22 +570,22 @@ public:
 
 
 
-    std::cout << "deletable points:" << std::endl;
+    // std::cout << "deletable points:" << std::endl;
+    //
+    // for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_interiorpoints.begin(); itr!=somae_interiorpoints.end(); ++itr){
+    //   long label = itr->first;
+    //   std::cout << "Seg ID: " << label << std::endl;
+    //   std::cout << "points: " << somae_interiorpoints[label].size() << std::endl;
+    //
+    //   for (std::unordered_set<long>::iterator itr2 = somae_interiorpoints[label].begin(); itr2!=somae_interiorpoints[label].end(); ++itr2){
+    //     Pointclouds[label].erase(*itr2);
+    //   }
+    // }
+    //
+    //
+    // std::cout << "surface points:" << std::endl;
 
-    for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = deletable_indices.begin(); itr!=deletable_indices.end(); ++itr){
-      long label = itr->first;
-      std::cout << "Seg ID: " << label << std::endl;
-      std::cout << "points: " << deletable_indices[label].size() << std::endl;
-
-      for (std::unordered_set<long>::iterator itr2 = deletable_indices[label].begin(); itr2!=deletable_indices[label].end(); ++itr2){
-        Pointclouds[label].erase(*itr2);
-      }
-    }
-
-
-    std::cout << "surface points:" << std::endl;
-
-    WriteSomaeSurface(somae_surfacepoints);
+    WriteSomaeSurface();
 
   }
 
@@ -900,7 +892,7 @@ public:
     fclose(wfp);
   }
 
-  void WriteSomaeSurface(std::unordered_map<long, std::vector<long>> &somae_surfacepoints)
+  void WriteSomaeSurface(void)
     {
 
       //get number of anchor points
@@ -919,7 +911,7 @@ public:
       WriteHeader(wfp, n_neurons);
       long checksum = 0;
 
-      for (std::unordered_map<long,std::vector<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+      for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
         long seg_id = itr->first;
         long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
 
@@ -936,7 +928,7 @@ public:
         // checksum += up_iv_global_center;
         // checksum += up_iv_local_center;
 
-        for (std::vector<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
+        for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
 
           long up_iv_local = *itr2;
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
@@ -1566,11 +1558,11 @@ public:
         // create new Datablock and set the input variables
         DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp, block_ind_start_inp, block_ind_end_inp, synapses_dir, somae_dir, output_dir);
 
-        // process the input labels
-        BlockA->CppPopulatePointCloudFromH5(inp_labels);
-
         // process Somae
         BlockA->CppPopulateSomaeFromH5(inp_somae);
+
+        // process the input labels
+        BlockA->CppPopulatePointCloudFromH5(inp_labels);
 
         // read Synapses
         if (!BlockA->ReadSynapses()) exit(-1);
