@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <unistd.h>
 #include <time.h>
+#include <vector>
 
 struct DijkstraData {
     long iv;
@@ -18,10 +19,10 @@ void ReadHeader(FILE *fp, long &num);
 void WriteHeaderSegID(FILE *fp, long &num, long&segID);
 void ReadHeaderSegID(FILE *fp, long &num, long&segID);
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir);
-void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
-void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::vector<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::vector<long> IDsToProcess, long (&block_ind)[3]);
 void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses);
 void WriteSomaeSurfaces(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces);
 
@@ -127,7 +128,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   fflush(stdout);
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
-  std::unordered_set<long> IDsToProcess = std::unordered_set<long>();
+  std::vector<long> IDsPresent = std::vector<long>();
+  std::vector<long> IDsToProcess = std::vector<long>();
 
   printf("Reading IDs to process \n");
   fflush(stdout);
@@ -151,7 +153,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
           long seg_ID;
           if (fread(&seg_ID, sizeof(long), 1, fpid) != 1) { fprintf(stderr, "Failed to read to IDs in Block to %s \n", output_filename_IDs); exit(-1); }
-          IDsToProcess.insert(seg_ID);
+          IDsPresent.push_back(seg_ID);
         }
         fclose(fpid);
 
@@ -159,8 +161,24 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     }
   }
 
-  for (auto const& i: IDsToProcess) {
+  printf("IDsPresent: ");
+  for (auto const& i: IDsPresent) {
         std::cout << i << " ";
+  }
+  printf("\n");
+  fflush(stdout);
+
+  printf("IDsToProcess: ");
+  int counter = 0;
+
+  for (auto const& i: IDsPresent) {
+
+        if (counter>50) continue;
+
+        IDsToProcess.push_back(*i);
+        std::cout << i << " ";
+
+        counter++;
   }
   printf("\n");
   fflush(stdout);
@@ -178,7 +196,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
       for (long bx =  block_search_start[OR_X]; bx<=block_search_end[OR_X]; bx++){
 
-        std::cout << "Block is: " << bz << ", " << by << ", " << bx << std::endl; 
+        std::cout << "Block is: " << bz << ", " << by << ", " << bx << std::endl;
         fflush(stdout);
         long block_ind[3];
 
@@ -203,13 +221,13 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   fflush(stdout);
 
   WriteProjectedSynapses(prefix, synapses);
-  
+
   printf("Writing Somae Surfaces");
   fflush(stdout);
 
   if (detectSomae) WriteSomaeSurfaces(prefix, somae_surfaces);
 
-  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
+  for (std::vector<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
     std::cout << "----------------------------------"<<std::endl;
@@ -502,7 +520,7 @@ void WriteHeaderSegID(FILE *fp, long &num, long&segID)
   if (check != 8) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
 }
 
-void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::vector<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -562,7 +580,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
 
 }
 
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::vector<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -578,7 +596,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
     ReadHeader(fp, nneurons);
     long checksum = 0;
-    
+
     for (long iv = 0; iv < nneurons; ++iv) {
 
 	// get the label and number of synapses
@@ -626,7 +644,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
 }
 
-void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3])
 {
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){

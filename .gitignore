@@ -16,6 +16,8 @@ examples/skeletons_somaedet_on/
 examples/synapses_projected_Zebrafinch/
 examples/somae_surfaces/
 examples/skeletons_somaedet_off/
+examples/skeletons_somaedet2p0_on/
+examples/synapses*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
