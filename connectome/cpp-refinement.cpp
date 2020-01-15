@@ -123,10 +123,14 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   start_time_total = clock();
 
-
+  printf("Setting Parameters\n");
+  fflush(stdout);
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
   std::unordered_set<long> IDsToProcess = std::unordered_set<long>();
+
+  printf("Reading IDs to process \n");
+  fflush(stdout);
 
   start_time_read_IDstoProcess = clock();
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
@@ -155,16 +159,27 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     }
   }
 
+  for (auto const& i: IDsToProcess) {
+        std::cout << i << " ";
+  }
+  printf("\n");
+  fflush(stdout);
+
   time_read_IDstoProcess += (double) (clock() - start_time_read_IDstoProcess) / CLOCKS_PER_SEC;
 
   std::unordered_map<long, std::unordered_map<long, char>> segment = std::unordered_map<long, std::unordered_map<long, char>>();
   std::unordered_map<long, std::unordered_set<long>> synapses = std::unordered_map<long, std::unordered_set<long>>();
   std::unordered_map<long, std::unordered_set<long>> somae_surfaces = std::unordered_map<long, std::unordered_set<long>>();
 
+  printf("Reading Synapses, Skeleton, (Somae)\n");
+  fflush(stdout);
+
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
     for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
       for (long bx =  block_search_start[OR_X]; bx<=block_search_end[OR_X]; bx++){
 
+        std::cout << "Block is: " << bz << ", " << by << ", " << bx << std::endl; 
+        fflush(stdout);
         long block_ind[3];
 
         block_ind[0]=bz;
@@ -184,8 +199,14 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       }
     }
   }
+  printf("Writing projected Synapeses");
+  fflush(stdout);
 
   WriteProjectedSynapses(prefix, synapses);
+  
+  printf("Writing Somae Surfaces");
+  fflush(stdout);
+
   if (detectSomae) WriteSomaeSurfaces(prefix, somae_surfaces);
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
@@ -548,7 +569,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
   char somaefilename[4096];
   snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-  std::cout << somaefilename << std::endl;
+  //std::cout << somaefilename << std::endl;
 
   FILE *fp = fopen(somaefilename, "rb");
   if (fp) {

@@ -68,7 +68,7 @@ else:
 
 files_written = 0
 code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
-run_hours = "2"
+run_hours = "4"
 slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
 
 prefix = "Zebrafinch"
@@ -77,7 +77,7 @@ error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
 template = template.replace('{HOURS}', run_hours)
-memory = str(20000)
+memory = str(90000)
 
 start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)

@@ -1577,10 +1577,10 @@ public:
         PopulateOffsets(BlockA->padded_blocksize);
 
         // insert IDs that should be processed (45 s for thinning)
-        // BlockA->IDs_to_process = BlockA->IDs_in_block;
-        BlockA->IDs_to_process.insert(301);
-        BlockA->IDs_to_process.insert(81);
-        BlockA->IDs_to_process.insert(55);
+        BlockA->IDs_to_process = BlockA->IDs_in_block;
+        //BlockA->IDs_to_process.insert(301);
+        //BlockA->IDs_to_process.insert(81);
+        //BlockA->IDs_to_process.insert(55);
 
         BlockA->writeIDs();
 

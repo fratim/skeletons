@@ -1876,10 +1876,10 @@ static const char __pyx_k_cpp_block_ind_start[] = "cpp_block_ind_start";
 static const char __pyx_k_skeletons_utilities[] = "skeletons.utilities";
 static const char __pyx_k_InputlabelsDirectory[] = "InputlabelsDirectory";
 static const char __pyx_k_walls_folder_current[] = "walls_folder_current";
-static const char __pyx_k_Zebrafinch_input_labels[] = "/Zebrafinch-input_labels-";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_Zebrafinch_somae_refined_dsp8[] = "/Zebrafinch-somae_refined_dsp8-";
 static const char __pyx_k_not_equal_to_size_specified_in[] = ") not equal to size specified in meta file";
+static const char __pyx_k_Zebrafinch_labels_discarded_fil[] = "/Zebrafinch-labels_discarded_filled_padded-";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_unknown_dtype_code_in_numpy_pxd[] = "unknown dtype code in numpy.pxd (%d)";
 static const char __pyx_k_Format_string_allocated_too_shor[] = "Format string allocated too short, see comment in numpy.pxd";
@@ -1911,7 +1911,7 @@ static PyObject *__pyx_n_s_SynapsesDirectory;
 static PyObject *__pyx_n_s_ValueError;
 static PyObject *__pyx_n_s_Volumesize;
 static PyObject *__pyx_n_s_WriteH5File;
-static PyObject *__pyx_kp_s_Zebrafinch_input_labels;
+static PyObject *__pyx_kp_s_Zebrafinch_labels_discarded_fil;
 static PyObject *__pyx_kp_s_Zebrafinch_somae_refined_dsp8;
 static PyObject *__pyx_kp_s__11;
 static PyObject *__pyx_n_s_array;
@@ -2052,7 +2052,7 @@ static PyObject *__pyx_codeobj__26;
  *             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
  * # save walls
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):             # <<<<<<<<<<<<<<
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  */
 
@@ -2175,7 +2175,7 @@ static PyObject *__pyx_pf_6wiring_SaveWalls(CYTHON_UNUSED PyObject *__pyx_self, 
   /* "wiring.pyx":26
  * # save walls
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
  *     data = dataIO.ReadH5File(fileName)
  *     walls_folder = output_folder+'walls/'+prefix+'/'
  */
@@ -2205,7 +2205,7 @@ static PyObject *__pyx_pf_6wiring_SaveWalls(CYTHON_UNUSED PyObject *__pyx_self, 
   __pyx_t_1 = PyNumber_Add(__pyx_t_3, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch_input_labels); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch_labels_discarded_fil); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_2 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_block_z); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
@@ -2297,7 +2297,7 @@ static PyObject *__pyx_pf_6wiring_SaveWalls(CYTHON_UNUSED PyObject *__pyx_self, 
 
   /* "wiring.pyx":27
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)             # <<<<<<<<<<<<<<
  *     walls_folder = output_folder+'walls/'+prefix+'/'
  *     dataset = 'main'
@@ -2326,7 +2326,7 @@ static PyObject *__pyx_pf_6wiring_SaveWalls(CYTHON_UNUSED PyObject *__pyx_self, 
   __pyx_t_3 = 0;
 
   /* "wiring.pyx":28
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  *     walls_folder = output_folder+'walls/'+prefix+'/'             # <<<<<<<<<<<<<<
  *     dataset = 'main'
@@ -3329,7 +3329,7 @@ static PyObject *__pyx_pf_6wiring_SaveWalls(CYTHON_UNUSED PyObject *__pyx_self, 
  *             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
  * # save walls
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):             # <<<<<<<<<<<<<<
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  */
 
@@ -6292,7 +6292,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   /* "wiring.pyx":101
  * 
  *     # everything needs to be long ints to work with c++
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
  *     data = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
  */
@@ -6322,7 +6322,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   __pyx_t_1 = PyNumber_Add(__pyx_t_2, __pyx_v_prefix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch_input_labels); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Add(__pyx_t_1, __pyx_kp_s_Zebrafinch_labels_discarded_fil); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_block_z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
@@ -6414,7 +6414,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
 
   /* "wiring.pyx":102
  *     # everything needs to be long ints to work with c++
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
  * 
@@ -6443,7 +6443,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   __pyx_t_2 = 0;
 
   /* "wiring.pyx":103
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)             # <<<<<<<<<<<<<<
  * 
@@ -10984,7 +10984,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
   {&__pyx_n_s_Volumesize, __pyx_k_Volumesize, sizeof(__pyx_k_Volumesize), 0, 0, 1, 1},
   {&__pyx_n_s_WriteH5File, __pyx_k_WriteH5File, sizeof(__pyx_k_WriteH5File), 0, 0, 1, 1},
-  {&__pyx_kp_s_Zebrafinch_input_labels, __pyx_k_Zebrafinch_input_labels, sizeof(__pyx_k_Zebrafinch_input_labels), 0, 0, 1, 0},
+  {&__pyx_kp_s_Zebrafinch_labels_discarded_fil, __pyx_k_Zebrafinch_labels_discarded_fil, sizeof(__pyx_k_Zebrafinch_labels_discarded_fil), 0, 0, 1, 0},
   {&__pyx_kp_s_Zebrafinch_somae_refined_dsp8, __pyx_k_Zebrafinch_somae_refined_dsp8, sizeof(__pyx_k_Zebrafinch_somae_refined_dsp8), 0, 0, 1, 0},
   {&__pyx_kp_s__11, __pyx_k__11, sizeof(__pyx_k__11), 0, 0, 1, 0},
   {&__pyx_n_s_array, __pyx_k_array, sizeof(__pyx_k_array), 0, 0, 1, 1},
@@ -11273,7 +11273,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
  * # save walls
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):             # <<<<<<<<<<<<<<
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  */
   __pyx_tuple__19 = PyTuple_Pack(15, __pyx_n_s_prefix, __pyx_n_s_output_folder, __pyx_n_s_block_z, __pyx_n_s_block_y, __pyx_n_s_block_x, __pyx_n_s_fileName, __pyx_n_s_data, __pyx_n_s_walls_folder, __pyx_n_s_dataset, __pyx_n_s_zmin_fp, __pyx_n_s_zmax_fp, __pyx_n_s_ymin_fp, __pyx_n_s_ymax_fp, __pyx_n_s_xmin_fp, __pyx_n_s_xmax_fp); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 25, __pyx_L1_error)
@@ -11695,7 +11695,7 @@ if (!__Pyx_RefNanny) {
  *             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
  * # save walls
  * def SaveWalls(prefix, output_folder, block_z, block_y, block_x):             # <<<<<<<<<<<<<<
- *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-input_labels-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data = dataIO.ReadH5File(fileName)
  */
   __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_6wiring_1SaveWalls, NULL, __pyx_n_s_wiring); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)

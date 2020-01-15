@@ -1,18 +1,18 @@
 # resolution in nm
 18x18x20
 # volume size
-5632x5632x6144
+6144x6144x5888
 # block size
-512x512x512
+2048x2048x256
 # blocks start
 0x0x0
 # number of blocks
-11x11x12
+3x3x23
 # input_labels directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/blocks_512_512_512/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/output_segments/
 # synapses directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/synapses_512/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/synapses_2048x2048x256/
 # somae directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/somae_blocks_dsp8/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/somae_2048x2048x256/
 # output directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/padded_data/filled_data/somaedet_on/
+/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/
