@@ -163,7 +163,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   printf("IDsPresent: ");
   for (std::vector<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
-        std::cout << *i << " ";
+        std::cout << *iter << " ";
   }
   printf("\n");
   fflush(stdout);
@@ -175,8 +175,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
         if (counter>50) continue;
 
-        IDsToProcess.push_back(*i);
-        std::cout << *i << " ";
+        IDsToProcess.push_back(*iter);
+        std::cout << *iter << " ";
 
         counter++;
   }
