@@ -543,7 +543,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
         if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
         bool isQuery = 0;
-        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
+        if (std::find(IDsToProcess.begin(), IDsToProcess.end(), segment_ID) != IDsToProcess.end()) isQuery = 1;
 
         // read in global indices
         for (long is = 0; is < nsynapses; ++is) {
@@ -607,7 +607,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
         if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
 
         bool isQuery = 0;
-        if (IDsToProcess.count(segment_ID) != 0) isQuery = 1;
+        if (std::find(IDsToProcess.begin(), IDsToProcess.end(), segment_ID) != IDsToProcess.end()) isQuery = 1;
 
         // read in global indices
         for (long is = 0; is < n_points; ++is) {
