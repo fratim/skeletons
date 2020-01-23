@@ -9,10 +9,10 @@
 # number of blocks
 3x3x23
 # input_labels directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/output_segments/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/2_discarded_filled_padded/
 # synapses directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/synapses_2048x2048x256/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/b_synapses_2048x2048x256/
 # somae directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/somae_2048x2048x256/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/c_somae_dsp8_2048x2048x256/
 # output directory
-/n/pfister_lab2/Lab/tfranzmeyer/Zebrafinch/original_data/stacked_256/padded_and_statistics/thinning/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/thinning/

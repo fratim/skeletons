@@ -19,7 +19,7 @@ cdef extern from 'cpp-wiring.h':
             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
 # save walls
 def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
-    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/"+prefix+"-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     walls_folder = output_folder+'walls/'+prefix+'/'
     dataset = 'main'
@@ -94,12 +94,12 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     start_time = time.time()
 
     # everything needs to be long ints to work with c++
-    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/Zebrafinch-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/"+prefix+"-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 
     # load somae
-    fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/Zebrafinch-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data_somae = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)
 
