@@ -178,6 +178,6 @@ def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_
     CppSkeletonRefinement(prefix.encode('utf-8'), &(cpp_resolution[0]), &(cpp_blocksize[0]), &(cpp_volumesize[0]), &(cpp_block_ind_begin[0]), &(cpp_block_ind_end[0]), output_folder.encode('utf-8'))
 
     # print out statistics for wiring extraction
-    g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
+    g = open(totaltime_folder+"-Refine.txt", "a+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
