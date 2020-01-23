@@ -7,11 +7,7 @@ cimport numpy as np
 import ctypes
 import numpy as np
 
-
-
 from skeletons.utilities import dataIO
-
-
 
 cdef extern from 'cpp-wiring.h':
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],

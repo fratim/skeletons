@@ -115,7 +115,7 @@ static void PopulateOffsets(long padded_blocksize[3])
   // use this order to go UP, DOWN, NORTH, SOUTH, EAST, WEST
   // DO NOT CHANGE THIS ORDERING
   n6_offsets[0] = -1 * padded_blocksize[OR_X]; //neg y direction
-  n6_offsets[1] = padded_blocksize[OR_X]; // neg y direction
+  n6_offsets[1] = padded_blocksize[OR_X]; // pos y direction
   n6_offsets[2] = -1 * padded_blocksize[OR_Y] * padded_blocksize[OR_X]; // neg z direction
   n6_offsets[3] = padded_blocksize[OR_Y] * padded_blocksize[OR_X]; // pos z direction
   n6_offsets[4] = +1; // pos x direction
@@ -190,7 +190,7 @@ public:
   std::unordered_set<long> IDs_to_process = std::unordered_set<long>();
   std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
   std::unordered_map<long, std::unordered_map<long, char>> Pointclouds = std::unordered_map<long, std::unordered_map<long, char>>();
-  std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>> borderpoints = std::unordered_map<long, std::unordered_map<long, std::unordered_set<long>>>();
+  std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>> borderpoints = std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>>();
   std::unordered_map<long, std::vector<long>> anchors_comp = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
@@ -316,9 +316,17 @@ public:
       long ix, iy, iz;
       IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size, input_row_size);
 
-      if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z].insert(p_iv_local);
-      else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y].insert(p_iv_local);
-      else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X].insert(p_iv_local);
+
+      // max key = 1
+      // min key = 0
+
+      if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z][1].insert(p_iv_local);
+      else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y][1].insert(p_iv_local);
+      else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X][1].insert(p_iv_local);
+      else if ((iz==0 && iy!=0) && ix!=0) borderpoints[curr_label][OR_Z][0].insert(p_iv_local);
+      else if ((iz!=0 && iy==0) && ix!=0) borderpoints[curr_label][OR_Y][0].insert(p_iv_local);
+      else if ((iz!=0 && iy!=0) && ix==0) borderpoints[curr_label][OR_X][0].insert(p_iv_local);
+
 
     }
 
@@ -958,7 +966,7 @@ public:
       List surface_voxels;
       long padded_infinity = -1;
       std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-      std::unordered_map<long, std::unordered_set<long>> borderpoints_segment = std::unordered_map<long, std::unordered_set<long>>();
+      std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>> borderpoints_segment = std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>>();
       std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
     public:
@@ -1062,9 +1070,12 @@ public:
             long iz = voxel.iz;
 
             // do not remove voxel in the dirction of the outer facing surface
-            if ((borderpoints_segment[OR_Y].find(index)!=borderpoints_segment[OR_Y].end()) && direction==0) continue;
-            if ((borderpoints_segment[OR_Z].find(index)!=borderpoints_segment[OR_Z].end()) && direction==2) continue;
-            if ((borderpoints_segment[OR_X].find(index)!=borderpoints_segment[OR_X].end()) && direction==5) continue;
+            if ((borderpoints_segment[OR_Y][1].find(index)!=borderpoints_segment[OR_Y][1].end()) && direction==0) continue;
+            if ((borderpoints_segment[OR_Z][1].find(index)!=borderpoints_segment[OR_Z][1].end()) && direction==2) continue;
+            if ((borderpoints_segment[OR_X][1].find(index)!=borderpoints_segment[OR_X][1].end()) && direction==5) continue;
+            if ((borderpoints_segment[OR_Y][0].find(index)!=borderpoints_segment[OR_Y][0].end()) && direction==1) continue;
+            if ((borderpoints_segment[OR_Z][0].find(index)!=borderpoints_segment[OR_Z][0].end()) && direction==3) continue;
+            if ((borderpoints_segment[OR_X][0].find(index)!=borderpoints_segment[OR_X][0].end()) && direction==4) continue;
 
             // otherise do normal procedure - ceck if simple, if so, delete it
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
