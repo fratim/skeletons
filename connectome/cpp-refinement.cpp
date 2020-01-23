@@ -647,7 +647,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3])
 {
 
-  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
+  for (std::vector<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
 
