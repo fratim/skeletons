@@ -21,12 +21,13 @@ start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
 # pass arguments
-if(len(sys.argv))!=4:
-    raise ValueError(" Scripts needs exactley 3 input arguments (bz by bx)")
+if(len(sys.argv))!=2:
+    raise ValueError(" Scripts needs exactley 1 input argument (bz)")
 else:
     bz = int(sys.argv[1])
-    by = int(sys.argv[2])
-    bx = int(sys.argv[3])
 
-output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
-wiring.SaveWalls(prefix, output_folder, bz, by, bx)
+for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
+    for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
+
+        output_folder = dataIO.OutputDirectory(prefix)+'output-'+str(bz).zfill(4)+'z-'+str(by).zfill(4)+'y-'+str(bx).zfill(4)+'x'+'/'
+        wiring.SaveWalls(prefix, output_folder, bz, by, bx)

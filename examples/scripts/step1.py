@@ -14,6 +14,7 @@ output_directories = [  'synapses_projected/',
 'somae_surface',
 'distances/',
 'widths/',
+'total_times/'
 'running_times/',
 'running_times/refinement/',
 'running_times/skeleton/']

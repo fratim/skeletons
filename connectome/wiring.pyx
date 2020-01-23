@@ -9,6 +9,8 @@ import numpy as np
 
 from skeletons.utilities import dataIO
 
+totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
+
 cdef extern from 'cpp-wiring.h':
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
             long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
@@ -19,6 +21,9 @@ cdef extern from 'cpp-wiring.h':
             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
 # save walls
 def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
+
+    start_time_total = time.time()
+
     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/"+prefix+"-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data = dataIO.ReadH5File(fileName)
     walls_folder = output_folder+'walls/'+prefix+'/'
@@ -36,8 +41,17 @@ def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
     dataIO.WriteH5File(data[:,:,0],xmin_fp, dataset)
     dataIO.WriteH5File(data[:,:,-1], xmax_fp, dataset)
 
+    time_total = time.time()-start_time_total
+
+    g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "w+")
+    g.write(format(time_total, '.4f') + "\n")
+    g.close()
+
 # save walls
 def MakeAnchorpoints(prefix, output_folder, block_z, block_y, block_x):
+
+    start_time_total = time.time()
+
     # get indices of the last block
     end_block_ind = np.array(dataIO.StartBlocks(prefix))+np.array(dataIO.NBlocks(prefix))-np.array((1,1,1))
 
@@ -88,10 +102,16 @@ def MakeAnchorpoints(prefix, output_folder, block_z, block_y, block_x):
     ComputeAnchorPoints(prefix.encode('utf-8'), output_folder.encode('utf-8'), &(cpp_blocksize[0]), &(cpp_block_ind[0]),
                 &(cpp_block_ind_start[0]), &(cpp_block_ind_end[0]), &(cpp_volumesize[0]), &(cpp_zmin_wall[0,0]), &(cpp_zmax_wall[0,0]), &(cpp_ymin_wall[0,0]), &(cpp_ymax_wall[0,0]), &(cpp_xmin_wall[0,0]), &(cpp_xmax_wall[0,0]));
 
+    time_total = time.time()-start_time_total
+
+    g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
+    g.write(format(time_total, '.4f') + "\n")
+    g.close()
+
 # extract the wiring diagram for this prefix and segment_ID
 def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     # start running time statistics
-    start_time = time.time()
+    start_time_total = time.time()
 
     # everything needs to be long ints to work with c++
     fileName = dataIO.InputlabelsDirectory(prefix)+"/"+prefix+"/"+prefix+"-labels_discarded_filled_padded-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
@@ -135,10 +155,15 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
                             output_folder.encode('utf-8'))
 
     # print out statistics for wiring extraction
-    print ('Generated skeletons in {:0.2f} seconds'.format(time.time() - start_time))
+    g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
+    g.write(format(time_total, '.4f') + "\n")
+    g.close()
 
 # run refinement on skeleton
 def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_start, block_z_end, block_y_end, block_x_end):
+
+    start_time_total = time.time()
+
     # get blocksize
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize = np.ascontiguousarray(dataIO.Blocksize(prefix), dtype=ctypes.c_int64)
     # get volumesize
@@ -151,3 +176,8 @@ def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_block_ind_end = np.ascontiguousarray(np.array([block_z_end, block_y_end, block_x_end]), dtype=ctypes.c_int64)
 
     CppSkeletonRefinement(prefix.encode('utf-8'), &(cpp_resolution[0]), &(cpp_blocksize[0]), &(cpp_volumesize[0]), &(cpp_block_ind_begin[0]), &(cpp_block_ind_end[0]), output_folder.encode('utf-8'))
+
+    # print out statistics for wiring extraction
+    g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
+    g.write(format(time_total, '.4f') + "\n")
+    g.close()
