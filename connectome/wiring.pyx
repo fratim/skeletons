@@ -9,7 +9,6 @@ import numpy as np
 
 from skeletons.utilities import dataIO
 
-totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
 
 cdef extern from 'cpp-wiring.h':
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
@@ -43,6 +42,7 @@ def SaveWalls(prefix, output_folder, block_z, block_y, block_x):
 
     time_total = time.time()-start_time_total
 
+    totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
     g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "w+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
@@ -104,6 +104,7 @@ def MakeAnchorpoints(prefix, output_folder, block_z, block_y, block_x):
 
     time_total = time.time()-start_time_total
 
+    totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
     g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
@@ -155,6 +156,7 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
                             output_folder.encode('utf-8'))
 
     # print out statistics for wiring extraction
+    totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
     g = open(totaltime_folder+"-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x.txt", "a+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
@@ -178,6 +180,7 @@ def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_
     CppSkeletonRefinement(prefix.encode('utf-8'), &(cpp_resolution[0]), &(cpp_blocksize[0]), &(cpp_volumesize[0]), &(cpp_block_ind_begin[0]), &(cpp_block_ind_end[0]), output_folder.encode('utf-8'))
 
     # print out statistics for wiring extraction
+    totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
     g = open(totaltime_folder+"-Refine.txt", "a+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
