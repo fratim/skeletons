@@ -49,6 +49,9 @@ long infinity = -1;
 long block_search_start[3] = {-1,-1,-1};
 long block_search_end[3] = {-1,-1,-1};
 
+long ID_start = -1;
+long ID_end = -1;
+
 const char *output_directory;
 
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir)
@@ -103,7 +106,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 
 }
 
-void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir, long ID_start, long ID_end)
+void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir, long ID_start_inp, long ID_end_inp)
 {
   // start timing statistics
   double time_total = 0;
@@ -121,6 +124,9 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   clock_t start_time_read_SomaeSurface = 0;
   clock_t start_time_dijkstra = 0;
   clock_t start_time_write = 0;
+
+  ID_start = ID_start_inp;
+  ID_end = ID_end_inp;
 
   start_time_total = clock();
 
@@ -588,64 +594,60 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
 void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
-  // read the synapses
-  char somaefilename[4096];
-  snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
-  //std::cout << somaefilename << std::endl;
+    long segmend_ID = *iter;
 
-  FILE *fp = fopen(somaefilename, "rb");
-  if (fp) {
+    // read the synapses
+    char somaefilename[4096];
+    snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], segment_ID);
 
-        long nneurons;
+    FILE *fp = fopen(somaefilename, "rb");
+    if (fp) {
 
-    ReadHeader(fp, nneurons);
-    long checksum = 0;
+      long segment_ID_read;
+      long n_points;
 
-    for (long iv = 0; iv < nneurons; ++iv) {
+      ReadHeaderSegID(fp, n_points, segment_ID_read);
 
-	      // get the label and number of synapses
-        long segment_ID;
-        long n_points;
+      if (segment_ID != segment_ID_read) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
 
-        if (fread(&segment_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename); exit(-1); }
-        if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
+      long checksum = 0;
 
-        bool isQuery = 0;
-        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
+      // read in global indices
+      for (long is = 0; is < n_points; ++is) {
 
-        // read in global indices
-        for (long is = 0; is < n_points; ++is) {
-            long up_iv_global;
-            if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1);}
-            checksum += up_iv_global;
+        long up_iv_global;
+        if (fread(&up_iv_global, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1);}
+        checksum += up_iv_global;
 
-            if (isQuery){
-              long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
-              segment[segment_ID][p_iv_global]=4;
-              somae_surfaces[segment_ID].insert(p_iv_global);
-            }
+        long p_iv_global = PadIndex(up_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+        segment[segment_ID][p_iv_global]=4;
+        somae_surfaces[segment_ID].insert(p_iv_global);
 
-        }
+      }
 
-        // ignore the local index
-        for (long is = 0; is < n_points; ++is) {
-            long iv_local;
-            if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
-            checksum += iv_local;
-        }
+      // ignore the local index
+      for (long is = 0; is < n_points; ++is) {
+        long iv_local;
+        if (fread(&iv_local, sizeof(long), 1, fp) != 1)  { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
+        checksum += iv_local;
+      }
+
+
+      long checksum_read;
+      if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", somaefilename);  exit(-1); }
+      if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", somaefilename); exit(-1); }
 
     }
 
-    long checksum_read;
-    if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", somaefilename);  exit(-1); }
-    if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", somaefilename); exit(-1); }
 
+    // close file
+    fclose(fp);
+    //std::cout << somaefilename << std::endl;
   }
 
 
-  // close file
-  fclose(fp);
 
 }
 
@@ -707,7 +709,7 @@ void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::un
 
   // create an output file for the points
   char output_filename[4096];
-  sprintf(output_filename, "%s/synapses_projected/%s/%s-synapses_projected.pts", output_directory, prefix, prefix);
+  sprintf(output_filename, "%s/synapses_projected/%s/%s-synapses_projected-ID_start-%012ld-ID_end-%012ld.pts", output_directory, prefix, prefix, ID_start, ID_end);
 
   FILE *wfp = fopen(output_filename, "wb");
   if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
@@ -745,7 +747,7 @@ void WriteSomaeSurfaces(const char *prefix, std::unordered_map<long, std::unorde
 
   // create an output file for the points
   char output_filename[4096];
-  sprintf(output_filename, "%s/somae_surfaces/%s/%s-somae_surfaces.pts", output_directory, prefix, prefix);
+  sprintf(output_filename, "%s/somae_surfaces/%s/%s-somae_surfaces-ID_start-%012ld-ID_end-%012ld.pts", output_directory, prefix, prefix, ID_start, ID_end);
 
   FILE *wfp = fopen(output_filename, "wb");
   if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
