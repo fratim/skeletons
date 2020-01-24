@@ -15,7 +15,7 @@ cdef extern from 'cpp-wiring.h':
             long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
             const char* synapses_dir, const char* somae_dir, const char* output_dir);
     void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],
-            long block_ind_end[3], const char* output_dir);
+            long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
     void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long blockind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
             long volumesize_in_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall);
 # save walls
@@ -162,10 +162,14 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     g.close()
 
 # run refinement on skeleton
-def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_start, block_z_end, block_y_end, block_x_end):
+def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_start, block_z_end, block_y_end, block_x_end, ID_start, ID_end):
 
     start_time_total = time.time()
 
+    # define ID to start with
+    cdef long cpp_ID_start = ID_start
+    # define ID to end with
+    cdef long cpp_ID_end = ID_end
     # get blocksize
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_blocksize = np.ascontiguousarray(dataIO.Blocksize(prefix), dtype=ctypes.c_int64)
     # get volumesize
@@ -177,7 +181,7 @@ def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_
     # get block indices (end)
     cdef np.ndarray[long, ndim=1, mode='c'] cpp_block_ind_end = np.ascontiguousarray(np.array([block_z_end, block_y_end, block_x_end]), dtype=ctypes.c_int64)
 
-    CppSkeletonRefinement(prefix.encode('utf-8'), &(cpp_resolution[0]), &(cpp_blocksize[0]), &(cpp_volumesize[0]), &(cpp_block_ind_begin[0]), &(cpp_block_ind_end[0]), output_folder.encode('utf-8'))
+    CppSkeletonRefinement(prefix.encode('utf-8'), &(cpp_resolution[0]), &(cpp_blocksize[0]), &(cpp_volumesize[0]), &(cpp_block_ind_begin[0]), &(cpp_block_ind_end[0]), output_folder.encode('utf-8'), cpp_ID_start, cpp_ID_end)
 
     # print out statistics for wiring extraction
     totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
