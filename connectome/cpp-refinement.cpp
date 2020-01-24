@@ -587,7 +587,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
   // read the synapses
   char somaefilename[4096];
-  snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
+  snprintf(somaefilename, 4096, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx-ID-%012ld.pts", output_directory, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix,prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
   //std::cout << somaefilename << std::endl;
 
@@ -601,7 +601,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
     for (long iv = 0; iv < nneurons; ++iv) {
 
-	// get the label and number of synapses
+	      // get the label and number of synapses
         long segment_ID;
         long n_points;
 
@@ -649,7 +649,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3])
 {
 
-  for (std::vector<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
+  for (std::unordered_map<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
 
