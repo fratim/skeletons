@@ -73,6 +73,9 @@ slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
 
 prefix = "Zebrafinch"
 
+ID_max = 410
+refinement_chunksize = 50
+
 error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
@@ -168,20 +171,27 @@ for bz in range(start_blocks[0], start_blocks[0] + n_blocks[0]):
             writeFile(filename, t)
             files_written += 1
 
-# write slurm for step one
-command = "step5.py"
-jobname = "S5"
 
-t = template
-t = t.replace('{JOBNAME}', jobname)
-t = t.replace('{COMMAND}', command)
-t = t.replace('{ERROR_PATH}', error_path)
-t = t.replace('{OUTPUT_PATH}', output_path)
-t = t.replace('{MEMORY}', memory)
-t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
-filename = step05folderpath + jobname + ".slurm"
-writeFile(filename, t)
-files_written += 1
+ID_range = np.arange(1,ID_max)
+
+for ID_start in ID_range[::refinement_chunksize]:
+
+    ID_end = ID_start+refinement_chunksize-1
+
+    command = "step5.py" + " " + str(ID_start) + " " + str(ID_end)
+    jobname = "S5" + "_" + str(ID_start) + "_" + str(ID_end)
+
+    t = template
+    t = t.replace('{JOBNAME}', jobname)
+    t = t.replace('{COMMAND}', command)
+    t = t.replace('{ERROR_PATH}', error_path)
+    t = t.replace('{OUTPUT_PATH}', output_path)
+    t = t.replace('{MEMORY}', memory)
+    t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
+
+    filename = step05folderpath + jobname + ".slurm"
+    writeFile(filename, t)
+    files_written += 1
 
 
 print ("Files written: " + str(files_written))

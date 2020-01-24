@@ -18,7 +18,7 @@ void WriteHeader(FILE *fp, long &num);
 void ReadHeader(FILE *fp, long &num);
 void WriteHeaderSegID(FILE *fp, long &num, long&segID);
 void ReadHeaderSegID(FILE *fp, long &num, long&segID);
-void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir);
+void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
 void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::vector<long> IDsToProcess, long (&block_ind)[3]);
 void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
@@ -103,7 +103,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 
 }
 
-void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir)
+void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
 {
   // start timing statistics
   double time_total = 0;
@@ -169,16 +169,18 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   fflush(stdout);
 
   printf("IDsToProcess: ");
-  int counter = 0;
+  long ID_query = 0;
 
   for (std::vector<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
 
-        if (counter>50) continue;
+        ID_query = *iter;
 
-        IDsToProcess.push_back(*iter);
-        std::cout << *iter << " ";
+        if ((ID_query>=ID_start)&&(ID_query<=ID_end)){
+          IDsToProcess.push_back(ID_query);
+          std::cout << ID_query << " ";
+        }
 
-        counter++;
+
   }
   printf("\n");
   fflush(stdout);
