@@ -19,10 +19,10 @@ void ReadHeader(FILE *fp, long &num);
 void WriteHeaderSegID(FILE *fp, long &num, long&segID);
 void ReadHeaderSegID(FILE *fp, long &num, long&segID);
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
-void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::vector<long> IDsToProcess, long (&block_ind)[3]);
-void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::vector<long> IDsToProcess, long (&block_ind)[3]);
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3]);
 void WriteProjectedSynapses(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &synapses);
 void WriteSomaeSurfaces(const char *prefix, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces);
 
@@ -103,7 +103,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 
 }
 
-void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
+void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3], long block_ind_end[3], const char* output_dir, long ID_start, long ID_end)
 {
   // start timing statistics
   double time_total = 0;
@@ -128,8 +128,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   fflush(stdout);
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
-  std::vector<long> IDsPresent = std::vector<long>();
-  std::vector<long> IDsToProcess = std::vector<long>();
+  std::unordered_set<long> IDsPresent = std::unordered_set<long>();
+  std::unordered_set<long> IDsToProcess = std::unordered_set<long>();
 
   printf("Reading IDs to process \n");
   fflush(stdout);
@@ -153,7 +153,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
           long seg_ID;
           if (fread(&seg_ID, sizeof(long), 1, fpid) != 1) { fprintf(stderr, "Failed to read to IDs in Block to %s \n", output_filename_IDs); exit(-1); }
-          IDsPresent.push_back(seg_ID);
+          IDsPresent.insert(seg_ID);
         }
         fclose(fpid);
 
@@ -162,7 +162,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   }
 
   printf("IDsPresent: ");
-  for (std::vector<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
+  for (std::unordered_set<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
         std::cout << *iter << " ";
   }
   printf("\n");
@@ -171,18 +171,21 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   printf("IDsToProcess: ");
   long ID_query = 0;
 
-  for (std::vector<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
+  for (std::unordered_set<long>::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
 
         ID_query = *iter;
 
         if ((ID_query>=ID_start)&&(ID_query<=ID_end)){
-          IDsToProcess.push_back(ID_query);
+          IDsToProcess.insert(ID_query);
           std::cout << ID_query << " ";
         }
 
 
   }
   printf("\n");
+
+  std::cout << "end" << std::flush;
+
   fflush(stdout);
 
   time_read_IDstoProcess += (double) (clock() - start_time_read_IDstoProcess) / CLOCKS_PER_SEC;
@@ -229,7 +232,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   if (detectSomae) WriteSomaeSurfaces(prefix, somae_surfaces);
 
-  for (std::vector<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
+  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
     std::cout << "----------------------------------"<<std::endl;
@@ -522,7 +525,7 @@ void WriteHeaderSegID(FILE *fp, long &num, long&segID)
   if (check != 8) { fprintf(stderr, "Failed to write file in writeheader\n"); exit(-1); }
 }
 
-void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::vector<long> IDsToProcess, long (&block_ind)[3])
+void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &synapses, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -545,7 +548,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
         if (fread(&nsynapses, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", synapse_filename);  exit(-1); }
 
         bool isQuery = 0;
-        if (std::find(IDsToProcess.begin(), IDsToProcess.end(), segment_ID) != IDsToProcess.end()) isQuery = 1;
+        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
 
         // read in global indices
         for (long is = 0; is < nsynapses; ++is) {
@@ -582,7 +585,7 @@ void ReadSynapses(const char *prefix, std::unordered_map<long, std::unordered_ma
 
 }
 
-void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::vector<long> IDsToProcess, long (&block_ind)[3])
+void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_map<long, std::unordered_set<long>> &somae_surfaces, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
   // read the synapses
@@ -609,7 +612,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
         if (fread(&n_points, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s.\n", somaefilename);  exit(-1); }
 
         bool isQuery = 0;
-        if (std::find(IDsToProcess.begin(), IDsToProcess.end(), segment_ID) != IDsToProcess.end()) isQuery = 1;
+        if (IDsToProcess.find(segment_ID) != IDsToProcess.end()) isQuery = 1;
 
         // read in global indices
         for (long is = 0; is < n_points; ++is) {
@@ -646,10 +649,10 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
 }
 
-void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::vector<long> IDsToProcess, long (&block_ind)[3])
+void ReadSkeleton(const char *prefix, std::unordered_map<long, std::unordered_map<long, char>> &segment, std::unordered_set<long> IDsToProcess, long (&block_ind)[3])
 {
 
-  for (std::vector<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
+  for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
 
