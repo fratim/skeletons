@@ -596,7 +596,7 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
 
   for (std::unordered_set<long>::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
-    long segmend_ID = *iter;
+    long segment_ID = *iter;
 
     // read the synapses
     char somaefilename[4096];
@@ -639,12 +639,13 @@ void ReadSomaeSurface(const char *prefix, std::unordered_map<long, std::unordere
       if (fread(&checksum_read, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to write to %s\n", somaefilename);  exit(-1); }
       if (checksum != checksum_read) { fprintf(stderr, "Checksum for %s incorrect\n", somaefilename); exit(-1); }
 
+      // close file
+      fclose(fp);
+      //std::cout << somaefilename << std::endl;
+      
     }
 
 
-    // close file
-    fclose(fp);
-    //std::cout << somaefilename << std::endl;
   }
 
 
