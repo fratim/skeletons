@@ -68,7 +68,7 @@ else:
 
 files_written = 0
 code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
-run_hours = "4"
+run_hours = "3"
 slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
 
 prefix = "Zebrafinch"
@@ -80,7 +80,8 @@ error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
 template = template.replace('{HOURS}', run_hours)
-memory = str(90000)
+memory = str(39000)
+# sizex * sizey * sizez * 3 * 8 bytes
 
 start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
@@ -186,7 +187,7 @@ for ID_start in ID_range[::refinement_chunksize]:
     t = t.replace('{COMMAND}', command)
     t = t.replace('{ERROR_PATH}', error_path)
     t = t.replace('{OUTPUT_PATH}', output_path)
-    t = t.replace('{MEMORY}', memory)
+    t = t.replace('{MEMORY}', str(memory))
     t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
 
     filename = step05folderpath + jobname + ".slurm"

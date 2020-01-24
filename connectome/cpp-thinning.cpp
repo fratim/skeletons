@@ -904,7 +904,7 @@ public:
     {
 
       //get number of anchor points
-      long n_neurons = somae_surfacepoints.size();
+      // long n_neurons = somae_surfacepoints.size();
 
       for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
 
@@ -921,7 +921,7 @@ public:
         if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
 
         // write the characteristics header
-        WriteHeader(wfp, seg_ID);
+        WriteHeader(wfp, seg_id);
         long checksum = 0;
 
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }

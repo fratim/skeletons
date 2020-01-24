@@ -10,7 +10,7 @@ start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
 # pass arguments
-if(len(sys.argv))!=4:
+if(len(sys.argv))!=3:
     raise ValueError(" Scripts needs exactley 2 input arguments (ID_start ID_end))")
 else:
     ID_start = int(sys.argv[1])
