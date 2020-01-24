@@ -930,9 +930,6 @@ public:
 
         long pos = 0;
 
-        // checksum += up_iv_global_center;
-        // checksum += up_iv_local_center;
-
         for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
 
           long up_iv_local = *itr2;
@@ -950,7 +947,7 @@ public:
 
         if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         fclose(wfp);
-        
+
       }
 
     }
