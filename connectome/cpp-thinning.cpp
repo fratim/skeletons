@@ -906,27 +906,24 @@ public:
       //get number of anchor points
       long n_neurons = somae_surfacepoints.size();
 
-      // create an output file for the points
-      char output_filename[4096];
-      sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx.pts",
-      output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
-      prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
-
-      FILE *wfp = fopen(output_filename, "wb");
-      if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
-
-      // write the characteristics header
-      WriteHeader(wfp, n_neurons);
-      long checksum = 0;
-
       for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+
         long seg_id = itr->first;
         long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
 
-        std::cout << "Seg ID: " << seg_id << std::endl;
-        std::cout << "points: " << n_points << std::endl;
+        // create an output file for the points
+        char output_filename[4096];
+        sprintf(output_filename, "%s/output-%04ldz-%04ldy-%04ldx/somae_surface/%s/%s-somae_surfaces-%04ldz-%04ldy-%04ldx-ID-%012ld.pts",
+        output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X],
+        prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], seg_id);
 
-        if (fwrite(&seg_id, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        FILE *wfp = fopen(output_filename, "wb");
+        if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+        // write the characteristics header
+        WriteHeader(wfp, seg_ID);
+        long checksum = 0;
+
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
         std::vector<long> index_local = std::vector<long>();
@@ -951,10 +948,11 @@ public:
           if (fwrite(&index_local[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
+        if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+        fclose(wfp);
+        
       }
 
-      if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-      fclose(wfp);
     }
 
   };
