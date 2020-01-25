@@ -29,7 +29,6 @@ static const int WEST = 5;
 
 // lookup tables
 static unsigned char *lut_simple;
-static std::unordered_map<long, float> widths;
 
 // mask variables for bitwise operations
 static long long_mask[26];
@@ -1033,8 +1032,17 @@ public:
                 NewSurfaceVoxel(index, ix, iy, iz, surface_voxels);
               }
 
-              // note this location as surface
-              widths[index] = 0;
+              // note this location as surface, if not on a block surface
+              if (  (borderpoints_segment[OR_Y][1].find(index)==borderpoints_segment[OR_Y][1].end()) &&
+                    (borderpoints_segment[OR_Z][1].find(index)==borderpoints_segment[OR_Z][1].end()) &&
+                    (borderpoints_segment[OR_X][1].find(index)==borderpoints_segment[OR_X][1].end()) &&
+                    (borderpoints_segment[OR_Y][0].find(index)==borderpoints_segment[OR_Y][0].end()) &&
+                    (borderpoints_segment[OR_Z][0].find(index)==borderpoints_segment[OR_Z][0].end()) &&
+                    (borderpoints_segment[OR_X][0].find(index)==borderpoints_segment[OR_X][0].end())    ){
+
+                      widths[index] = 0;
+
+                    }
 
               break;
             }
