@@ -1302,7 +1302,7 @@ public:
 
         double seg_time = (double) (clock() - start_time_seg) / CLOCKS_PER_SEC;
 
-        fprintf(fptime,"%12ld, %12ld \n", initial_points_input, seg_time);
+        fprintf(fptime,"%12ld, %12.2f \n", initial_points_input, seg_time);
 
         fclose(fptime);
       }
