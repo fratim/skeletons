@@ -149,11 +149,6 @@ typedef struct {
   int length;
 } PointList;
 
-typedef struct {
-  ListElement *first;
-  ListElement *last;
-} DoubleList;
-
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
 static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);
 static void CreatePointList(PointList *s);
@@ -1590,11 +1585,8 @@ public:
         // needs to happen after PopulatePointCloud()
         PopulateOffsets(BlockA->padded_blocksize);
 
-        // insert IDs that should be processed (45 s for thinning)
+        // insert IDs that should be processed (IDs_in_Block if all)
         BlockA->IDs_to_process = BlockA->IDs_in_block;
-        //BlockA->IDs_to_process.insert(301);
-        //BlockA->IDs_to_process.insert(81);
-        //BlockA->IDs_to_process.insert(55);
 
         BlockA->writeIDs();
 
