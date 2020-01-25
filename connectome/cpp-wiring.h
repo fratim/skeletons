@@ -25,6 +25,8 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
 #define OR_Y 1
 #define OR_X 2
 
+#define SOMA_DSP 8
+
 
 //////////////////////////////////////
 //// COORDINATE UTILITY FUNCTIONS ////

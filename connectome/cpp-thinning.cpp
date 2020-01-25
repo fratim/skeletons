@@ -149,6 +149,8 @@ typedef struct {
   int length;
 } PointList;
 
+typedef std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>> borderpoints_map;
+
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
 static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);
 static void CreatePointList(PointList *s);
@@ -179,7 +181,7 @@ public:
   std::unordered_set<long> IDs_to_process = std::unordered_set<long>();
   std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
   std::unordered_map<long, std::unordered_map<long, char>> Pointclouds = std::unordered_map<long, std::unordered_map<long, char>>();
-  std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>> borderpoints = std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>>();
+  borderpoints_map borderpoints = borderpoints_map();
   std::unordered_map<long, std::vector<long>> anchors_comp = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
@@ -266,7 +268,7 @@ public:
   void CppPopulatePointCloudFromH5(long *inp_labels)
   {
 
-    long n_points = input_blocksize[0]*input_blocksize[1]*input_blocksize[2];
+    long n_points = input_blocksize[OR_Z]*input_blocksize[OR_Y]*input_blocksize[OR_X];
 
     std::cout << "n_points is: " << n_points << std::endl;
 
@@ -330,7 +332,7 @@ public:
   void CppPopulateSomaeFromH5(long *inp_somae)
   {
 
-    long dsp = 8;
+    long dsp = SOMA_DSP;
     long input_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp, input_blocksize[OR_Y]/dsp, input_blocksize[OR_X]/dsp};
     long padded_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp+2, input_blocksize[OR_Y]/dsp+2, input_blocksize[OR_X]/dsp+2};
     long input_sheet_size_dsp = input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
@@ -338,23 +340,15 @@ public:
     long padded_sheet_size_dsp = padded_blocksize_dsp[OR_Y]*padded_blocksize_dsp[OR_X];
     long padded_row_size_dsp = padded_blocksize_dsp[OR_X];
 
-    long n_points = input_blocksize_dsp[0]*input_blocksize_dsp[1]*input_blocksize_dsp[2];
+    long n_points = input_blocksize_dsp[OR_Z]*input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
 
     std::cout << "n_points somae is: " << n_points << std::endl;
 
     for (long up_iv_local_dsp = 0; up_iv_local_dsp < n_points; up_iv_local_dsp++){
 
-      if (up_iv_local_dsp%10000==0) std::cout << up_iv_local_dsp << std::endl;
-
       // get segment_ID of current index and skip if is zero
       long curr_label = inp_somae[up_iv_local_dsp];
       if (!curr_label) continue;
-
-      // // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
-      // if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-      //   fprintf(stderr, "No pointcloud existent for this somae ID.\n");
-      //   exit(-1);
-      // }
 
       // get downsampled coordinates
       long ix_dsp, iy_dsp, iz_dsp;
