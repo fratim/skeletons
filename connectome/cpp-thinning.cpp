@@ -1,6 +1,5 @@
 /* c++ file to extract wiring diagram */
 #include <limits>
-#include "cpp-wiring.h"
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
@@ -8,11 +7,8 @@
 #include <time.h>
 #include <stdio.h>
 #include <string>
-#include <unistd.h>
 #include "cpp-MinBinaryHeap.h"
 #include "cpp-wiring.h"
-#include <algorithm>
-#include <fstream>
 
 
 // constant variables
