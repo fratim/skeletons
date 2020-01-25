@@ -148,10 +148,10 @@ typedef struct {
   Cell *tail;
   int length;
 } PointList;
-
+typedef std::vector<long> vec;
 typedef std::unordered_set<long> uoSet;
 typedef std::unordered_map<long, uoSet> map_numToset;
-typedef std::unordered_map<long, std::vector<long>> map_numToset;
+typedef std::unordered_map<long, vec> map_numTovector;
 typedef std::unordered_map<long, char> map_numTochar;
 typedef std::unordered_map<long, std::unordered_map<long, map_numToset>> borderpoints_obj;
 typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
@@ -187,9 +187,9 @@ public:
   uoSet IDs_in_block = uoSet();
   pointclouds_obj Pointclouds = pointclouds_obj();
   borderpoints_obj borderpoints = borderpoints_obj();
-  map_numToset anchors_comp = map_numToset();
-  map_numToset synapses = map_numToset();
-  map_numToset synapses_off = map_numToset();
+  map_numTovector anchors_comp = map_numTovector();
+  map_numTovector synapses = map_numTovector();
+  map_numTovector synapses_off = map_numTovector();
   map_numToset somae_interiorpoints = map_numToset();
   map_numToset somae_surfacepoints = map_numToset();
 
@@ -830,7 +830,7 @@ public:
     WriteHeader(wfp, n_neurons);
     long checksum = 0;
 
-    for (map_numToset::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
+    for (map_numTovector::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
       long seg_id = itr->first;
 
       if (IDs_to_process.count(seg_id)==0) continue;
@@ -842,7 +842,7 @@ public:
       long index_local[n_synapses];
       long pos = 0;
 
-      for (std::vector<long>::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2, ++pos){
+      for (vec::iterator itr2 = synapses[seg_id].begin(); itr2!=synapses[seg_id].end(); ++itr2, ++pos){
 
         long up_iv_local = *itr2;
         long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
@@ -889,7 +889,7 @@ public:
 
         if (fwrite(&n_points, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
-        std::vector<long> index_local = std::vector<long>();
+        vec index_local = vec();
 
         long pos = 0;
 
@@ -1328,7 +1328,7 @@ public:
 
         std::cout << "Projecting n synapses: " << Block.synapses_off[segment_ID].size() << std::endl;
 
-        for (std::vector<long>::iterator it = Block.synapses_off[segment_ID].begin(); it != Block.synapses_off[segment_ID].end(); ++it){
+        for (vec::iterator it = Block.synapses_off[segment_ID].begin(); it != Block.synapses_off[segment_ID].end(); ++it){
           long linear_index = *it;
           long iz_unpadded, iy_unpadded, ix_unpadded;
           IndexToIndices(linear_index, ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size_block, input_row_size_block);
