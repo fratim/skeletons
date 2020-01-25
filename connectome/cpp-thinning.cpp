@@ -149,7 +149,11 @@ typedef struct {
   int length;
 } PointList;
 
-typedef std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, std::unordered_set<long>>>> borderpoints_map;
+typedef std::unordered_set<long> uoSet;
+typedef std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, uoSet>>> borderpoints_obj;
+typedef std::unordered_map<long, std::unordered_map<long, char>> pointclouds_obj;
+typedef std::unordered_map<long, std::vector<long>> map_idTovector;
+typedef std::unordered_map<long, uoSet> map_idToset
 
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
 static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);
@@ -178,15 +182,15 @@ protected:
 
 public:
   long padded_blocksize[3];
-  std::unordered_set<long> IDs_to_process = std::unordered_set<long>();
-  std::unordered_set<long> IDs_in_block = std::unordered_set<long>();
-  std::unordered_map<long, std::unordered_map<long, char>> Pointclouds = std::unordered_map<long, std::unordered_map<long, char>>();
-  borderpoints_map borderpoints = borderpoints_map();
-  std::unordered_map<long, std::vector<long>> anchors_comp = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::unordered_set<long>> somae_interiorpoints = std::unordered_map<long, std::unordered_set<long>>();
-  std::unordered_map<long, std::unordered_set<long>> somae_surfacepoints = std::unordered_map<long, std::unordered_set<long>>();
+  uoSet IDs_to_process = uoSet();
+  uoSet IDs_in_block = uoSet();
+  pointclouds_obj Pointclouds = pointclouds_obj();
+  borderpoints_obj borderpoints = borderpoints_obj();
+  map_idTovector anchors_comp = map_idTovector();
+  map_idTovector synapses = map_idTovector();
+  map_idTovector synapses_off = map_idTovector();
+  map_idToset somae_interiorpoints = map_idToset();
+  map_idToset somae_surfacepoints = map_idToset();
 
   DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* output_dir){
 
@@ -315,12 +319,12 @@ public:
 
     }
 
-    for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+    for (std::unordered_map<long,uoSet>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
       long label = itr->first;
       std::cout << "Seg ID: " << label << std::endl;
       std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
       long p_iv_local;
-      for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[label].begin(); itr2!=somae_surfacepoints[label].end(); ++itr2){
+      for (uoSet::iterator itr2 = somae_surfacepoints[label].begin(); itr2!=somae_surfacepoints[label].end(); ++itr2){
         p_iv_local = PadIndex(*itr2, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
         Pointclouds[label][p_iv_local] = 4;
       }
@@ -727,7 +731,7 @@ public:
 
       WriteHeader(fpid, num);
 
-      for (std::unordered_set<long>::iterator iter = IDs_to_process.begin(); iter != IDs_to_process.end(); ++iter) {
+      for (uoSet::iterator iter = IDs_to_process.begin(); iter != IDs_to_process.end(); ++iter) {
 
         long seg_ID = *iter;
 
@@ -750,7 +754,7 @@ public:
 
       WriteHeader(fpid, num);
 
-      for (std::unordered_set<long>::iterator iter = IDs_in_block.begin(); iter != IDs_in_block.end(); ++iter) {
+      for (uoSet::iterator iter = IDs_in_block.begin(); iter != IDs_in_block.end(); ++iter) {
 
         long seg_ID = *iter;
 
@@ -864,7 +868,7 @@ public:
       //get number of anchor points
       // long n_neurons = somae_surfacepoints.size();
 
-      for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+      for (std::unordered_map<long,uoSet>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
 
         long seg_id = itr->first;
         long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
@@ -888,7 +892,7 @@ public:
 
         long pos = 0;
 
-        for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
+        for (uoSet::iterator itr2 = somae_surfacepoints[seg_id].begin(); itr2!=somae_surfacepoints[seg_id].end(); ++itr2, ++pos){
 
           long up_iv_local = *itr2;
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
@@ -918,7 +922,7 @@ public:
       long segment_ID = -1;
       List surface_voxels;
       std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-      std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>> borderpoints_segment = std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>>();
+      std::unordered_map<long, std::unordered_map<bool ,uoSet>> borderpoints_segment = std::unordered_map<long, std::unordered_map<bool ,uoSet>>();
       std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
     public:
@@ -1553,7 +1557,7 @@ public:
 
         BlockA->writeIDs();
 
-        std::unordered_set<long>::iterator itr = BlockA->IDs_to_process.begin();
+        uoSet::iterator itr = BlockA->IDs_to_process.begin();
 
         while (itr != BlockA->IDs_to_process.end())
         {
