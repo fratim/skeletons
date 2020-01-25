@@ -7,6 +7,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string>
+#include <algorithm>
 #include "cpp-MinBinaryHeap.h"
 #include "cpp-wiring.h"
 
