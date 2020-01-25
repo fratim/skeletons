@@ -150,10 +150,11 @@ typedef struct {
 } PointList;
 
 typedef std::unordered_set<long> uoSet;
-typedef std::unordered_map<long, std::unordered_map<long, std::unordered_map<bool, uoSet>>> borderpoints_obj;
-typedef std::unordered_map<long, std::unordered_map<long, char>> pointclouds_obj;
-typedef std::unordered_map<long, std::vector<long>> map_idTovector;
-typedef std::unordered_map<long, uoSet> map_idToset;
+typedef std::unordered_map<long, uoSet> map_numToset;
+typedef std::unordered_map<long, std::vector<long>> map_numToset;
+typedef std::unordered_map<long, char> map_numTochar;
+typedef std::unordered_map<long, std::unordered_map<long, map_numToset>> borderpoints_obj;
+typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
 
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
 static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);
@@ -186,11 +187,11 @@ public:
   uoSet IDs_in_block = uoSet();
   pointclouds_obj Pointclouds = pointclouds_obj();
   borderpoints_obj borderpoints = borderpoints_obj();
-  map_idTovector anchors_comp = map_idTovector();
-  map_idTovector synapses = map_idTovector();
-  map_idTovector synapses_off = map_idTovector();
-  map_idToset somae_interiorpoints = map_idToset();
-  map_idToset somae_surfacepoints = map_idToset();
+  map_numToset anchors_comp = map_numToset();
+  map_numToset synapses = map_numToset();
+  map_numToset synapses_off = map_numToset();
+  map_numToset somae_interiorpoints = map_numToset();
+  map_numToset somae_surfacepoints = map_numToset();
 
   DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* output_dir){
 
@@ -291,7 +292,7 @@ public:
 
       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
-        Pointclouds[curr_label] = std::unordered_map<long,char>();
+        Pointclouds[curr_label] = map_numTochar();
         // std::cout << "New segment_ID detected: " << curr_label << std::endl << std::flush;
         IDs_in_block.insert(curr_label);
       }
@@ -319,7 +320,7 @@ public:
 
     }
 
-    for (std::unordered_map<long,uoSet>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+    for (map_numToset::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
       long label = itr->first;
       std::cout << "Seg ID: " << label << std::endl;
       std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
@@ -829,7 +830,7 @@ public:
     WriteHeader(wfp, n_neurons);
     long checksum = 0;
 
-    for (std::unordered_map<long,std::vector<long>>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
+    for (map_numToset::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
       long seg_id = itr->first;
 
       if (IDs_to_process.count(seg_id)==0) continue;
@@ -868,7 +869,7 @@ public:
       //get number of anchor points
       // long n_neurons = somae_surfacepoints.size();
 
-      for (std::unordered_map<long,uoSet>::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
+      for (map_numToset::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
 
         long seg_id = itr->first;
         long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
@@ -921,8 +922,8 @@ public:
       long initial_points_input = -1;
       long segment_ID = -1;
       List surface_voxels;
-      std::unordered_map<long, char> segment = std::unordered_map<long, char>();
-      std::unordered_map<long, std::unordered_map<bool ,uoSet>> borderpoints_segment = std::unordered_map<long, std::unordered_map<bool ,uoSet>>();
+      map_numTochar segment = map_numTochar();
+      std::unordered_map<long, map_numToset> borderpoints_segment = std::unordered_map<long, map_numToset>();
       std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
     public:
@@ -963,7 +964,7 @@ public:
       {
 
         // go through all voxels and check their six neighbors
-        for (std::unordered_map<long, char>::iterator it = segment.begin(); it != segment.end(); ++it) {
+        for (map_numTochar::iterator it = segment.begin(); it != segment.end(); ++it) {
 
           // all of these elements are either 1 or 3 and in the segment
           long index = it->first;
