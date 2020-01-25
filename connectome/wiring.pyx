@@ -13,7 +13,7 @@ from skeletons.utilities import dataIO
 cdef extern from 'cpp-wiring.h':
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
             long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
-            const char* synapses_dir, const char* somae_dir, const char* output_dir);
+            const char* synapses_dir, const char* output_dir);
     void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],
             long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
     void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long blockind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
@@ -152,8 +152,7 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     # create c++ datablock and set all variables
     CPPcreateDataBlock(     prefix.encode('utf-8'), lut_directory.encode('utf-8'), &(cpp_inp_labels[0,0,0]), &(cpp_inp_somae[0,0,0]), &(cpp_resolution[0]), &(cpp_blocksize_inp[0]),
                             &(cpp_volumesize[0]), &(cpp_block_ind[0]), &(cpp_block_ind_start[0]), &(cpp_block_ind_end[0]),
-                            dataIO.SynapsesDirectory(prefix).encode('utf-8'),dataIO.SomaeDirectory(prefix).encode('utf-8'),
-                            output_folder.encode('utf-8'))
+                            dataIO.SynapsesDirectory(prefix).encode('utf-8'), output_folder.encode('utf-8'))
 
     time_total = time.time()-start_time_total
 
