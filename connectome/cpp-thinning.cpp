@@ -166,17 +166,12 @@ protected:
   long block_ind[3] = {-1,-1,-1};
   long block_ind_min[3] = {-1,-1,-1};
   long block_ind_max[3] = {-1,-1,-1};
-  long padded_row_size = -1;
-  long padded_sheet_size = -1;
-  long input_row_size = -1;
-  long input_sheet_size = -1;
-  long volume_row_size = -1;
-  long volume_sheet_size = -1;
-  long n_somae_surface = 0;
-  long n_somae_removed = 0;
+  long padded_row_size_block = -1;
+  long padded_sheet_size_block = -1;
+  long input_row_size_block = -1;
+  long input_sheet_size_block = -1;
   const char *prefix;
   const char *synapses_directory;
-  const char *somae_directory;
   const char *output_directory;
 
 public:
@@ -188,12 +183,10 @@ public:
   std::unordered_map<long, std::vector<long>> anchors_comp = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses = std::unordered_map<long, std::vector<long>>();
   std::unordered_map<long, std::vector<long>> synapses_off = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<short,long> n_points_somae = std::unordered_map<short,long>();
-  std::unordered_map<short,long> n_points_somae_surface = std::unordered_map<short,long>();
   std::unordered_map<long, std::unordered_set<long>> somae_interiorpoints = std::unordered_map<long, std::unordered_set<long>>();
   std::unordered_map<long, std::unordered_set<long>> somae_surfacepoints = std::unordered_map<long, std::unordered_set<long>>();
 
-  DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* somae_dir, const char* output_dir){
+  DataBlock(const char* prefix_inp, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3], const char* synapses_dir, const char* output_dir){
 
     resolution[OR_Z] = input_resolution[OR_Z];
     resolution[OR_Y] = input_resolution[OR_Y];
@@ -209,18 +202,18 @@ public:
     padded_blocksize[OR_Y] = inp_blocksize[OR_Y]+2;
     padded_blocksize[OR_X] = inp_blocksize[OR_X]+2;
 
-    padded_sheet_size = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
-    padded_row_size = padded_blocksize[OR_X];
+    padded_sheet_size_block = padded_blocksize[OR_Y] * padded_blocksize[OR_X];
+    padded_row_size_block = padded_blocksize[OR_X];
 
-    input_sheet_size = input_blocksize[OR_Y] * input_blocksize[OR_X];
-    input_row_size = input_blocksize[OR_X];
+    input_sheet_size_block = input_blocksize[OR_Y] * input_blocksize[OR_X];
+    input_row_size_block = input_blocksize[OR_X];
 
     // std::cout << "Blocksize input set to: " << input_blocksize[OR_Z] << "," << input_blocksize[OR_Y] << "," << input_blocksize[OR_X] << "," << std::endl;
     // std::cout << "Blocksize padded set to: " << padded_blocksize[OR_Z] << "," << padded_blocksize[OR_Y] << "," << padded_blocksize[OR_X] << "," << std::endl;
-    // std::cout << "Sheetsize padded set to: " << padded_sheet_size << std::endl;
-    // std::cout << "Rowsize padded set to: " << padded_row_size << std::endl;
-    // std::cout << "Sheetsize input set to: " << input_sheet_size << std::endl;
-    // std::cout << "Rowsize input set to: " << input_row_size << std::endl;
+    // std::cout << "Sheetsize padded set to: " << padded_sheet_size_block << std::endl;
+    // std::cout << "Rowsize padded set to: " << padded_row_size_block << std::endl;
+    // std::cout << "Sheetsize input set to: " << input_sheet_size_block << std::endl;
+    // std::cout << "Rowsize input set to: " << input_row_size_block << std::endl;
 
     volumesize[OR_Z] = volume_size[OR_Z];
     volumesize[OR_Y] = volume_size[OR_Y];
@@ -245,7 +238,6 @@ public:
     prefix = prefix_inp;
 
     synapses_directory = synapses_dir;
-    somae_directory = somae_dir;
     output_directory = output_dir;
 
     // std::cout << "Directories set. " << std::endl;
@@ -264,14 +256,11 @@ public:
     output_directory = Block.output_directory;
     prefix = Block.prefix;
 
-    padded_row_size = Block.padded_row_size;
-    padded_sheet_size = Block.padded_sheet_size;
+    padded_row_size_block = Block.padded_row_size_block;
+    padded_sheet_size_block = Block.padded_sheet_size_block;
 
-    input_row_size = Block.input_row_size;
-    input_sheet_size = Block.input_sheet_size;
-
-    n_points_somae = Block.n_points_somae;
-    n_points_somae_surface = Block.n_points_somae_surface;
+    input_row_size_block = Block.input_row_size_block;
+    input_sheet_size_block = Block.input_sheet_size_block;
   }
 
   void CppPopulatePointCloudFromH5(long *inp_labels)
@@ -292,7 +281,7 @@ public:
       if (!curr_label) continue;
 
       // find the new voxel index
-      long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+      long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
       // check if pointcloud of this segment_ID already exists, otherwise add new pointcloud
       if (Pointclouds.find(curr_label) == Pointclouds.end()) {
@@ -308,7 +297,7 @@ public:
 
       // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
       long ix, iy, iz;
-      IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size, input_row_size);
+      IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size_block, input_row_size_block);
 
 
       // max key = 1
@@ -330,7 +319,7 @@ public:
       std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
       long p_iv_local;
       for (std::unordered_set<long>::iterator itr2 = somae_surfacepoints[label].begin(); itr2!=somae_surfacepoints[label].end(); ++itr2){
-        p_iv_local = PadIndex(*itr2, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+        p_iv_local = PadIndex(*itr2, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
         Pointclouds[label][p_iv_local] = 4;
       }
     }
@@ -423,8 +412,8 @@ public:
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iw = iz;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -435,8 +424,8 @@ public:
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iw = iz;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -446,8 +435,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iv = iy;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -458,8 +447,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iv = iy;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -469,8 +458,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iv = iy; iv<iy+dsp; iv++){
             int iu = ix;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -481,8 +470,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iv = iy; iv<iy+dsp; iv++){
             int iu = ix;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -492,8 +481,8 @@ public:
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iw = iz+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -504,8 +493,8 @@ public:
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iw = iz+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -515,8 +504,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iv = iy+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -527,8 +516,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iu = ix; iu<ix+dsp; iu++){
             int iv = iy+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -538,8 +527,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iv = iy; iv<iy+dsp; iv++){
             int iu = ix+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             // Pointclouds[curr_label][p_iv_local_add] = 4;
             somae_surfacepoints[curr_label].insert(up_iv_local_add);
           }
@@ -550,8 +539,8 @@ public:
         for (int iw = iz; iw<iz+dsp; iw++){
           for (int iv = iy; iv<iy+dsp; iv++){
             int iu = ix+dsp-1;
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
@@ -560,32 +549,13 @@ public:
       for (int iw = iz+1; iw<iz+dsp-1; iw++){
         for (int iv = iy+1; iv<iy+dsp-1; iv++){
           for (int iu = ix+1; iu<ix+dsp-1; iu++){
-            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size, input_row_size);
-            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+            up_iv_local_add = IndicesToIndex(iu, iv, iw, input_sheet_size_block, input_row_size_block);
+            p_iv_local_add = PadIndex(up_iv_local_add, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
             somae_interiorpoints[curr_label].insert(p_iv_local_add);
           }
         }
       }
     }
-
-
-
-
-
-    // std::cout << "deletable points:" << std::endl;
-    //
-    // for (std::unordered_map<long,std::unordered_set<long>>::iterator itr = somae_interiorpoints.begin(); itr!=somae_interiorpoints.end(); ++itr){
-    //   long label = itr->first;
-    //   std::cout << "Seg ID: " << label << std::endl;
-    //   std::cout << "points: " << somae_interiorpoints[label].size() << std::endl;
-    //
-    //   for (std::unordered_set<long>::iterator itr2 = somae_interiorpoints[label].begin(); itr2!=somae_interiorpoints[label].end(); ++itr2){
-    //     Pointclouds[label].erase(*itr2);
-    //   }
-    // }
-    //
-    //
-    // std::cout << "surface points:" << std::endl;
 
     WriteSomaeSurface();
 
@@ -626,7 +596,7 @@ public:
         // add them to the synapses vector (unpadded)
 
         // find the new voxel index
-        long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+        long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
         // set ID of this index to 3 (==Synapse)
         // only add synapse if it is on the body
@@ -730,7 +700,7 @@ public:
         if (fread(&up_iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
         checksum += up_iv_local;
 
-        long p_iv_local = PadIndex(up_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+        long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
         Pointclouds[seg_ID][p_iv_local] = 3;
         anchors_comp[seg_ID].push_back(up_iv_local);
@@ -950,10 +920,9 @@ public:
 
     class BlockSegment : public DataBlock{
     private:
-      long initial_points = -1;
+      long initial_points_input = -1;
       long segment_ID = -1;
       List surface_voxels;
-      long padded_infinity = -1;
       std::unordered_map<long, char> segment = std::unordered_map<long, char>();
       std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>> borderpoints_segment = std::unordered_map<long, std::unordered_map<bool ,std::unordered_set<long>>>();
       std::unordered_map<long, float> widths = std::unordered_map<long, float>();
@@ -969,8 +938,8 @@ public:
         std::cout << "-----------------------------------" << std::endl;
         std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
-        initial_points = segment.size();
-        printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points);
+        initial_points_input = segment.size();
+        printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points_input);
 
         surface_voxels.first = NULL;
         surface_voxels.last = NULL;
@@ -1005,14 +974,14 @@ public:
           widths[index] = std::numeric_limits<float>::max();
 
           long ix, iy, iz;
-          IndexToIndices(index, ix, iy, iz, padded_sheet_size, padded_row_size);
+          IndexToIndices(index, ix, iy, iz, padded_sheet_size_block, padded_row_size_block);
           // check the 6 neighbors
           for (long dir = 0; dir < NTHINNING_DIRECTIONS; ++dir) {
             long neighbor_index = index + n6_offsets[dir];
 
             long ii, ij, ik;
 
-            IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size, padded_row_size);
+            IndexToIndices(neighbor_index, ii, ij, ik, padded_sheet_size_block, padded_row_size_block);
 
             // skip the fake boundary elements
             if ((ii == 0) or (ii == padded_blocksize[OR_X] - 1)) continue;
@@ -1088,7 +1057,7 @@ public:
                 // widths of voxels start at maximum and first updated when put on surface
                 if (segment[neighbor_index] == 1) {
                   long iu, iv, iw;
-                  IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size, padded_row_size);
+                  IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size_block, padded_row_size_block);
                   NewSurfaceVoxel(neighbor_index, iu, iv, iw, surface_voxels);
 
                   // convert to a surface point
@@ -1103,7 +1072,7 @@ public:
 
                 // get this index in (x, y, z)
                 long iu, iv, iw;
-                IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size, padded_row_size);
+                IndexToIndices(neighbor_index, iu, iv, iw, padded_sheet_size_block, padded_row_size_block);
 
                 // get the distance from the voxel to be deleted
                 float diffx = resolution[OR_X] * (ix - iu);
@@ -1137,7 +1106,7 @@ public:
       {
         unsigned int neighbors = 0;
 
-        long index = IndicesToIndex(ix, iy, iz, padded_sheet_size, padded_row_size);
+        long index = IndicesToIndex(ix, iy, iz, padded_sheet_size_block, padded_row_size_block);
 
         // some of these lookups will create a new entry but the region is
         // shrinking so memory overhead is minimal
@@ -1247,7 +1216,7 @@ public:
           long p_iv_local = LE->iv;
           float width = widths[p_iv_local];
 
-          long up_iv_local = UnpadIndex(p_iv_local, input_sheet_size, input_row_size, padded_sheet_size, padded_row_size);
+          long up_iv_local = UnpadIndex(p_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
@@ -1333,7 +1302,7 @@ public:
 
         double seg_time = (double) (clock() - start_time_seg) / CLOCKS_PER_SEC;
 
-        fprintf(fptime,"%12ld, %12ld, %12ld, %12.2f \n", initial_points, n_points_somae[segment_ID], n_points_somae_surface[segment_ID], seg_time);
+        fprintf(fptime,"%12ld, %12ld \n", initial_points_input, seg_time);
 
         fclose(fptime);
       }
@@ -1363,7 +1332,7 @@ public:
         for (std::vector<long>::iterator it = Block.synapses_off[segment_ID].begin(); it != Block.synapses_off[segment_ID].end(); ++it){
           long linear_index = *it;
           long iz_unpadded, iy_unpadded, ix_unpadded;
-          IndexToIndices(linear_index, ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
+          IndexToIndices(linear_index, ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size_block, input_row_size_block);
           long iz_padded = iz_unpadded + 1;
           long iy_padded = iy_unpadded + 1;
           long ix_padded = ix_unpadded + 1;
@@ -1383,7 +1352,7 @@ public:
                 for (long iu = ix_padded - cubesize; iu <= ix_padded + cubesize; ++iu) {
 
 
-                  long index_padded = IndicesToIndex(iu, iv, iw, padded_sheet_size, padded_row_size);
+                  long index_padded = IndicesToIndex(iu, iv, iw, padded_sheet_size_block, padded_row_size_block);
                   if (segment[index_padded]==2){
 
                     // get the distance
@@ -1422,13 +1391,13 @@ public:
             Block.Pointclouds[segment_ID][closest_index_padded] = 3;
             segment[closest_index_padded] = 3;
 
-            IndexToIndices(closest_index_padded, ix_padded, iy_padded, iz_padded, padded_sheet_size, padded_row_size);
+            IndexToIndices(closest_index_padded, ix_padded, iy_padded, iz_padded, padded_sheet_size_block, padded_row_size_block);
 
             iz_unpadded = iz_padded - 1;
             iy_unpadded = iy_padded - 1;
             ix_unpadded = ix_padded - 1;
 
-            long projected_index = IndicesToIndex(ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size, input_row_size);
+            long projected_index = IndicesToIndex(ix_unpadded, iy_unpadded, iz_unpadded, input_sheet_size_block, input_row_size_block);
             Block.synapses[segment_ID].push_back(projected_index);
           }
         }
@@ -1560,12 +1529,12 @@ public:
 
     void CPPcreateDataBlock(const char *prefix, const char *lookup_table_directory, long *inp_labels, long *inp_somae, float input_resolution[3],
       long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
-      const char* synapses_dir, const char* somae_dir, const char* output_dir){
+      const char* synapses_dir, const char* output_dir){
 
         clock_t start_time_total = clock();
 
         // create new Datablock and set the input variables
-        DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp, block_ind_start_inp, block_ind_end_inp, synapses_dir, somae_dir, output_dir);
+        DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp, block_ind_start_inp, block_ind_end_inp, synapses_dir, output_dir);
 
         // process Somae
         BlockA->CppPopulateSomaeFromH5(inp_somae);
