@@ -148,14 +148,6 @@ typedef struct {
   Cell *tail;
   int length;
 } PointList;
-typedef std::vector<long> vec;
-typedef std::unordered_set<long> uoSet;
-typedef std::unordered_map<long, uoSet> map_numToset;
-typedef std::unordered_map<long, vec> map_numTovector;
-typedef std::unordered_map<long, char> map_numTochar;
-typedef std::unordered_map<long, map_numToset> map_numTonumToset;
-typedef std::unordered_map<long, map_numTonumToset> borderpoints_obj;
-typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
 
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
 static void RemoveSurfaceVoxel(ListElement *LE, List &surface_voxels);

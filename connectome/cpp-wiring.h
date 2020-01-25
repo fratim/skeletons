@@ -27,6 +27,14 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
 
 #define SOMA_DSP 8
 
+typedef std::vector<long> vec;
+typedef std::unordered_set<long> uoSet;
+typedef std::unordered_map<long, uoSet> map_numToset;
+typedef std::unordered_map<long, vec> map_numTovector;
+typedef std::unordered_map<long, char> map_numTochar;
+typedef std::unordered_map<long, map_numToset> map_numTonumToset;
+typedef std::unordered_map<long, map_numTonumToset> borderpoints_obj;
+typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
 
 //////////////////////////////////////
 //// COORDINATE UTILITY FUNCTIONS ////
@@ -85,7 +93,5 @@ inline long UnpadIndex(long index_padded, long unpadded_sheet_size, long unpadde
 
     return iz_unpadded * unpadded_sheet_size + iy_unpadded * unpadded_row_size + ix_unpadded;
 }
-
-
 
 #endif
