@@ -153,7 +153,8 @@ typedef std::unordered_set<long> uoSet;
 typedef std::unordered_map<long, uoSet> map_numToset;
 typedef std::unordered_map<long, vec> map_numTovector;
 typedef std::unordered_map<long, char> map_numTochar;
-typedef std::unordered_map<long, std::unordered_map<long, map_numToset>> borderpoints_obj;
+typedef std::unordered_map<long, map_numToset> map_numTonumToSet;
+typedef std::unordered_map<long, map_numTonumToSet> borderpoints_obj;
 typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
 
 static void NewSurfaceVoxel(long iv, long ix, long iy, long iz, List &surface_voxels);
@@ -923,7 +924,7 @@ public:
       long segment_ID = -1;
       List surface_voxels;
       map_numTochar segment = map_numTochar();
-      std::unordered_map<long, map_numToset> borderpoints_segment = std::unordered_map<long, map_numToset>();
+      map_numTonumToSet borderpoints_segment = map_numTonumToSet();
       std::unordered_map<long, float> widths = std::unordered_map<long, float>();
 
     public:
