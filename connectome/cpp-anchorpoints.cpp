@@ -104,8 +104,8 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
 long inp_volumesize[3] = {-1,-1,-1};
 long block_ind[3] = {-1,-1,-1};
 long inp_blocksize[3] = {-1,-1,-1};
-long inp_sheetsize = -1;
-long inp_rowsize = -1;
+long inp_sheetsize_block = -1;
+long inp_rowsize_block = -1;
 
 void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_blocksize_inp[3], long blockind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
         long inp_volumesize_inp[3], long *z_min_wall, long *z_max_wall, long *y_min_wall, long *y_max_wall, long *x_min_wall, long *x_max_wall){
@@ -113,8 +113,8 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
   inp_blocksize[OR_Z] = inp_blocksize_inp[OR_Z];
   inp_blocksize[OR_Y] = inp_blocksize_inp[OR_Y];
   inp_blocksize[OR_X] = inp_blocksize_inp[OR_X];
-  inp_sheetsize = inp_blocksize_inp[OR_Y]*inp_blocksize_inp[OR_X];
-  inp_rowsize = inp_blocksize_inp[OR_X];
+  inp_sheetsize_block = inp_blocksize_inp[OR_Y]*inp_blocksize_inp[OR_X];
+  inp_rowsize_block = inp_blocksize_inp[OR_X];
   block_ind[OR_Z] = blockind_inp[OR_Z];
   block_ind[OR_Y] = blockind_inp[OR_Y];
   block_ind[OR_X] = blockind_inp[OR_X];
@@ -205,14 +205,14 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
         long ix = iu_centers[seg_ID][pos];
 
         long iz = inp_blocksize[OR_Z]-1;
-        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_max[pos] = up_iv_local_max;
         long up_iv_global_max = IndexLocalToGlobal(up_iv_local_max, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
         checksum_max += (up_iv_local_max+up_iv_global_max);
 
         iz = 0;
-        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -315,7 +315,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
         long ix = iu_centers[seg_ID][pos];
 
         long iy = inp_blocksize[OR_Y]-1;
-        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_max[pos] = up_iv_local_max;
         long up_iv_global_max = IndexLocalToGlobal(up_iv_local_max, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -323,7 +323,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
 
 
         iy = 0;
-        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
@@ -424,14 +424,14 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
         long iy = iu_centers[seg_ID][pos];
 
         long ix = inp_blocksize[OR_X]-1;
-        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_max = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_max[pos] = up_iv_local_max;
         long up_iv_global_max = IndexLocalToGlobal(up_iv_local_max, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
         checksum_max += (up_iv_local_max+up_iv_global_max);
 
         ix = 0;
-        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize, inp_rowsize);
+        long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind, inp_blocksize, inp_volumesize);
         if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }

@@ -120,7 +120,7 @@ def GenerateSkeleton(prefix, output_folder, block_z, block_y, block_x):
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_labels =  np.ascontiguousarray(data, dtype=ctypes.c_int64)
 
     # load somae
-    fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+    fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_filled_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
     data_somae = dataIO.ReadH5File(fileName)
     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)
 
@@ -188,6 +188,6 @@ def RefineSkeleton(prefix, output_folder, block_z_start, block_y_start, block_x_
 
     # print out statistics for wiring extraction
     totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
-    g = open(totaltime_folder+"-Refine.txt", "a+")
+    g = open(totaltime_folder+"total_time-Refine.txt", "a+")
     g.write(format(time_total, '.4f') + "\n")
     g.close()
