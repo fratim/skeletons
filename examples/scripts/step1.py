@@ -14,7 +14,6 @@ output_directories = [  'synapses_projected/',
 'somae_surface',
 'distances/',
 'widths/',
-'total_times/'
 'running_times/',
 'running_times/refinement/',
 'running_times/skeleton/']
@@ -38,6 +37,10 @@ if not os.path.exists(output_folder_syn): os.mkdir(output_folder_syn)
 if not os.path.exists('{}/{}'.format(output_folder_syn, prefix)): os.mkdir('{}/{}'.format(output_folder_syn, prefix))
 
 output_folder_som = dataIO.OutputDirectory(prefix)+'somae_surfaces/'
+if not os.path.exists(output_folder_som): os.mkdir(output_folder_som)
+if not os.path.exists('{}/{}'.format(output_folder_som, prefix)): os.mkdir('{}/{}'.format(output_folder_som, prefix))
+
+output_folder_som = dataIO.OutputDirectory(prefix)+'total_times/'
 if not os.path.exists(output_folder_som): os.mkdir(output_folder_som)
 if not os.path.exists('{}/{}'.format(output_folder_som, prefix)): os.mkdir('{}/{}'.format(output_folder_som, prefix))
 

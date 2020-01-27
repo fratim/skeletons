@@ -1825,7 +1825,6 @@ static const char __pyx_k_zMinWall[] = "zMinWall";
 static const char __pyx_k_Blocksize[] = "Blocksize";
 static const char __pyx_k_SaveWalls[] = "SaveWalls";
 static const char __pyx_k_ReadH5File[] = "ReadH5File";
-static const char __pyx_k_Refine_txt[] = "-Refine.txt";
 static const char __pyx_k_Resolution[] = "Resolution";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_Volumesize[] = "Volumesize";
@@ -1879,12 +1878,13 @@ static const char __pyx_k_ascontiguousarray[] = "ascontiguousarray";
 static const char __pyx_k_cpp_block_ind_end[] = "cpp_block_ind_end";
 static const char __pyx_k_cpp_blocksize_inp[] = "cpp_blocksize_inp";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
-static const char __pyx_k_somae_refined_dsp8[] = "-somae_refined_dsp8-";
 static const char __pyx_k_cpp_block_ind_begin[] = "cpp_block_ind_begin";
 static const char __pyx_k_cpp_block_ind_start[] = "cpp_block_ind_start";
 static const char __pyx_k_skeletons_utilities[] = "skeletons.utilities";
 static const char __pyx_k_InputlabelsDirectory[] = "InputlabelsDirectory";
 static const char __pyx_k_walls_folder_current[] = "walls_folder_current";
+static const char __pyx_k_total_time_Refine_txt[] = "total_time-Refine.txt";
+static const char __pyx_k_somae_filled_refined_dsp8[] = "-somae_filled_refined_dsp8-";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static const char __pyx_k_labels_discarded_filled_padded[] = "-labels_discarded_filled_padded-";
 static const char __pyx_k_not_equal_to_size_specified_in[] = ") not equal to size specified in meta file";
@@ -1912,7 +1912,6 @@ static PyObject *__pyx_kp_u_Non_native_byte_order_not_suppor;
 static PyObject *__pyx_n_s_OutputDirectory;
 static PyObject *__pyx_n_s_ReadH5File;
 static PyObject *__pyx_n_s_RefineSkeleton;
-static PyObject *__pyx_kp_s_Refine_txt;
 static PyObject *__pyx_n_s_Resolution;
 static PyObject *__pyx_n_s_RuntimeError;
 static PyObject *__pyx_n_s_SaveWalls;
@@ -1996,12 +1995,13 @@ static PyObject *__pyx_n_s_prefix;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_shape;
 static PyObject *__pyx_n_s_skeletons_utilities;
-static PyObject *__pyx_kp_s_somae_refined_dsp8;
+static PyObject *__pyx_kp_s_somae_filled_refined_dsp8;
 static PyObject *__pyx_n_s_start_time_total;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_time;
 static PyObject *__pyx_n_s_time_total;
 static PyObject *__pyx_kp_s_total_time;
+static PyObject *__pyx_kp_s_total_time_Refine_txt;
 static PyObject *__pyx_kp_s_total_times;
 static PyObject *__pyx_n_s_totaltime_folder;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
@@ -7075,7 +7075,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   /* "wiring.pyx":123
  * 
  *     # load somae
- *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
+ *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_filled_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"             # <<<<<<<<<<<<<<
  *     data_somae = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)
  */
@@ -7111,7 +7111,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   __pyx_t_5 = PyNumber_Add(__pyx_t_2, __pyx_v_prefix); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_somae_refined_dsp8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Add(__pyx_t_5, __pyx_kp_s_somae_filled_refined_dsp8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyString_Type)), __pyx_v_block_z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
@@ -7203,7 +7203,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
 
   /* "wiring.pyx":124
  *     # load somae
- *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_filled_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data_somae = dataIO.ReadH5File(fileName)             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)
  * 
@@ -7232,7 +7232,7 @@ static PyObject *__pyx_pf_6wiring_4GenerateSkeleton(CYTHON_UNUSED PyObject *__py
   __pyx_t_2 = 0;
 
   /* "wiring.pyx":125
- *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
+ *     fileName = dataIO.SomaeDirectory(prefix)+"/"+prefix+"/"+prefix+"-somae_filled_refined_dsp8-"+str(block_z).zfill(4)+"z-"+str(block_y).zfill(4)+"y-"+str(block_x).zfill(4)+"x"+".h5"
  *     data_somae = dataIO.ReadH5File(fileName)
  *     cdef np.ndarray[long, ndim=3, mode='c'] cpp_inp_somae =  np.ascontiguousarray(data_somae, dtype=ctypes.c_int64)             # <<<<<<<<<<<<<<
  * 
@@ -9298,7 +9298,7 @@ static PyObject *__pyx_pf_6wiring_6RefineSkeleton(CYTHON_UNUSED PyObject *__pyx_
  * 
  *     # print out statistics for wiring extraction
  *     totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"             # <<<<<<<<<<<<<<
- *     g = open(totaltime_folder+"-Refine.txt", "a+")
+ *     g = open(totaltime_folder+"total_time-Refine.txt", "a+")
  *     g.write(format(time_total, '.4f') + "\n")
  */
   __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_dataIO); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 190, __pyx_L1_error)
@@ -9330,11 +9330,11 @@ static PyObject *__pyx_pf_6wiring_6RefineSkeleton(CYTHON_UNUSED PyObject *__pyx_
   /* "wiring.pyx":191
  *     # print out statistics for wiring extraction
  *     totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
- *     g = open(totaltime_folder+"-Refine.txt", "a+")             # <<<<<<<<<<<<<<
+ *     g = open(totaltime_folder+"total_time-Refine.txt", "a+")             # <<<<<<<<<<<<<<
  *     g.write(format(time_total, '.4f') + "\n")
  *     g.close()
  */
-  __pyx_t_3 = PyNumber_Add(__pyx_v_totaltime_folder, __pyx_kp_s_Refine_txt); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 191, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Add(__pyx_v_totaltime_folder, __pyx_kp_s_total_time_Refine_txt); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -9352,7 +9352,7 @@ static PyObject *__pyx_pf_6wiring_6RefineSkeleton(CYTHON_UNUSED PyObject *__pyx_
 
   /* "wiring.pyx":192
  *     totaltime_folder = dataIO.OutputDirectory(prefix)+"total_times/"
- *     g = open(totaltime_folder+"-Refine.txt", "a+")
+ *     g = open(totaltime_folder+"total_time-Refine.txt", "a+")
  *     g.write(format(time_total, '.4f') + "\n")             # <<<<<<<<<<<<<<
  *     g.close()
  */
@@ -9391,7 +9391,7 @@ static PyObject *__pyx_pf_6wiring_6RefineSkeleton(CYTHON_UNUSED PyObject *__pyx_
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "wiring.pyx":193
- *     g = open(totaltime_folder+"-Refine.txt", "a+")
+ *     g = open(totaltime_folder+"total_time-Refine.txt", "a+")
  *     g.write(format(time_total, '.4f') + "\n")
  *     g.close()             # <<<<<<<<<<<<<<
  */
@@ -11947,7 +11947,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_OutputDirectory, __pyx_k_OutputDirectory, sizeof(__pyx_k_OutputDirectory), 0, 0, 1, 1},
   {&__pyx_n_s_ReadH5File, __pyx_k_ReadH5File, sizeof(__pyx_k_ReadH5File), 0, 0, 1, 1},
   {&__pyx_n_s_RefineSkeleton, __pyx_k_RefineSkeleton, sizeof(__pyx_k_RefineSkeleton), 0, 0, 1, 1},
-  {&__pyx_kp_s_Refine_txt, __pyx_k_Refine_txt, sizeof(__pyx_k_Refine_txt), 0, 0, 1, 0},
   {&__pyx_n_s_Resolution, __pyx_k_Resolution, sizeof(__pyx_k_Resolution), 0, 0, 1, 1},
   {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s_SaveWalls, __pyx_k_SaveWalls, sizeof(__pyx_k_SaveWalls), 0, 0, 1, 1},
@@ -12031,12 +12030,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_shape, __pyx_k_shape, sizeof(__pyx_k_shape), 0, 0, 1, 1},
   {&__pyx_n_s_skeletons_utilities, __pyx_k_skeletons_utilities, sizeof(__pyx_k_skeletons_utilities), 0, 0, 1, 1},
-  {&__pyx_kp_s_somae_refined_dsp8, __pyx_k_somae_refined_dsp8, sizeof(__pyx_k_somae_refined_dsp8), 0, 0, 1, 0},
+  {&__pyx_kp_s_somae_filled_refined_dsp8, __pyx_k_somae_filled_refined_dsp8, sizeof(__pyx_k_somae_filled_refined_dsp8), 0, 0, 1, 0},
   {&__pyx_n_s_start_time_total, __pyx_k_start_time_total, sizeof(__pyx_k_start_time_total), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_time, __pyx_k_time, sizeof(__pyx_k_time), 0, 0, 1, 1},
   {&__pyx_n_s_time_total, __pyx_k_time_total, sizeof(__pyx_k_time_total), 0, 0, 1, 1},
   {&__pyx_kp_s_total_time, __pyx_k_total_time, sizeof(__pyx_k_total_time), 0, 0, 1, 0},
+  {&__pyx_kp_s_total_time_Refine_txt, __pyx_k_total_time_Refine_txt, sizeof(__pyx_k_total_time_Refine_txt), 0, 0, 1, 0},
   {&__pyx_kp_s_total_times, __pyx_k_total_times, sizeof(__pyx_k_total_times), 0, 0, 1, 0},
   {&__pyx_n_s_totaltime_folder, __pyx_k_totaltime_folder, sizeof(__pyx_k_totaltime_folder), 0, 0, 1, 1},
   {&__pyx_kp_u_unknown_dtype_code_in_numpy_pxd, __pyx_k_unknown_dtype_code_in_numpy_pxd, sizeof(__pyx_k_unknown_dtype_code_in_numpy_pxd), 0, 1, 0, 0},

@@ -80,7 +80,7 @@ error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
 template = template.replace('{HOURS}', run_hours)
-memory = str(149000)
+memory = str(35000)
 # sizex * sizey * sizez * 3 * 8 bytes
 
 start_blocks = dataIO.StartBlocks(prefix)
