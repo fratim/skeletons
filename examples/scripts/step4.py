@@ -6,31 +6,18 @@ import time
 
 prefix = 'Zebrafinch'
 
-output_directories = [  'synapses_projected/',
-'anchorpoints_computed/',
-'walls/',
-'segment_IDs/',
-'skeleton/',
-'distances/',
-'widths/',
-'running_times/',
-'running_times/refinement/',
-'running_times/skeleton/']
-
 start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
 # pass arguments
-if(len(sys.argv))!=4:
-    raise ValueError(" Scripts needs exactley 3 input arguments (bz by bx)")
+if(len(sys.argv))!=3:
+    raise ValueError(" Scripts needs exactley 2 input arguments (ID_start ID_end))")
 else:
-    bz = int(sys.argv[1])
-    by = int(sys.argv[2])
-    bx = int(sys.argv[3])
+    ID_start = int(sys.argv[1])
+    ID_end = int(sys.argv[2])
 
-start_time_thinning = time.time()
+start_time_refinement = time.time()
+wiring.RefineSkeleton(  prefix, dataIO.OutputDirectory(prefix),start_blocks[0],start_blocks[1],start_blocks[2],
+                        start_blocks[0]+n_blocks[0]-1,start_blocks[1]+n_blocks[1]-1,start_blocks[2]+n_blocks[2]-1, ID_start, ID_end)
 
-output_folder = dataIO.OutputDirectory(prefix)
-wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
-
-print("total time thinning:" + str(time.time()-start_time_thinning))
+print("total time refinement:" + str(time.time()-start_time_refinement))
