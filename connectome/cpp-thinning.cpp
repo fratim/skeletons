@@ -1631,10 +1631,7 @@ time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
           FILE * fptime = fopen (output_filename,"a");
 
           fprintf(fptime,"time_total, time_createDataBlock, start_time_popSomae, start_time_popPointcloud, start_time_readSynapses, start_time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]");
-          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12,2f, %12.2f, %12.2f, %04ld, %04ld, %04ld\n",
-                                                          time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses,
-                                                          time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses,
-                                                          block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12,2f, %12.2f, %12.2f, %04ld, %04ld, %04ld\n", time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses, time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
           fclose(fptime);
         }
 
