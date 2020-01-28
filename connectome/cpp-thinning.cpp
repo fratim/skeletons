@@ -1520,24 +1520,44 @@ public:
       long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
       const char* synapses_dir, const char* output_dir){
 
-        clock_t start_time_total = clock();
+clock_t start_time_total = clock();
 
         // create new Datablock and set the input variables
+clock_t start_time_createDataBlock = clock();
         DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp, block_ind_start_inp, block_ind_end_inp, synapses_dir, output_dir);
+clock_t time_createDataBlock = (double) (clock() - start_time_createDataBlock);
 
         // process Somae
+clock_t start_time_popSomae = clock();
         BlockA->CppPopulateSomaeFromH5(inp_somae);
+clock_t time_popSomae = (double) (clock() - start_time_popSomae);
 
         // process the input labels
+clock_t start_time_popPointcloud = clock();
         BlockA->CppPopulatePointCloudFromH5(inp_labels);
+clock_t time_popPointcloud = (double) (clock() - start_time_popPointcloud);
 
         // read Synapses
+clock_t start_time_readSynapses = clock();
         if (!BlockA->ReadSynapses()) exit(-1);
+clock_t time_readSynapses = (double) (clock() - start_time_readSynapses);
 
         // read Anchor points (if block before does exist)
+clock_t start_time_readAnchors = clock();
         if (!BlockA->ReadAnchorpoints()) exit(-1);
+clock_t time_readAnchors = (double) (clock() - start_time_readAnchors);
 
-        // initialize lookup tables
+
+// initialize lookup tables
+clock_t time_setup = clock();
+clock_t time_thinning = clock();
+clock_t time_WriteOutput = clock();
+
+clock_t time_beforesetup = clock();
+clock_t time_beforethinning = clock();
+clock_t time_beforeWriteOutput = clock();
+
+time_beforesetup = clock();
         InitializeLookupTables(lookup_table_directory);
 
         // needs to happen after PopulatePointCloud()
@@ -1545,48 +1565,63 @@ public:
 
         // insert IDs that should be processed (IDs_in_Block if all)
         BlockA->IDs_to_process = BlockA->IDs_in_block;
-
         BlockA->writeIDs();
+time_setup += (double) (clock() - time_beforethinning);
 
         uoSet::iterator itr = BlockA->IDs_to_process.begin();
-
         while (itr != BlockA->IDs_to_process.end())
         {
 
+time_beforesetup = clock();
           // start timer for this segment
           clock_t start_time_seg = clock();
 
           // initialize segment using the Block object and the segment ID to process
           BlockSegment* segA = new BlockSegment(*itr, *BlockA);
+time_setup += (double) (clock()-time_beforesetup);
 
           // call the sequential thinning algorithm
+time_beforethinning = clock();
           segA->SequentialThinning(*BlockA);
+time_thinning += (double) (clock() - time_beforethinning);
 
           // write skeletons and widths, add anchor points to
+time_beforeWriteOutput = clock();
           segA->WriteOutputfiles(*BlockA);
-
           // write timing to file
           segA->WriteTimeFile(start_time_seg);
+time_WriteOutput += (double) (clock() - time_beforeWriteOutput);
 
+time_beforesetup = clock();
           delete segA;
+time_setup += (double) (clock()-time_beforesetup);
 
           itr++;
 
         }
 
+time_beforeWriteOutput = clock();
         // write border anchor points to file
         BlockA->WriteProjectedSynapses();
+time_WriteOutput += (double) (clock() - time_beforeWriteOutput);
 
-        double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
+double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
 
+time_beforesetup = clock();
         delete BlockA;
+time_setup += (double) (clock()-time_beforesetup);
+
 
         {
           char output_filename[4096];
           sprintf(output_filename, "%s/running_times/%s/%s-total_time_thinning.pts", output_dir, prefix, prefix);
           std::cout << "Writing time for block to : " << output_filename << std::endl;
           FILE * fptime = fopen (output_filename,"a");
-          fprintf(fptime,"%12.2f, %04ld, %04ld, %04ld\n",time_total, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
+          fprintf(fptime,"time_total, time_createDataBlock, start_time_popSomae, start_time_popPointcloud, start_time_readSynapses, start_time_readAnchors, time_setup, time_thinning, time_WriteOutput, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]");
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %04ld, %04ld, %04ld\n",
+                                                          time_total, time_createDataBlock, start_time_popSomae, start_time_popPointcloud, start_time_readSynapses,
+                                                          start_time_readAnchors, time_setup, time_thinning, time_WriteOutput,
+                                                          block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
           fclose(fptime);
         }
 
