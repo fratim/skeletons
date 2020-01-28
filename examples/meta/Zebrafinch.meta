@@ -17,4 +17,8 @@
 # output directory
 /n/pfister_lab2/Lab/tfranzmeyer/Data/512x512x512/thinning/
 # code directory
+<<<<<<< HEAD
 /n/pfister_lab2/Lab/tfranzmeyer/Data/512x512x512/Code/
+=======
+/n/pfister_lab2/Lab/tfranzmeyer/Data/512x512x512/Code/skeletons/
+>>>>>>> 3251314428be4d26a428120bfe131f17d07f4fd5

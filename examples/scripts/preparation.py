@@ -25,6 +25,7 @@ output_folder = dataIO.OutputDirectory(prefix)
 if not os.path.exists(output_folder): os.mkdir(output_folder)
 if not os.path.exists(output_folder+"error_files/"): os.mkdir(output_folder+"error_files/")
 if not os.path.exists(output_folder+"output_files/"): os.mkdir(output_folder+"output_files/")
+if not os.path.exists(output_folder+"slurm_files/"): os.mkdir(output_folder+"slurm_files/")
 
 output_folder_skeletons = dataIO.OutputDirectory(prefix)+'skeletons/'
 if not os.path.exists(output_folder_skeletons): os.mkdir(output_folder_skeletons)
@@ -56,3 +57,5 @@ for bz in range(start_blocks[0], start_blocks[0]+n_blocks[0]):
                 directory_path = output_folder+output_directory
                 if not os.path.exists(directory_path): os.mkdir(directory_path)
                 if not os.path.exists('{}/{}'.format(directory_path, prefix)): os.mkdir('{}/{}'.format(directory_path, prefix))
+
+print("Created Folders")

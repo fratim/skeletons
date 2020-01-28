@@ -74,8 +74,16 @@ refinement_chunksize = 50
 
 error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
+<<<<<<< HEAD
 slurm_path = dataIO.OutputDirectory(prefix)+"slurm_files/"
 code_run_path = dataIO.CodeDirectory(prefix)
+=======
+slurm_path = dataIO.OutputDirectory(prefix)+"Code/"
+code_run_path = dataIO.CodeDirectory(prefix)
+
+template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
+template = template.replace('{HOURS}', run_hours)
+>>>>>>> 3251314428be4d26a428120bfe131f17d07f4fd5
 
 block_size = dataIO.Blocksize(prefix)
 start_blocks = dataIO.StartBlocks(prefix)
