@@ -18,13 +18,13 @@ template ='''#!/bin/bash
 #SBATCH -e {ERROR_PATH}/{JOBNAME}.err                        # where to write the error files
 #SBATCH -J thinning_{JOBNAME}                               # jobname given to job
 
-module load cuda/9.0-fasrc02 cudnn/7.1_cuda9.0-fasrc01
+module load Anaconda3/5.0.1-fasrc02
 
 source activate fillholes
 
 export PYTHONPATH=$PYTHONPATH:{RUNCODEDIRECTORY}
 
-cd {RUNCODEDIRECTORY}/skeletons/examples/
+cd {RUNCODEDIRECTORY}skeletons/examples/
 
 python scripts/{COMMAND}
 
@@ -83,7 +83,8 @@ start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
 block_volume = block_size[0]*block_size[1]*block_size[2]
-memory = str(int(block_volume*3*8*1.1/1000/1000))
+memory = str(int(block_volume*3*8*3/1000/1000))
+memory_step4 = str(50000)
 run_hours = str(int(block_volume/(1024*1024*1024)*2))
 
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
@@ -172,10 +173,10 @@ for ID_start in ID_range[::refinement_chunksize]:
     t = t.replace('{COMMAND}', command)
     t = t.replace('{ERROR_PATH}', error_path)
     t = t.replace('{OUTPUT_PATH}', output_path)
-    t = t.replace('{MEMORY}', str(memory))
+    t = t.replace('{MEMORY}', str(memory_step4))
     t = t.replace('{PARTITION}', partitions[np.random.randint(0,n_part)])
 
-    filename = step03folderpath + jobname + ".slurm"
+    filename = step04folderpath + jobname + ".slurm"
     writeFile(filename, t)
     files_written += 1
 

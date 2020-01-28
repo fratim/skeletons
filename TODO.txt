@@ -5,4 +5,9 @@ QUESTIONS:
 
 Instruction:
 
-Set directories and parameters in meta file
+1. Set directories and parameters in meta file
+2. Go to skeletons/examples/
+3. python preparation.py
+4. python scripts/createSlurms "Partition1" "Partition2" "Partition3" Partition4"
+5. Go to "Output_path"+/thinning/slurms/
+6. sbatch slurm files for steps 1 to 4
