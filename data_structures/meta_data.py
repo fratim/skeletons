@@ -48,6 +48,8 @@ class MetaData:
                     self.somae_directory = str(value)
                 elif comment == '# output directory':
                     self.output_directory = str(value)
+                elif comment == '# code directory':
+                    self.code_directory = str(value)
                 else:
                     raise ValueError("Unknown keyword in metafile")
 
@@ -77,3 +79,6 @@ class MetaData:
 
     def OutputDirectory(self):
         return self.output_directory
+
+    def CodeDirectory(self):
+        return self.code_directory

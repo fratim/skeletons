@@ -2,3 +2,7 @@ TODO:
 COMMENTS:
 IDEAS:
 QUESTIONS:
+
+Instruction:
+
+Set directories and parameters in meta file

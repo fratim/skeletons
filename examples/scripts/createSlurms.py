@@ -18,12 +18,11 @@ template ='''#!/bin/bash
 #SBATCH -e {ERROR_PATH}/{JOBNAME}.err                        # where to write the error files
 #SBATCH -J thinning_{JOBNAME}                               # jobname given to job
 
-module load Anaconda3/5.0.1-fasrc02
 module load cuda/9.0-fasrc02 cudnn/7.1_cuda9.0-fasrc01
 
 source activate fillholes
 
-export PYTHONPATH=$PYTHONPATH:/n/home12/tfranzmeyer/Code/
+export PYTHONPATH=$PYTHONPATH:{RUNCODEDIRECTORY}
 
 cd {RUNCODEDIRECTORY}
 
@@ -67,8 +66,6 @@ else:
         n_part +=1
 
 files_written = 0
-code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
-slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
 
 prefix = "Zebrafinch"
 
@@ -77,6 +74,9 @@ refinement_chunksize = 50
 
 error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
+slurm_path = dataIO.OutputDirectory(prefix)+"Code/"
+code_run_path = dataIO.CodeDirectory(prefix)
+
 template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
 template = template.replace('{HOURS}', run_hours)
 
