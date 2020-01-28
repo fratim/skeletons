@@ -1635,11 +1635,11 @@ time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
                   block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
 
           fprintf(fptime,"time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses\n");
-          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f",
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f\n",
                   time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses);
 
           fprintf(fptime,"time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses\n");
-          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f",
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f\n",
                   time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses);
 
           fclose(fptime);
