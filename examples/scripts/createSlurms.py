@@ -18,14 +18,13 @@ template ='''#!/bin/bash
 #SBATCH -e {ERROR_PATH}/{JOBNAME}.err                        # where to write the error files
 #SBATCH -J thinning_{JOBNAME}                               # jobname given to job
 
-module load Anaconda3/5.0.1-fasrc02
 module load cuda/9.0-fasrc02 cudnn/7.1_cuda9.0-fasrc01
 
 source activate fillholes
 
-export PYTHONPATH=$PYTHONPATH:/n/home12/tfranzmeyer/Code/
+export PYTHONPATH=$PYTHONPATH:{RUNCODEDIRECTORY}
 
-cd {RUNCODEDIRECTORY}
+cd {RUNCODEDIRECTORY}/skeletons/examples/
 
 python scripts/{COMMAND}
 
@@ -67,8 +66,6 @@ else:
         n_part +=1
 
 files_written = 0
-code_run_path = "/n/home12/tfranzmeyer/Code/skeletons/examples/"
-slurm_path = "/n/home12/tfranzmeyer/slurms_skeletons/"
 
 prefix = "Zebrafinch"
 
@@ -77,16 +74,19 @@ refinement_chunksize = 50
 
 error_path = dataIO.OutputDirectory(prefix) + "error_files/"
 output_path = dataIO.OutputDirectory(prefix) + "output_files/"
-template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
-template = template.replace('{HOURS}', run_hours)
+slurm_path = dataIO.OutputDirectory(prefix)+"slurm_files/"
+code_run_path = dataIO.CodeDirectory(prefix)
 
 block_size = dataIO.Blocksize(prefix)
 start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
 block_volume = block_size[0]*block_size[1]*block_size[2]
-memory = str(int(block_volume*3*8*1.1))
+memory = str(int(block_volume*3*8*1.1/1000/1000))
 run_hours = str(int(block_volume/(1024*1024*1024)*2))
+
+template = template.replace('{RUNCODEDIRECTORY}', code_run_path)
+template = template.replace('{HOURS}', run_hours)
 
 SLURM_OUTPUT_FOLDER = slurm_path
 

@@ -47,6 +47,10 @@ def OutputDirectory(prefix):
     # return the filepath to the synapses (of each Neuron)
     return meta_data.MetaData(prefix).OutputDirectory()
 
+def CodeDirectory(prefix):
+    # return the filepath to the synapses (of each Neuron)
+    return meta_data.MetaData(prefix).CodeDirectory()
+
 def ReadImage(filename):
     # return the image corresponding to this file
     im = np.array(Image.open(filename))
