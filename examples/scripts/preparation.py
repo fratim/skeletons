@@ -45,7 +45,6 @@ if not os.path.exists('{}/{}'.format(output_folder_som, prefix)): os.mkdir('{}/{
 
 output_folder_som = dataIO.OutputDirectory(prefix)+'total_times/'
 if not os.path.exists(output_folder_som): os.mkdir(output_folder_som)
-if not os.path.exists('{}/{}'.format(output_folder_som, prefix)): os.mkdir('{}/{}'.format(output_folder_som, prefix))
 
 for bz in range(start_blocks[0], start_blocks[0]+n_blocks[0]):
     for by in range(start_blocks[2], start_blocks[1]+n_blocks[1]):
