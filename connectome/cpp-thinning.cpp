@@ -1554,10 +1554,10 @@ double time_readAnchors = (double) (clock() - start_time_readAnchors) / CLOCKS_P
 
 
 // initialize lookup tables
-double time_setup = clock();
-double time_thinning = clock();
-double time_WriteOutput = clock();
-double time_projSynapses = clock();
+double time_setup = 0;
+double time_thinning = 0;
+double time_WriteOutput = 0;
+double time_projSynapses = 0;
 
 clock_t time_beforesetup = clock();
 clock_t time_beforethinning = clock();
