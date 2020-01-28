@@ -1589,7 +1589,7 @@ time_beforesetup = clock();
 time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
 
 time_beforeprojSynapses = clock();
-          segA->Projectsynapses(BlockA)
+          segA->Projectsynapses(*BlockA);
 time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
 
           // call the sequential thinning algorithm
