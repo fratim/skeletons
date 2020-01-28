@@ -1630,8 +1630,18 @@ time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
           std::cout << "Writing time for block to : " << output_filename << std::endl;
           FILE * fptime = fopen (output_filename,"a");
 
-          fprintf(fptime,"time_total, time_createDataBlock, start_time_popSomae, start_time_popPointcloud, start_time_readSynapses, start_time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses, block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X], %04ld, %04ld, %04ld\n", block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
-          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12.2f, %12,2f, %12.2f, %12.2f\n", time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses, time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses);
+          fprintf(fptime,"bz,by,bx\n",
+          fprintf(fptime,"%04ld, %04ld, %04ld\n",
+                  block_ind_inp[OR_Z], block_ind_inp[OR_Y], block_ind_inp[OR_X]);
+
+          fprintf(fptime,"time_total, time_createDataBlock, start_time_popSomae, start_time_popPointcloud, time_readSynapses\n",
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f",
+                  time_total, time_createDataBlock, time_popSomae, time_popPointcloud, time_readSynapses);
+
+          fprintf(fptime,"time_totatime_popPointcloud, time_readSynapses, time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses\n",
+          fprintf(fptime,"%12.2f, %12.2f, %12.2f, %12.2f, %12.2f",
+                  time_popPointcloud, time_readSynapses, time_readAnchors, time_setup, time_thinning, time_WriteOutput, time_projSynapses);
+
           fclose(fptime);
         }
 
