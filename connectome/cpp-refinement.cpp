@@ -227,7 +227,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   WriteProjectedSynapses(prefix, synapses);
 
   if (printAllSkeletonPoints){
-    WriteAllSkeletonPoints(prefix, all_skeleton_points)
+    WriteAllSkeletonPoints(prefix, all_skeleton_points);
   }
 
   printf("Writing Somae Surfaces");
@@ -681,7 +681,7 @@ void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToPr
           checksum += up_iv_global;
 
           if (printAllSkeletonPoints){
-            all_skeleton_points[segment_ID].insert(p_iv_global)
+            all_skeleton_points[segment_ID].insert(p_iv_global);
           }
       }
 
@@ -781,8 +781,6 @@ void WriteSomaeSurfaces(const char *prefix, map_numToset &somae_surfaces)
 
 void WriteAllSkeletonPoints(const char *prefix, map_numToset &all_skeleton_points)
 {
-  //get number of anchor points
-  long n_neurons = all_skeleton_points.size();
 
   for (std::unordered_map<long,uoSet>::iterator itr = all_skeleton_points.begin(); itr!=all_skeleton_points.end(); ++itr){
 
