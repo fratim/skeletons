@@ -33,7 +33,9 @@ static unsigned char char_mask[8];
 static long n26_offsets[26];
 static long n6_offsets[6];
 
-double time_added = 0;
+// TODO remove this at some point
+double time_projSynapses = 0;
+clock_t time_beforeprojSynapses = clock();
 
 static void set_long_mask(void)
 {
@@ -939,7 +941,9 @@ public:
       {
         // create a vector of surface voxels
         CollectSurfaceVoxels();
-        // Projectsynapses(Block);
+        time_beforeprojSynapses = clock();
+        Projectsynapses(Block);
+        time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
         int iteration = 0;
         long changed = 0;
         do {
@@ -1557,12 +1561,10 @@ double time_readAnchors = (double) (clock() - start_time_readAnchors) / CLOCKS_P
 double time_setup = 0;
 double time_thinning = 0;
 double time_WriteOutput = 0;
-double time_projSynapses = 0;
 
 clock_t time_beforesetup = clock();
 clock_t time_beforethinning = clock();
 clock_t time_beforeWriteOutput = clock();
-clock_t time_beforeprojSynapses = clock();
 
 
 time_beforesetup = clock();
@@ -1587,10 +1589,6 @@ time_beforesetup = clock();
           // initialize segment using the Block object and the segment ID to process
           BlockSegment* segA = new BlockSegment(*itr, *BlockA);
 time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
-
-time_beforeprojSynapses = clock();
-          segA->Projectsynapses(*BlockA);
-time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
 
           // call the sequential thinning algorithm
 time_beforethinning = clock();
