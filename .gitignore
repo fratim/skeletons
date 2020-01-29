@@ -18,6 +18,8 @@ examples/somae_surfaces/
 examples/skeletons_somaedet_off/
 examples/skeletons_somaedet2p0_on/
 examples/synapses*
+examples/anchors*
+examples/rawSkeletons*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
