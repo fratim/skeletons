@@ -20,11 +20,12 @@ void WriteHeaderSegID(FILE *fp, long &num, long&segID);
 void ReadHeaderSegID(FILE *fp, long &num, long&segID);
 void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_begin[3],long block_ind_end[3], const char* output_dir, long ID_start, long ID_end);
 void ReadSynapses(const char *prefix, map_numTonumTochar &segment, map_numToset &synapses, uoSet IDsToProcess, long (&block_ind)[3]);
-void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToProcess, long (&block_ind)[3]);
+void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToProcess, long (&block_ind)[3], map_numToset &all_skeleton_points);
 void setParameters(float input_resolution[3], long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], const char* output_dir);
 void ReadSomaeSurface(const char *prefix, map_numTonumTochar &segment, map_numToset &somae_surfaces, uoSet IDsToProcess, long (&block_ind)[3]);
 void WriteProjectedSynapses(const char *prefix, map_numToset &synapses);
 void WriteSomaeSurfaces(const char *prefix, map_numToset &somae_surfaces);
+void WriteAllSkeletonPoints(const char *prefix, map_numToset &all_skeleton_points);
 
 bool detectSomae = 1;
 
@@ -46,6 +47,8 @@ long block_search_end[3] = {-1,-1,-1};
 
 long ID_start = -1;
 long ID_end = -1;
+
+bool printAllSkeletonPoints = 1;
 
 const char *output_directory;
 
@@ -188,6 +191,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   map_numTonumTochar segment = map_numTonumTochar();
   map_numToset synapses = map_numToset();
   map_numToset somae_surfaces = map_numToset();
+  map_numToset all_skeleton_points = map_numToset();
 
   printf("Reading Synapses, Skeleton, (Somae)\n");
   fflush(stdout);
@@ -208,7 +212,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
         time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
         start_time_read_Skeleton = clock();
-        ReadSkeleton(prefix, segment, IDsToProcess, block_ind);
+        ReadSkeleton(prefix, segment, IDsToProcess, block_ind, all_skeleton_points);
         time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
         start_time_read_SomaeSurface = clock();
         if (detectSomae) ReadSomaeSurface(prefix, segment, somae_surfaces, IDsToProcess, block_ind);
@@ -221,6 +225,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   fflush(stdout);
 
   WriteProjectedSynapses(prefix, synapses);
+
+  if (printAllSkeletonPoints){
+    WriteAllSkeletonPoints(prefix, all_skeleton_points)
+  }
 
   printf("Writing Somae Surfaces");
   fflush(stdout);
@@ -240,7 +248,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     long nelements = segment[ID_query].size();
 
     std::cout << "points before refinement: "<<nelements<<std::endl;
-    std::cout << "Synapses: "<<synapses[ID_query].size()<<std::endl;
+    std::cout << "Synapses: " << synapses[ID_query].size()<<std::endl;
 
     if (!detectSomae){
       if (synapses[ID_query].size()>0) {
@@ -641,7 +649,7 @@ void ReadSomaeSurface(const char *prefix, map_numTonumTochar &segment, map_numTo
 
 }
 
-void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToProcess, long (&block_ind)[3])
+void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToProcess, long (&block_ind)[3], map_numToset &all_skeleton_points)
 {
 
   for (uoSet::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
@@ -672,6 +680,9 @@ void ReadSkeleton(const char *prefix, map_numTonumTochar &segment, uoSet IDsToPr
           segment[segment_ID][p_iv_global]=1;
           checksum += up_iv_global;
 
+          if (printAllSkeletonPoints){
+            all_skeleton_points[segment_ID].insert(p_iv_global)
+          }
       }
 
       // ignore the local ones
@@ -766,4 +777,40 @@ void WriteSomaeSurfaces(const char *prefix, map_numToset &somae_surfaces)
 
   if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
   fclose(wfp);
+}
+
+void WriteAllSkeletonPoints(const char *prefix, map_numToset &all_skeleton_points)
+{
+  //get number of anchor points
+  long n_neurons = all_skeleton_points.size();
+
+  for (std::unordered_map<long,uoSet>::iterator itr = all_skeleton_points.begin(); itr!=all_skeleton_points.end(); ++itr){
+
+    long seg_id = itr->first;
+
+    // create an output file for the points
+    char output_filename[4096];
+    sprintf(output_filename, "%s/skeletons/%s/%s-allSkeletonPoints-ID-%012ld.pts", output_directory, prefix, prefix, seg_id);
+
+    FILE *wfp = fopen(output_filename, "wb");
+    if (!wfp) { fprintf(stderr, "Failed to open %s\n", output_filename); exit(-1); }
+
+    long n_points = all_skeleton_points[seg_id].size();
+
+    // write the characteristics header
+    WriteHeaderSegID(wfp, n_points, seg_id);
+    long checksum = 0;
+
+    for (uoSet::iterator itr2 = all_skeleton_points[seg_id].begin(); itr2!=all_skeleton_points[seg_id].end(); ++itr2){
+
+      long p_iv_global = *itr2;
+      long up_iv_global = UnpadIndex(p_iv_global, input_sheet_size_volume, input_row_size_volume, padded_sheet_size_volume, padded_row_size_volume);
+      if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+      checksum += up_iv_global;
+    }
+
+    if (fwrite(&checksum, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+    fclose(wfp);
+  }
+
 }
