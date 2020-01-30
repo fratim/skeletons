@@ -216,7 +216,7 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_zmax, inp_blocksize, inp_volumesize);
-        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
         checksum_min += (up_iv_local_min+up_iv_global_min);
 
       }
@@ -328,7 +328,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_ymax, inp_blocksize, inp_volumesize);
-        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
         checksum_min += (up_iv_local_min+up_iv_global_min);
 
       }
@@ -437,7 +437,7 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_xmax, inp_blocksize, inp_volumesize);
-        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
+        if (fwrite(&up_iv_global_min, sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
         checksum_min += (up_iv_local_min+up_iv_global_min);
 
       }
