@@ -947,9 +947,9 @@ public:
       void SequentialThinning(DataBlock &Block)
       {
         // create a vector of surface voxels
+        Projectsynapses(Block);
         CollectSurfaceVoxels();
         time_beforeprojSynapses = clock();
-        // Projectsynapses(Block);
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
         int iteration = 0;
         long changed = 0;
