@@ -949,7 +949,7 @@ public:
         // create a vector of surface voxels
         CollectSurfaceVoxels();
         time_beforeprojSynapses = clock();
-        Projectsynapses(Block);
+        // Projectsynapses(Block);
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
         int iteration = 0;
         long changed = 0;
