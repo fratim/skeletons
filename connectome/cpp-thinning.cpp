@@ -1016,7 +1016,7 @@ public:
           }
         }
 
-        std::cout << "Initial Surface Voxels: " << n_surface_voxels << std::endl;
+        std::cout << "Initial Surface Voxels: " << n_surface_voxels << std::endl << std::flush;
 
       }
 
