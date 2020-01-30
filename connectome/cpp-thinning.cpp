@@ -1387,7 +1387,7 @@ public:
           }
 
           if (projection_found==1){
-            // std::cout << "Projection found with cubesize: " << cubesize << std::endl;
+            std::cout << "Projection found with cubesize: " << cubesize << std::endl;
             Block.Pointclouds[segment_ID][closest_index_padded] = 3;
             segment[closest_index_padded] = 3;
 
