@@ -662,9 +662,6 @@ public:
     output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, identifier,
     block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
-
-    if (seg_ID==1) std::cout << "reading " << identifier << std::endl << std::flush
-
     FILE *fp = fopen(output_filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", output_filename); exit(-1); }
 
@@ -679,6 +676,8 @@ public:
 
       if (fread(&seg_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
       if (fread(&n_anchors, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
+
+      if (seg_ID==1) std::cout << "reading " << identifier << std::endl << std::flush
 
       // ignore global indices
       for (long pos=0; pos<n_anchors; pos++) {
