@@ -677,7 +677,7 @@ public:
       if (fread(&seg_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
       if (fread(&n_anchors, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
 
-      if (seg_ID==1) std::cout << "reading " << identifier << std::endl << std::flush;
+      std::cout << "reading " << identifier << std::endl << std::flush;
 
       // ignore global indices
       for (long pos=0; pos<n_anchors; pos++) {
@@ -696,7 +696,7 @@ public:
         long ix,iy,iz;
         IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size_block, input_row_size_block);
 
-        if (seg_ID==1) std::cout << "Anchor added at (iz,iy,ix): " << iz << ", " << iy << ", " << ix << std::endl << std::flush;
+        std::cout << "Anchor added at (iz,iy,ix): " << iz << ", " << iy << ", " << ix << std::endl << std::flush;
 
         long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
