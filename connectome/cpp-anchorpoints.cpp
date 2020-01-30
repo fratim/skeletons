@@ -178,6 +178,10 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
+    std::cout << "printing to " << output_filename_max << std::endl;
+    std::cout << "printing to " << output_filename_min << std::endl;
+
+
     long nsegments = iu_centers.size();
     Writeheader(maxfp, nsegments);
     Writeheader(minfp, nsegments);
@@ -287,6 +291,9 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
+    std::cout << "printing to " << output_filename_max << std::endl;
+    std::cout << "printing to " << output_filename_min << std::endl;
+
     long nsegments = iu_centers.size();
     Writeheader(maxfp, nsegments);
     Writeheader(minfp, nsegments);
@@ -390,6 +397,7 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
     char output_filename_max[4096];
     sprintf(output_filename_max, "%s/output-%04ldz-%04ldy-%04ldx/anchorpoints_computed/%s/%s-Anchors_Comp_XMax-%04ldz-%04ldy-%04ldx.pts", output_dir, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
+
     FILE *maxfp = fopen(output_filename_max, "wb");
     if (!maxfp) { fprintf(stderr, "Failed to open %s\n", output_filename_max); exit(-1); }
 
@@ -398,6 +406,9 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
 
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
+
+    std::cout << "printing to " << output_filename_max << std::endl;
+    std::cout << "printing to " << output_filename_min << std::endl;
 
     long nsegments = iu_centers.size();
     Writeheader(maxfp, nsegments);
@@ -446,8 +457,6 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
         if (fwrite(&local_index_max[pos], sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
         if (fwrite(&local_index_min[pos], sizeof(long), 1, minfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_min); exit(-1); }
       }
-
-
 
     }
     if (fwrite(&checksum_max, sizeof(long), 1, maxfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename_max); exit(-1); }
