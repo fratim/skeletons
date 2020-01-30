@@ -662,6 +662,9 @@ public:
     output_directory,  block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X], prefix, prefix, identifier,
     block_ind[OR_Z], block_ind[OR_Y], block_ind[OR_X]);
 
+
+    if (seg_ID==1) std::cout << "reading " << identifier << std::endl << std::flush
+
     FILE *fp = fopen(output_filename, "rb");
     if (!fp) { fprintf(stderr, "Failed to read %s.\n", output_filename); exit(-1); }
 
@@ -690,6 +693,11 @@ public:
         long up_iv_local;
         if (fread(&up_iv_local, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
         checksum += up_iv_local;
+
+        long ix,iy,iz;
+        IndexToIndices(long up_iv_local, long ix, long iy, long iz, long input_sheet_size_block, long input_row_size_block);
+
+        if (seg_ID==1) std::cout << "Anchor added at (iz,iy,ix): " << iz << ", " << iy << ", " << ix << std::endl << std::flush;
 
         long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
