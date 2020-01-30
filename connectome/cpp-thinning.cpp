@@ -677,8 +677,6 @@ public:
       if (fread(&seg_ID, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
       if (fread(&n_anchors, sizeof(long), 1, fp) != 1) { fprintf(stderr, "Failed to read %s\n", output_filename); exit(-1); }
 
-      if (seg_ID==1) std::cout << "reading " << identifier << std::endl << std::flush;
-
       // ignore global indices
       for (long pos=0; pos<n_anchors; pos++) {
 
@@ -695,8 +693,6 @@ public:
 
         long ix,iy,iz;
         IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size_block, input_row_size_block);
-
-        if (seg_ID==1) std::cout << "Anchor added at (iz,iy,ix): " << iz << ", " << iy << ", " << ix << std::endl << std::flush;
 
         long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
 
@@ -947,8 +943,8 @@ public:
       void SequentialThinning(DataBlock &Block)
       {
         // create a vector of surface voxels
-        // Projectsynapses(Block);
         CollectSurfaceVoxels();
+        Projectsynapses(Block);
         time_beforeprojSynapses = clock();
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
         int iteration = 0;
@@ -1009,7 +1005,7 @@ public:
 
                       widths[index] = 0;
 
-                    }
+              }
 
               break;
             }
@@ -1207,6 +1203,8 @@ public:
         WriteHeaderSegID(width_fp, total_points);
 
         printf("Remaining voxels: %ld\n", num);
+        printf("Anchors: %ld\n", n_anchors_comp);
+        printf("Synapses: %ld\n", n_synapses);
 
         long index_local[num];
         long counter_it = 0;
@@ -1359,21 +1357,21 @@ public:
 
 
                   long index_padded = IndicesToIndex(iu, iv, iw, padded_sheet_size_block, padded_row_size_block);
-                  if (segment[index_padded]==2){
+                  if (segment.find(index_padded)!=segment.end()){
+                    if (segment[index_padded]==2){
+                      // get the distance
+                      double deltaz = resolution[OR_Z] * (double)(iw - iz_padded);
+                      double deltay = resolution[OR_Y] * (double)(iv - iy_padded);
+                      double deltax = resolution[OR_X] * (double)(iu - ix_padded);
+                      double distance = sqrt(deltax * deltax + deltay * deltay + deltaz * deltaz);
 
-                    // get the distance
-                    double deltaz = resolution[OR_Z] * (double)(iw - iz_padded);
-                    double deltay = resolution[OR_Y] * (double)(iv - iy_padded);
-                    double deltax = resolution[OR_X] * (double)(iu - ix_padded);
-                    double distance = sqrt(deltax * deltax + deltay * deltay + deltaz * deltaz);
-
-                    // check if distance is smaller than smallest distance and smaller than radius of cube
-                    if (distance<min_distance){
-                      projection_found = 1;
-                      min_distance = distance;
-                      closest_index_padded = index_padded;
+                      // check if distance is smaller than smallest distance and smaller than radius of cube
+                      if (distance<min_distance){
+                        projection_found = 1;
+                        min_distance = distance;
+                        closest_index_padded = index_padded;
+                      }
                     }
-
                   }
                 }
               }
@@ -1382,7 +1380,7 @@ public:
             cubesize = (long)(cubesize*1.5);
 
             if (min_distance>(resolution_min*20)){
-              std::cout << "WARNING: Projection Synapses distance very large: "<< min_distance << std::endl;
+              // std::cout << "WARNING: Projection Synapses distance very large: "<< min_distance << std::endl;
             }
 
             if (min_distance>(resolution_min*30)){
@@ -1393,7 +1391,7 @@ public:
           }
 
           if (projection_found==1){
-            std::cout << "Projection found with cubesize: " << cubesize << std::endl;
+            // std::cout << "Projection found with cubesize: " << cubesize << std::endl;
             Block.Pointclouds[segment_ID][closest_index_padded] = 3;
             segment[closest_index_padded] = 3;
 
