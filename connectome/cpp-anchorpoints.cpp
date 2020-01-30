@@ -216,7 +216,7 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
         checksum_max += (up_iv_local_max+up_iv_global_max);
 
         iz = 0;
-        block_ind_zmax = [block_ind[OR_Z]+1,block_ind[OR_Y],block_ind[OR_X]];
+        long block_ind_zmax = [block_ind[OR_Z]+1,block_ind[OR_Y],block_ind[OR_X]];
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_zmax, inp_blocksize, inp_volumesize);
@@ -331,7 +331,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
 
 
         iy = 0;
-        block_ind_ymax = [block_ind[OR_Z],block_ind[OR_Y]+1,block_ind[OR_X]];
+        long block_ind_ymax = [block_ind[OR_Z],block_ind[OR_Y]+1,block_ind[OR_X]];
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_ymax, inp_blocksize, inp_volumesize);
@@ -444,7 +444,7 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
         checksum_max += (up_iv_local_max+up_iv_global_max);
 
         ix = 0;
-        block_ind_xmax = [block_ind[OR_Z],block_ind[OR_Y],block_ind[OR_X]+1];
+        long block_ind_xmax = [block_ind[OR_Z],block_ind[OR_Y],block_ind[OR_X]+1];
         long up_iv_local_min = IndicesToIndex(ix, iy, iz, inp_sheetsize_block, inp_rowsize_block);
         local_index_min[pos] = up_iv_local_min;
         long up_iv_global_min = IndexLocalToGlobal(up_iv_local_min, block_ind_xmax, inp_blocksize, inp_volumesize);
