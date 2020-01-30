@@ -947,7 +947,7 @@ public:
       void SequentialThinning(DataBlock &Block)
       {
         // create a vector of surface voxels
-        Projectsynapses(Block);
+        // Projectsynapses(Block);
         CollectSurfaceVoxels();
         time_beforeprojSynapses = clock();
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
@@ -963,6 +963,8 @@ public:
 
       void CollectSurfaceVoxels(void)
       {
+
+        long n_surface_voxels = 0;
 
         // go through all voxels and check their six neighbors
         for (map_numTochar::iterator it = segment.begin(); it != segment.end(); ++it) {
@@ -994,6 +996,7 @@ public:
               if (it->second == 1) {
                 it->second = 2;
                 NewSurfaceVoxel(index, ix, iy, iz, surface_voxels);
+                n_surface_voxels ++;
               }
 
               // note this location as surface, if not on a block surface
@@ -1012,6 +1015,9 @@ public:
             }
           }
         }
+
+        std::cout << "Initial Surface Voxels: " << n_surface_voxels << std::endl;
+
       }
 
       long ThinningIterationStep(DataBlock &Block)
