@@ -695,7 +695,7 @@ public:
         checksum += up_iv_local;
 
         long ix,iy,iz;
-        IndexToIndices(long up_iv_local, long ix, long iy, long iz, long input_sheet_size_block, long input_row_size_block);
+        IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size_block, input_row_size_block);
 
         if (seg_ID==1) std::cout << "Anchor added at (iz,iy,ix): " << iz << ", " << iy << ", " << ix << std::endl << std::flush;
 
