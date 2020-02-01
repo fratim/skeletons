@@ -178,8 +178,8 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
-    std::cout << "printing to " << output_filename_max << std::endl;
-    std::cout << "printing to " << output_filename_min << std::endl;
+    // std::cout << "printing to " << output_filename_max << std::endl;
+    // std::cout << "printing to " << output_filename_min << std::endl;
 
 
     long nsegments = iu_centers.size();
@@ -291,8 +291,8 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
-    std::cout << "printing to " << output_filename_max << std::endl;
-    std::cout << "printing to " << output_filename_min << std::endl;
+    // std::cout << "printing to " << output_filename_max << std::endl;
+    // std::cout << "printing to " << output_filename_min << std::endl;
 
     long nsegments = iu_centers.size();
     Writeheader(maxfp, nsegments);
@@ -407,8 +407,8 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
     FILE *minfp = fopen(output_filename_min, "wb");
     if (!minfp) { fprintf(stderr, "Failed to open %s\n", output_filename_min); exit(-1); }
 
-    std::cout << "printing to " << output_filename_max << std::endl;
-    std::cout << "printing to " << output_filename_min << std::endl;
+    // std::cout << "printing to " << output_filename_max << std::endl;
+    // std::cout << "printing to " << output_filename_min << std::endl;
 
     long nsegments = iu_centers.size();
     Writeheader(maxfp, nsegments);
