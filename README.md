@@ -9,3 +9,5 @@ It operates in a MapReduce style, composed of four different steps:
 2. Anchorpoints are computed for each boundary slice, then saved to the corresponding output folders
 3. Skeletons are generated for each block, using 3D topological thinning. Synapses and anchor-points are set to be fix points, hence are part of the output skeleton.
 4. On a global scale, skeletons for each neuron are refined.
+
+Parameters, input- and output folders are specified in the meta file, which can be found in examples/meta/Zebrafinch.meta
