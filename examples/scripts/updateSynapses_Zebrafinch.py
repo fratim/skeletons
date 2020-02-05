@@ -7,7 +7,7 @@ OR_X = 2
 
 prefix = 'Zebrafinch'
 max_label = 410
-block_size =    [512, 512, 512]
+block_size =    [128, 1024, 1024]
 volume_size =   [6144, 6144, 6144]
 
 # get the number of blocks
@@ -75,7 +75,7 @@ for zblock in range(nzblocks):
                 nneurons = len(neuron_ids)
 
             # write synapses for this block
-            synapse_filename = 'synapses_512x512x512/Zebrafinch/{}-synapses-{:04d}z-{:04d}y-{:04d}x.pts'.format(prefix, zblock, yblock, xblock)
+            synapse_filename = 'synapses/synapses_1024x1024x128/Zebrafinch/{}-synapses-{:04d}z-{:04d}y-{:04d}x.pts'.format(prefix, zblock, yblock, xblock)
 
             with open(synapse_filename, 'wb') as fd:
                 fd.write(struct.pack('qqqqqq', volume_size[OR_Z], volume_size[OR_Y], volume_size[OR_X], block_size[OR_Z], block_size[OR_Y], block_size[OR_X]))

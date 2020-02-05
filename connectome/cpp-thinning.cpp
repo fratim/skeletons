@@ -294,13 +294,16 @@ public:
         Pointclouds[curr_label][p_iv_local] = 1;
       }
 
-      // add index to borderpoints unordered_map (only for max walls, as these anchor points are then copied to next level)
+
       long ix, iy, iz;
       IndexToIndices(up_iv_local, ix, iy, iz, input_sheet_size_block, input_row_size_block);
 
 
+
+      // add points to borderpoints component, if on any of the 6 walls
       // max key = 1
       // min key = 0
+      // do not add points that are on edges or corners, as those otherwise could never be removed
 
       if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z][1].insert(p_iv_local);
       else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y][1].insert(p_iv_local);
@@ -328,6 +331,7 @@ public:
 
   void CppPopulateSomaeFromH5(long *inp_somae)
   {
+    // save characteristics of the downsampled volume, which are only needed and therfore defined within the function
 
     long dsp = SOMA_DSP;
     long input_blocksize_dsp[3] = {input_blocksize[OR_Z]/dsp, input_blocksize[OR_Y]/dsp, input_blocksize[OR_X]/dsp};
@@ -359,7 +363,7 @@ public:
       n6_offsets_dsp[4] = +1; // pos x direction
       n6_offsets_dsp[5] = -1; // neg x direction
 
-      // check if this is a surface voxel
+      // check if this is a surface voxel in either of the 6 direction
       bool isSurface_z_pos = 0;
       bool isSurface_y_pos = 0;
       bool isSurface_x_pos = 0;
@@ -369,6 +373,7 @@ public:
 
       long p_iv_local_dsp = PadIndex(up_iv_local_dsp, input_sheet_size_dsp, input_row_size_dsp, padded_sheet_size_dsp, padded_row_size_dsp);
 
+      // check all 6-connected neighboring voxels, determining if this is a soma surface point
       for (long dir = 0; dir < NTHINNING_DIRECTIONS; dir++) {
 
         long p_neighbor_index = p_iv_local_dsp + n6_offsets_dsp[dir];
@@ -399,6 +404,13 @@ public:
 
       long up_iv_local_add;
       long p_iv_local_add;
+
+      // general idea: each somae voxel represents a volume of (dsp*dsp*dsp) in the segmentation space.
+      // if the voxel is a surface voxel, the respective face of this volume is added to the segmentation as a soma surface.
+      // otherwise, respective face of the volume is added to the somae interior n_points
+      // the inside voxels of the volume (a total of dsp*dsp*dsp-dsp*dsp*6) are always added to the somae interior points
+      // when loading the segmentation, somae interior points can the be omitted
+
       if (isSurface_z_neg){
         for (int iv = iy; iv<iy+dsp; iv++){
           for (int iu = ix; iu<ix+dsp; iu++){
@@ -546,8 +558,10 @@ public:
           }
         }
       }
+
     }
 
+    // somae surfaces are written to one file per block per neuron
     WriteSomaeSurface();
 
   }
@@ -591,6 +605,7 @@ public:
 
         // set ID of this index to 3 (==Synapse)
         // only add synapse if it is on the body
+        // if synapse is not on the body, it is added to synapses_off, which are projected onto the surface in a later step
         if (Pointclouds[segment_ID][p_iv_local] == 1){
           Pointclouds[segment_ID][p_iv_local] = 3;
           synapses[segment_ID].push_back(up_iv_local);
@@ -613,6 +628,7 @@ public:
 
   int ReadAnchorpoints(void)
   {
+    // Read in precomputed anchorpoints for the surfaces needed
 
     // read in z anchors (Zmin)
     if (block_ind[OR_Z]>block_ind_min[OR_Z]){
@@ -713,6 +729,7 @@ public:
 
   void writeIDs(void)
   {
+    // write IDs present in a block and Ids being processed to output files
     {
       // write IDs that are processed
       char output_filename_IDs[4096];
@@ -861,13 +878,10 @@ public:
   void WriteSomaeSurface(void)
     {
 
-      //get number of anchor points
-      // long n_neurons = somae_surfacepoints.size();
-
       for (map_numToset::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
 
         long seg_id = itr->first;
-        long n_points = somae_surfacepoints[seg_id].size(); //+1; // first indedx is index of center
+        long n_points = somae_surfacepoints[seg_id].size();
 
         // create an output file for the points
         char output_filename[4096];
@@ -944,16 +958,19 @@ public:
       {
         // create a vector of surface voxels
         CollectSurfaceVoxels();
+        // project the synapses on the surface (surface voxels must be indentified BEFORE
         Projectsynapses(Block);
+
         time_beforeprojSynapses = clock();
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
+
         int iteration = 0;
         long changed = 0;
         do {
           changed = ThinningIterationStep(Block);
           iteration++;
-          // printf("  Iteration %d deleted %ld points\n", iteration, changed);
         } while (changed);
+
         printf("Needed %d iterations\n", iteration);
       }
 
@@ -1046,7 +1063,7 @@ public:
             if ((borderpoints_segment[OR_Z][0].find(index)!=borderpoints_segment[OR_Z][0].end()) && direction==3) continue;
             if ((borderpoints_segment[OR_X][0].find(index)!=borderpoints_segment[OR_X][0].end()) && direction==4) continue;
 
-            // otherise do normal procedure - ceck if simple, if so, delete it
+            // check if simple, if so, delete it
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
             if (Simple26_6(neighbors)) {
               // delete the simple point
@@ -1286,7 +1303,6 @@ public:
           if (fwrite(&index_local_synapses[j], sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         }
 
-
         if (fwrite(&checksum_outp, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
         if (fwrite(&checksum_width, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
@@ -1344,6 +1360,7 @@ public:
           bool projection_found = 0;
           bool unable_to_project = 0;
           long closest_index_padded = -1;
+
           float* i1 = std::min_element(resolution, resolution+2);
           float resolution_min = *i1;
 
@@ -1535,50 +1552,45 @@ public:
       long inp_blocksize[3], long volume_size[3], long block_ind_inp[3], long block_ind_start_inp[3], long block_ind_end_inp[3],
       const char* synapses_dir, const char* output_dir){
 
-clock_t start_time_total = clock();
+        clock_t start_time_total = clock();
 
         // create new Datablock and set the input variables
-clock_t start_time_createDataBlock = clock();
+        clock_t start_time_createDataBlock = clock();
         DataBlock*  BlockA = new DataBlock (prefix, input_resolution, inp_blocksize, volume_size, block_ind_inp, block_ind_start_inp, block_ind_end_inp, synapses_dir, output_dir);
-
-double time_createDataBlock = (double) (clock() - start_time_createDataBlock) / CLOCKS_PER_SEC;
+        double time_createDataBlock = (double) (clock() - start_time_createDataBlock) / CLOCKS_PER_SEC;
 
         // process Somae
-clock_t start_time_popSomae = clock();
+        clock_t start_time_popSomae = clock();
         BlockA->CppPopulateSomaeFromH5(inp_somae);
-
-double time_popSomae = (double) (clock() - start_time_popSomae) / CLOCKS_PER_SEC;
+        double time_popSomae = (double) (clock() - start_time_popSomae) / CLOCKS_PER_SEC;
 
         // process the input labels
-clock_t start_time_popPointcloud = clock();
+        clock_t start_time_popPointcloud = clock();
         BlockA->CppPopulatePointCloudFromH5(inp_labels);
-
-double time_popPointcloud = (double) (clock() - start_time_popPointcloud) / CLOCKS_PER_SEC;
+        double time_popPointcloud = (double) (clock() - start_time_popPointcloud) / CLOCKS_PER_SEC;
 
         // read Synapses
-clock_t start_time_readSynapses = clock();
+        clock_t start_time_readSynapses = clock();
         if (!BlockA->ReadSynapses()) exit(-1);
-
-double time_readSynapses = (double) (clock() - start_time_readSynapses) / CLOCKS_PER_SEC;
+        double time_readSynapses = (double) (clock() - start_time_readSynapses) / CLOCKS_PER_SEC;
 
         // read Anchor points (if block before does exist)
-clock_t start_time_readAnchors = clock();
+        clock_t start_time_readAnchors = clock();
         if (!BlockA->ReadAnchorpoints()) exit(-1);
-
-double time_readAnchors = (double) (clock() - start_time_readAnchors) / CLOCKS_PER_SEC;
-
-
-// initialize lookup tables
-double time_setup = 0;
-double time_thinning = 0;
-double time_WriteOutput = 0;
-
-clock_t time_beforesetup = clock();
-clock_t time_beforethinning = clock();
-clock_t time_beforeWriteOutput = clock();
+        double time_readAnchors = (double) (clock() - start_time_readAnchors) / CLOCKS_PER_SEC;
 
 
-time_beforesetup = clock();
+        double time_setup = 0;
+        double time_thinning = 0;
+        double time_WriteOutput = 0;
+
+        clock_t time_beforesetup = clock();
+        clock_t time_beforethinning = clock();
+        clock_t time_beforeWriteOutput = clock();
+
+
+        // initialize lookup tables
+        time_beforesetup = clock();
         InitializeLookupTables(lookup_table_directory);
 
         // needs to happen after PopulatePointCloud()
@@ -1587,50 +1599,51 @@ time_beforesetup = clock();
         // insert IDs that should be processed (IDs_in_Block if all)
         BlockA->IDs_to_process = BlockA->IDs_in_block;
         BlockA->writeIDs();
-time_setup += (double) (clock() - time_beforethinning) / CLOCKS_PER_SEC;
+        time_setup += (double) (clock() - time_beforesetup) / CLOCKS_PER_SEC;
 
+        // iterate over all IDs that should be processed
         uoSet::iterator itr = BlockA->IDs_to_process.begin();
         while (itr != BlockA->IDs_to_process.end())
         {
 
-time_beforesetup = clock();
           // start timer for this segment
           clock_t start_time_seg = clock();
 
+          time_beforesetup = clock();
           // initialize segment using the Block object and the segment ID to process
           BlockSegment* segA = new BlockSegment(*itr, *BlockA);
-time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
+          time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
 
           // call the sequential thinning algorithm
-time_beforethinning = clock();
+          time_beforethinning = clock();
           segA->SequentialThinning(*BlockA);
-time_thinning += (double) (clock() - time_beforethinning) / CLOCKS_PER_SEC;
+          time_thinning += (double) (clock() - time_beforethinning) / CLOCKS_PER_SEC;
 
           // write skeletons and widths, add anchor points to
-time_beforeWriteOutput = clock();
+          time_beforeWriteOutput = clock();
           segA->WriteOutputfiles(*BlockA);
           // write timing to file
           segA->WriteTimeFile(start_time_seg);
-time_WriteOutput += (double) (clock() - time_beforeWriteOutput) / CLOCKS_PER_SEC;
+          time_WriteOutput += (double) (clock() - time_beforeWriteOutput) / CLOCKS_PER_SEC;
 
-time_beforesetup = clock();
+          time_beforesetup = clock();
           delete segA;
-time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
+          time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
 
           itr++;
 
         }
 
-time_beforeWriteOutput = clock();
+        time_beforeWriteOutput = clock();
         // write border anchor points to file
         BlockA->WriteProjectedSynapses();
-time_WriteOutput += (double) (clock() - time_beforeWriteOutput);
+        time_WriteOutput += (double) (clock() - time_beforeWriteOutput);
 
-double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
+        double time_total = (double) (clock() - start_time_total) / CLOCKS_PER_SEC;
 
-time_beforesetup = clock();
+        time_beforesetup = clock();
         delete BlockA;
-time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
+        time_setup += (double) (clock()-time_beforesetup) / CLOCKS_PER_SEC;
 
 
         {
