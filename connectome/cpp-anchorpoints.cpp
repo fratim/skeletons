@@ -416,7 +416,7 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
     long checksum_max = 0;
     long checksum_min = 0;
 
-    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+    for (std::map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
 
       long seg_ID = iter->first;
 
