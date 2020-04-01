@@ -1,4 +1,4 @@
-map/* c++ file for running skeleton refinement algorithm */
+/* c++ file for running skeleton refinement algorithm */
 
 #include "cpp-MinBinaryHeap.h"
 #include "cpp-wiring.h"

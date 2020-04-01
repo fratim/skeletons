@@ -1,4 +1,4 @@
-map/* c++ file to extract wiring diagram */
+/* c++ file to extract wiring diagram */
 #include <limits>
 #include "cpp-wiring.h"
 #include <iostream>
