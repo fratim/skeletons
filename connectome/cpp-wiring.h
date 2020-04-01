@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <set>
 #include <iostream>
 #include <stdio.h>
 #include <vector>
@@ -29,14 +29,14 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
 #define SOMA_DSP 8
 
 typedef std::vector<long> vec;
-typedef std::unordered_set<long> uoSet;
-typedef std::unordered_map<long, uoSet> map_numToset;
-typedef std::unordered_map<long, vec> map_numTovector;
-typedef std::unordered_map<long, char> map_numTochar;
-typedef std::unordered_map<long, map_numToset> map_numTonumToset;
-typedef std::unordered_map<long, map_numTonumToset> borderpoints_obj;
-typedef std::unordered_map<long, map_numTochar> map_numTonumTochar;
-typedef std::unordered_map<long, map_numTochar> pointclouds_obj;
+typedef std::set<long> uoSet;
+typedef std::map<long, uoSet> map_numToset;
+typedef std::map<long, vec> map_numTovector;
+typedef std::map<long, char> map_numTochar;
+typedef std::map<long, map_numToset> map_numTonumToset;
+typedef std::map<long, map_numTonumToset> borderpoints_obj;
+typedef std::map<long, map_numTochar> map_numTonumTochar;
+typedef std::map<long, map_numTochar> pointclouds_obj;
 
 //////////////////////////////////////
 //// COORDINATE UTILITY FUNCTIONS ////

@@ -1,4 +1,4 @@
-/* c++ file to extract wiring diagram */
+map/* c++ file to extract wiring diagram */
 #include <limits>
 #include "cpp-wiring.h"
 #include <iostream>
@@ -131,10 +131,10 @@ void ComputeAnchorPoints(const char *prefix, const char* output_dir, long inp_bl
 void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wall, long *z_max_wall){
 
   long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_X]);
-  std::unordered_set<long> IDs_present = std::unordered_set<long>();
-  std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
-  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+  std::set<long> IDs_present = std::set<long>();
+  std::map <long, PGMImage*> images = std::map <long, PGMImage*>();
+  std::map<long, std::vector<long>> iu_centers = std::map<long, std::vector<long>>();
+  std::map<long, std::vector<long>> iv_centers = std::map<long, std::vector<long>>();
 
   long current_ID;
   int u_size = (int)inp_blocksize[OR_X]; // width
@@ -160,7 +160,7 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
   }
 
 
-  for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
+  for (std::map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
 
   }
@@ -188,7 +188,7 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
     long checksum_max = 0;
     long checksum_min = 0;
 
-    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+    for (std::map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
 
       long seg_ID = iter->first;
 
@@ -247,10 +247,10 @@ void ProcessZAnchors(const char *prefix, const char* output_dir, long *z_min_wal
 void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wall, long *y_max_wall){
 
   long entries = (inp_blocksize[OR_Z]*inp_blocksize[OR_X]);
-  std::unordered_set<long> IDs_present = std::unordered_set<long>();
-  std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
-  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+  std::set<long> IDs_present = std::set<long>();
+  std::map <long, PGMImage*> images = std::map <long, PGMImage*>();
+  std::map<long, std::vector<long>> iu_centers = std::map<long, std::vector<long>>();
+  std::map<long, std::vector<long>> iv_centers = std::map<long, std::vector<long>>();
 
   long current_ID;
   int u_size = (int)inp_blocksize[OR_X]; // width
@@ -274,7 +274,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
     }
   }
 
-  for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
+  for (std::map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
   }
   // write to file
@@ -301,7 +301,7 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
     long checksum_min = 0;
 
 
-    for (std::unordered_map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
+    for (std::map<long, std::vector<long>>::iterator iter = iu_centers.begin(); iter != iu_centers.end(); ++iter) {
 
       long seg_ID = iter->first;
 
@@ -362,10 +362,10 @@ void ProcessYAnchors(const char *prefix, const char* output_dir, long *y_min_wal
 void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wall, long *x_max_wall){
 
   long entries = (inp_blocksize[OR_Y]*inp_blocksize[OR_Z]);
-  std::unordered_set<long> IDs_present = std::unordered_set<long>();
-  std::unordered_map <long, PGMImage*> images = std::unordered_map <long, PGMImage*>();
-  std::unordered_map<long, std::vector<long>> iu_centers = std::unordered_map<long, std::vector<long>>();
-  std::unordered_map<long, std::vector<long>> iv_centers = std::unordered_map<long, std::vector<long>>();
+  std::set<long> IDs_present = std::set<long>();
+  std::map <long, PGMImage*> images = std::map <long, PGMImage*>();
+  std::map<long, std::vector<long>> iu_centers = std::map<long, std::vector<long>>();
+  std::map<long, std::vector<long>> iv_centers = std::map<long, std::vector<long>>();
 
   long current_ID;
   int u_size = (int)inp_blocksize[OR_Y]; // width
@@ -389,7 +389,7 @@ void ProcessXAnchors(const char *prefix, const char* output_dir, long *x_min_wal
     }
   }
 
-  for (std::unordered_map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
+  for (std::map <long, PGMImage*>::iterator iter = images.begin(); iter != images.end(); iter++){
     ThinImage(iter->second, iu_centers[iter->first], iv_centers[iter->first]);
   }
   // write to file

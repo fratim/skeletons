@@ -1,4 +1,4 @@
-/* c++ file for running skeleton refinement algorithm */
+map/* c++ file for running skeleton refinement algorithm */
 
 #include "cpp-MinBinaryHeap.h"
 #include "cpp-wiring.h"
@@ -241,7 +241,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     std::cout << "----------------------------------"<<std::endl;
     std::cout << "processing: "<<ID_query<<std::endl;
 
-    std::unordered_map<long, long> dijkstra_map = std::unordered_map<long, long>();
+    std::map<long, long> dijkstra_map = std::map<long, long>();
 
     start_time_dijkstra = clock();
 
@@ -719,7 +719,7 @@ void WriteProjectedSynapses(const char *prefix, map_numToset &synapses)
   WriteHeader(wfp, n_neurons);
   long checksum = 0;
 
-  for (std::unordered_map<long,uoSet>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
+  for (std::map<long,uoSet>::iterator itr = synapses.begin(); itr!=synapses.end(); ++itr){
     long seg_id = itr->first;
 
     long n_synapses = synapses[seg_id].size();
@@ -757,7 +757,7 @@ void WriteSomaeSurfaces(const char *prefix, map_numToset &somae_surfaces)
   WriteHeader(wfp, n_neurons);
   long checksum = 0;
 
-  for (std::unordered_map<long,uoSet>::iterator itr = somae_surfaces.begin(); itr!=somae_surfaces.end(); ++itr){
+  for (std::map<long,uoSet>::iterator itr = somae_surfaces.begin(); itr!=somae_surfaces.end(); ++itr){
     long seg_id = itr->first;
 
     long n_synapses = somae_surfaces[seg_id].size();
@@ -782,7 +782,7 @@ void WriteSomaeSurfaces(const char *prefix, map_numToset &somae_surfaces)
 void WriteAllSkeletonPoints(const char *prefix, map_numToset &all_skeleton_points)
 {
 
-  for (std::unordered_map<long,uoSet>::iterator itr = all_skeleton_points.begin(); itr!=all_skeleton_points.end(); ++itr){
+  for (std::map<long,uoSet>::iterator itr = all_skeleton_points.begin(); itr!=all_skeleton_points.end(); ++itr){
 
     long seg_id = itr->first;
 

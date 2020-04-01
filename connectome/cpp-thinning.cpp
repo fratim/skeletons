@@ -933,7 +933,7 @@ public:
       List surface_voxels;
       map_numTochar segment = map_numTochar();
       map_numTonumToset borderpoints_segment = map_numTonumToset();
-      std::unordered_map<long, float> widths = std::unordered_map<long, float>();
+      std::map<long, float> widths = std::map<long, float>();
 
     public:
       BlockSegment(long segment_ID_inp, DataBlock &Block):DataBlock(Block)
@@ -1147,7 +1147,7 @@ public:
           long iz = LE->iz;
 
           // not a synapse endpoint (need this here since endpoints are on the list of surfaces)
-          // this will only be called on things on the surface already so already in unordered_map
+          // this will only be called on things on the surface already so already in map
           if (segment[iv] == 2) {
 
             long value = 0;
