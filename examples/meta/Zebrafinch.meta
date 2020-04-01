@@ -3,18 +3,18 @@
 # volume size
 6144x6144x6144
 # block size
-1024x1024x1024
+1024x1024x128
 # blocks start
 0x0x0
 # number of blocks
-2x2x2
+2x2x16
 # input_labels directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x1024_play_fixed/2_discarded_filled_padded_1024x1024x1024/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/2_discarded_filled_padded_1024x1024x128/
 # synapses directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x1024_play_fixed/b_synapses_1024x1024x1024/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/b_synapses_1024x1024x128/
 # somae directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x1024_play_fixed/c_somae_dsp8_1024x1024x1024/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/c_somae_dsp8_1024x1024x128/
 # output directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x1024_play_fixed/thinning/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/thinning/
 # code directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x1024_play_fixed/Code/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/Code/
