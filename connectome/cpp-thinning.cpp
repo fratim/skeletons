@@ -321,7 +321,7 @@ public:
           if (not (iz == 0 or iz == z_max or ix == 0 or ix == x_max)) borderpoints[curr_label][OR_Y][0].insert(p_iv_local);
       }
       if (ix == 0) {
-          if (not (iz == 0 or z_max or iy == 0 or iy == y_max)) borderpoints[curr_label][OR_X][0].insert(p_iv_local);
+          if (not (iz == 0 or iz == z_max or iy == 0 or iy == y_max)) borderpoints[curr_label][OR_X][0].insert(p_iv_local);
       }
     }
 
@@ -1633,7 +1633,6 @@ public:
         uoSet::iterator itr = BlockA->IDs_to_process.begin();
         while (itr != BlockA->IDs_to_process.end())
         {
-
           // start timer for this segment
           clock_t start_time_seg = clock();
 
