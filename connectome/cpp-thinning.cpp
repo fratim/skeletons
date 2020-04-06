@@ -305,14 +305,24 @@ public:
       // min key = 0
       // do not add points that are on edges or corners, as those otherwise could never be removed
 
-      if ((iz==z_max && iy!=y_max) && ix!=x_max) borderpoints[curr_label][OR_Z][1].insert(p_iv_local);
-      else if ((iz!=z_max && iy==y_max) && ix!=x_max) borderpoints[curr_label][OR_Y][1].insert(p_iv_local);
-      else if ((iz!=z_max && iy!=y_max) && ix==x_max) borderpoints[curr_label][OR_X][1].insert(p_iv_local);
-      else if ((iz==0 && iy!=0) && ix!=0) borderpoints[curr_label][OR_Z][0].insert(p_iv_local);
-      else if ((iz!=0 && iy==0) && ix!=0) borderpoints[curr_label][OR_Y][0].insert(p_iv_local);
-      else if ((iz!=0 && iy!=0) && ix==0) borderpoints[curr_label][OR_X][0].insert(p_iv_local);
-
-
+      if (iz == z_max) {
+          if (not (iy == 0 or iy == y_max or ix == 0 or ix == x_max)) borderpoints[curr_label][OR_Z][1].insert(p_iv_local);
+      }
+      if (iy == y_max) {
+          if (not (iz == 0 or iz == z_max or ix == 0 or ix == x_max)) borderpoints[curr_label][OR_Y][1].insert(p_iv_local);
+      }
+      if (ix == x_max) {
+          if (not (iz == 0 or iz == z_max or iy == 0 or iy == y_max)) borderpoints[curr_label][OR_X][1].insert(p_iv_local);
+      }
+      if (iz == 0) {
+          if (not (iy == 0 or iy == y_max or ix == 0 or ix == x_max)) borderpoints[curr_label][OR_Z][0].insert(p_iv_local);
+      }
+      if (iy == 0) {
+          if (not (iz == 0 or iz == z_max or ix == 0 or ix == x_max)) borderpoints[curr_label][OR_Y][0].insert(p_iv_local);
+      }
+      if (ix == 0) {
+          if (not (iz == 0 or z_max or iy == 0 or iy == y_max)) borderpoints[curr_label][OR_X][0].insert(p_iv_local);
+      }
     }
 
     for (map_numToset::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
@@ -606,12 +616,12 @@ public:
         // set ID of this index to 3 (==Synapse)
         // only add synapse if it is on the body
         // if synapse is not on the body, it is added to synapses_off, which are projected onto the surface in a later step
-        if (Pointclouds[segment_ID][p_iv_local] == 1){
-          Pointclouds[segment_ID][p_iv_local] = 3;
-          synapses[segment_ID].push_back(up_iv_local);
+        if (Pointclouds[segment_ID].find(p_iv_local) == Pointclouds[segment_ID].end()) {
+            synapses_off[segment_ID].push_back(up_iv_local);
         }
         else {
-          synapses_off[segment_ID].push_back(up_iv_local);
+            Pointclouds[segment_ID][p_iv_local] = 3;
+            synapses[segment_ID].push_back(up_iv_local);
         }
 
       }
@@ -961,6 +971,18 @@ public:
         // project the synapses on the surface (surface voxels must be indentified BEFORE
         Projectsynapses(Block);
 
+        // clear the list of surface voxels 
+        while (surface_voxels.first != NULL) {
+            // get the surface voxels
+            ListElement *LE = (ListElement *) surface_voxels.first;
+            long iv = LE->iv;
+            if (segment[iv] == 2) segment[iv] = 1;
+            // remove this voxel
+             RemoveSurfaceVoxel(LE, surface_voxels);
+        }
+        // create a vector of surface voxels
+        CollectSurfaceVoxels();
+
         time_beforeprojSynapses = clock();
         time_projSynapses += (double) (clock()-time_beforeprojSynapses) / CLOCKS_PER_SEC;
 
@@ -969,6 +991,8 @@ public:
         do {
           changed = ThinningIterationStep(Block);
           iteration++;
+
+          printf("  Iteration %d: %ld points removed\n", iteration, changed);
         } while (changed);
 
         printf("Needed %d iterations\n", iteration);
@@ -1037,7 +1061,6 @@ public:
       {
         long changed = 0;
 
-
         // iterate through every direction
         for (int direction = 0; direction < NTHINNING_DIRECTIONS; ++direction) {
           PointList deletable_points;
@@ -1057,11 +1080,11 @@ public:
 
             // do not remove voxel in the dirction of the outer facing surface
             if ((borderpoints_segment[OR_Y][1].find(index)!=borderpoints_segment[OR_Y][1].end()) && direction==0) continue;
-            if ((borderpoints_segment[OR_Z][1].find(index)!=borderpoints_segment[OR_Z][1].end()) && direction==2) continue;
-            if ((borderpoints_segment[OR_X][1].find(index)!=borderpoints_segment[OR_X][1].end()) && direction==5) continue;
             if ((borderpoints_segment[OR_Y][0].find(index)!=borderpoints_segment[OR_Y][0].end()) && direction==1) continue;
+            if ((borderpoints_segment[OR_Z][1].find(index)!=borderpoints_segment[OR_Z][1].end()) && direction==2) continue;            
             if ((borderpoints_segment[OR_Z][0].find(index)!=borderpoints_segment[OR_Z][0].end()) && direction==3) continue;
             if ((borderpoints_segment[OR_X][0].find(index)!=borderpoints_segment[OR_X][0].end()) && direction==4) continue;
+            if ((borderpoints_segment[OR_X][1].find(index)!=borderpoints_segment[OR_X][1].end()) && direction==5) continue;
 
             // check if simple, if so, delete it
             unsigned int neighbors = Collect26Neighbors(ix, iy, iz);
@@ -1180,7 +1203,6 @@ public:
 
       void WriteOutputfiles(DataBlock &Block)
       {
-
         // count the number of remaining points
         long num = 0;
         ListElement *LE = (ListElement *) surface_voxels.first;
@@ -1227,7 +1249,6 @@ public:
         long counter_it = 0;
 
         long checksum_outp = 0;
-        long checksum_width = 0;
 
         // write surface voxels (global index)
         while (surface_voxels.first != NULL) {
@@ -1248,8 +1269,6 @@ public:
 
           checksum_outp += up_iv_global;
           checksum_outp += up_iv_local;
-          checksum_width += up_iv_global;
-          checksum_width += width;
 
           // remove this voxel
           RemoveSurfaceVoxel(LE, surface_voxels);
@@ -1264,12 +1283,17 @@ public:
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
+          
+          long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
+          float width = widths[p_iv_local];
+
+          if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
 
           index_local_anchors_comp[pos] = up_iv_local;
 
           checksum_outp += up_iv_global;
           checksum_outp += up_iv_local;
-
         }
 
         // write the synapses (global index)
@@ -1281,11 +1305,16 @@ public:
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
 
+          long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
+          float width = widths[p_iv_local];
+
+          if (fwrite(&up_iv_global, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+          if (fwrite(&width, sizeof(float), 1, width_fp) != 1)  { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
+
           index_local_synapses[pos] = up_iv_local;
 
           checksum_outp += up_iv_global;
           checksum_outp += up_iv_local;
-
         }
 
         // write surface voxels (local index)
@@ -1304,8 +1333,7 @@ public:
         }
 
         if (fwrite(&checksum_outp, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        if (fwrite(&checksum_width, sizeof(long), 1, width_fp) != 1) { fprintf(stderr, "Failed to write to %s\n", widths_filename); exit(-1); }
-
+        
         // close the I/O files
         fclose(wfp);
         fclose(width_fp);
