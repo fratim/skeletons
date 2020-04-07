@@ -238,6 +238,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   for (uoSet::iterator iter = IDsToProcess.begin(); iter != IDsToProcess.end(); ++iter){
 
     long ID_query = *iter;
+
+    // skip if there are no synapses for this ID
+    if (!synapses[ID_query].size()) continue;
+
     std::cout << "----------------------------------"<<std::endl;
     std::cout << "processing: "<<ID_query<<std::endl;
 
@@ -250,11 +254,18 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     std::cout << "points before refinement: "<<nelements<<std::endl;
     std::cout << "Synapses: " << synapses[ID_query].size()<<std::endl;
 
-    if (!detectSomae){
-      if (synapses[ID_query].size()>0) {
-        uoSet::iterator it2 = synapses[ID_query].begin();
-        segment[ID_query][*it2]=4;
+    // if there is no soma location, choose a synapse 
+    bool source_voxel = false;
+    for (map_numTochar::iterator it = segment[ID_query].begin(); it != segment[ID_query].end(); ++it) {
+      if (it->second == 4) {
+        source_voxel = true;
+        break;
       }
+    }
+
+    if (!source_voxel) {
+      uoSet::iterator it2 = synapses[ID_query].begin();
+      segment[ID_query][*it2] = 4;
     }
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
