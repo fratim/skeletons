@@ -13,7 +13,7 @@
 
 template <class PtrType>
 MinBinaryHeap<PtrType>::
-MinBinaryHeap(PtrType base, double *value_ptr, int nentries) :
+MinBinaryHeap(PtrType base, float *value_ptr, int nentries) :
 NMAX(nentries),
 N(0)
 {
@@ -224,10 +224,10 @@ Exch(int i, int j)
 
 
 template <class PtrType>
-double MinBinaryHeap<PtrType>::
+float MinBinaryHeap<PtrType>::
 Value(int i) const
 {
-   return *((double *)((unsigned char *)keys[i] + value_offset));
+   return *((float *)((unsigned char *)keys[i] + value_offset));
 }
 
 
@@ -237,8 +237,8 @@ int MinBinaryHeap<PtrType>::
 Compare(int i, int j) const
 {
    // get values
-   double value1 = Value(pq[i]);
-   double value2 = Value(pq[j]);
+   float value1 = Value(pq[i]);
+   float value2 = Value(pq[j]);
 
    // compare values
    if (value1 < value2) return -1;

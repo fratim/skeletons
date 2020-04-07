@@ -12,7 +12,7 @@ public:
     //// CONSTRUCTORS/DESTRUCTORS ////
     //////////////////////////////////
 
-    MinBinaryHeap(PtrType base, double *value_ptr, int nentries);
+    MinBinaryHeap(PtrType base, float *value_ptr, int nentries);
     ~MinBinaryHeap();
 
 
@@ -57,7 +57,7 @@ public:
    
 private:
     // value property functions
-    double Value(int i) const;
+    float Value(int i) const;
     int Compare(int i, int j) const;
     int Greater(int i, int j) const;
 

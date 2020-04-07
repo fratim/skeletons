@@ -10,7 +10,7 @@
 struct DijkstraData {
     long iv;
     DijkstraData *prev;
-    double distance;
+    float distance;
     bool visited;
 };
 
@@ -306,6 +306,9 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       for (long iw = iz - 1; iw <= iz + 1; ++iw) {
         for (long iv = iy - 1; iv <= iy + 1; ++iv) {
           for (long iu = ix - 1; iu <= ix + 1; ++iu) {
+            // do not iterate over itself
+            if (iw == iz and iv == iy and iu == ix) continue;
+
             // get the linear index for this voxel
             long neighbor_index = IndicesToIndex(iu, iv, iw, padded_sheet_size_volume, padded_row_size_volume);
 
@@ -322,11 +325,11 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
             long deltax = resolution[OR_X] * (iu - ix);
 
             // get the distance between (ix, iy, iz) and (iu, iv, iw)
-            double distance = sqrt(deltax * deltax + deltay * deltay + deltaz * deltaz);
+            float distance = sqrt(deltax * deltax + deltay * deltay + deltaz * deltaz);
 
             // get the distance to get to this voxel through the current voxel (requires a penalty for visiting this voxel)
-            double distance_through_current = current->distance + distance;
-            double distance_without_current = neighbor_data->distance;
+            float distance_through_current = current->distance + distance;
+            float distance_without_current = neighbor_data->distance;
 
             if (!neighbor_data->visited) {
               neighbor_data->prev = current;
@@ -413,10 +416,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       // get the corresponding neighbor data
       long dijkstra_index = dijkstra_map[padded_index_global];
       DijkstraData *dijkstra_data = &(voxel_data[dijkstra_index]);
-      double distance = dijkstra_data->distance;
+      float distance = dijkstra_data->distance;
 
       if (fwrite(&voxel_index, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
-      if (fwrite(&distance, sizeof(double), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
+      if (fwrite(&distance, sizeof(float), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
       checksum_dis += voxel_index;
       checksum_dis += distance;
 
