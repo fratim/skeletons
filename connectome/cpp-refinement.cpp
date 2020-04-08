@@ -207,16 +207,20 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         block_ind[0]=bz;
         block_ind[1]=by;
         block_ind[2]=bx;
-
-        start_time_read_Synapses = clock();
-        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
-        time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
-        start_time_read_Skeleton = clock();
-        ReadSkeleton(prefix, segment, IDsToProcess, block_ind, all_skeleton_points);
-        time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
+        
+        // each of these modifies segment and needs to maintain this ordering. Synapses are most important so must have correct
+        // final value, followed by skeletons. Since somata are thrown out, any synapses on the border need to keep value 3
         start_time_read_SomaeSurface = clock();
         if (detectSomae) ReadSomaeSurface(prefix, segment, somae_surfaces, IDsToProcess, block_ind);
         time_read_SomaeSurface += (double) (clock() - start_time_read_SomaeSurface) / CLOCKS_PER_SEC;
+        start_time_read_Skeleton = clock();
+        ReadSkeleton(prefix, segment, IDsToProcess, block_ind, all_skeleton_points);
+        time_read_Skeleton += (double) (clock() - start_time_read_Skeleton) / CLOCKS_PER_SEC;
+        start_time_read_Synapses = clock();
+        ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
+        time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
+        
+        
 
       }
     }
