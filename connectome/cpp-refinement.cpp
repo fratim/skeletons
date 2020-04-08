@@ -265,7 +265,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
     if (!source_voxel) {
       uoSet::iterator it2 = synapses[ID_query].begin();
-      segment[ID_query][*it2] = 4;
+      // segments that are even count as sources 
+      segment[ID_query][*it2] = 2;
     }
 
     DijkstraData *voxel_data = new DijkstraData[nelements];
@@ -284,8 +285,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
       voxel_data[index].visited = false;
       dijkstra_map[it->first] = index;
 
-      // this is the soma
-      if (it->second == 4) {
+      // this is the soma (or designated synapse)
+      if (it->second % 2 == 0) {
         // insert the source into the heap
         voxel_data[index].distance = 0.0;
         voxel_data[index].visited = true;
@@ -369,7 +370,9 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         // reconvert to linear coordinates
         long iv_unpadded = IndicesToIndex(ix, iy, iz, input_sheet_size_volume, input_row_size_volume);
 
-        wiring_diagram.insert(iv_unpadded);
+        if (segment[ID_query][iv] != 4) {
+          wiring_diagram.insert(iv_unpadded);
+        }
 
         data = data->prev;
       }
