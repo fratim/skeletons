@@ -70,7 +70,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
   input_volumesize[OR_Y] = volume_size[OR_Y];
   input_volumesize[OR_X] = volume_size[OR_X];
 
-  std::cout << "input_volumesize is: " << input_volumesize[OR_Z] << ","<< input_volumesize[OR_Y] << ","<< input_volumesize[OR_X] << std::endl;
+  //std::cout << "input_volumesize is: " << input_volumesize[OR_Z] << ","<< input_volumesize[OR_Y] << ","<< input_volumesize[OR_X] << std::endl;
 
   padded_volumesize[OR_Z] = volume_size[OR_Z]+2;
   padded_volumesize[OR_Y] = volume_size[OR_Y]+2;
@@ -93,7 +93,7 @@ void setParameters(float input_resolution[3], long inp_blocksize[3], long volume
 
   output_directory = output_dir;
 
-  std::cout << "Block indices start set to: " << block_search_start[OR_Z] << "," << block_search_start[OR_Y] << "," << block_search_start[OR_X] << std::endl;
+  //std::cout << "Block indices start set to: " << block_search_start[OR_Z] << "," << block_search_start[OR_Y] << "," << block_search_start[OR_X] << std::endl;
 
 
 }
@@ -122,15 +122,15 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
   start_time_total = clock();
 
-  printf("Setting Parameters\n");
-  fflush(stdout);
+  //printf("Setting Parameters\n");
+  //fflush(stdout);
   setParameters(input_resolution, inp_blocksize, volume_size, block_ind_begin, block_ind_end, output_dir);
 
   uoSet IDsPresent = uoSet();
   uoSet IDsToProcess = uoSet();
 
-  printf("Reading IDs to process \n");
-  fflush(stdout);
+  //printf("Reading IDs to process \n");
+  //fflush(stdout);
 
   start_time_read_IDstoProcess = clock();
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
@@ -159,30 +159,31 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     }
   }
 
-  printf("IDsPresent: ");
+  /*printf("IDsPresent: ");
   for (uoSet::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
-        std::cout << *iter << " ";
+        //std::cout << *iter << " ";
   }
   printf("\n");
   fflush(stdout);
 
   printf("IDsToProcess: ");
-  long ID_query = 0;
+  */
 
+  long ID_query = 0;
   for (uoSet::iterator iter = IDsPresent.begin(); iter != IDsPresent.end(); ++iter) {
 
         ID_query = *iter;
 
         if ((ID_query>=ID_start)&&(ID_query<=ID_end)){
           IDsToProcess.insert(ID_query);
-          std::cout << ID_query << " ";
+          //std::cout << ID_query << " ";
         }
 
 
   }
-  printf("\n");
+  //printf("\n");
 
-  std::cout << "end" << std::flush;
+  //std::cout << "end" << std::flush;
 
   fflush(stdout);
 
@@ -193,21 +194,21 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   map_numToset somae_surfaces = map_numToset();
   map_numToset all_skeleton_points = map_numToset();
 
-  printf("Reading Synapses, Skeleton, (Somae)\n");
-  fflush(stdout);
+  //printf("Reading Synapses, Skeleton, (Somae)\n");
+  //fflush(stdout);
 
   for (long bz = block_search_start[OR_Z]; bz<=block_search_end[OR_Z]; bz++){
     for (long by =  block_search_start[OR_Y]; by<=block_search_end[OR_Y]; by++){
       for (long bx =  block_search_start[OR_X]; bx<=block_search_end[OR_X]; bx++){
 
-        std::cout << "Block is: " << bz << ", " << by << ", " << bx << std::endl;
+        //std::cout << "Block is: " << bz << ", " << by << ", " << bx << std::endl;
         fflush(stdout);
         long block_ind[3];
 
         block_ind[0]=bz;
         block_ind[1]=by;
         block_ind[2]=bx;
-        
+
         // each of these modifies segment and needs to maintain this ordering. Synapses are most important so must have correct
         // final value, followed by skeletons. Since somata are thrown out, any synapses on the border need to keep value 3
         start_time_read_SomaeSurface = clock();
@@ -219,14 +220,14 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
         start_time_read_Synapses = clock();
         ReadSynapses(prefix, segment, synapses, IDsToProcess, block_ind);
         time_read_Synapses += (double) (clock() - start_time_read_Synapses) / CLOCKS_PER_SEC;
-        
-        
+
+
 
       }
     }
   }
-  printf("Writing projected Synapeses");
-  fflush(stdout);
+  //printf("Writing projected Synapeses");
+  //fflush(stdout);
 
   WriteProjectedSynapses(prefix, synapses);
 
@@ -234,8 +235,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     WriteAllSkeletonPoints(prefix, all_skeleton_points);
   }
 
-  printf("Writing Somae Surfaces");
-  fflush(stdout);
+  //printf("Writing Somae Surfaces");
+  //fflush(stdout);
 
   if (detectSomae) WriteSomaeSurfaces(prefix, somae_surfaces);
 
@@ -246,8 +247,8 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     // skip if there are no synapses for this ID
     if (!synapses[ID_query].size()) continue;
 
-    std::cout << "----------------------------------"<<std::endl;
-    std::cout << "processing: "<<ID_query<<std::endl;
+    //std::cout << "----------------------------------"<<std::endl;
+    //std::cout << "processing: "<<ID_query<<std::endl;
 
     std::map<long, long> dijkstra_map = std::map<long, long>();
 
@@ -255,10 +256,10 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
     long nelements = segment[ID_query].size();
 
-    std::cout << "points before refinement: "<<nelements<<std::endl;
-    std::cout << "Synapses: " << synapses[ID_query].size()<<std::endl;
+    //std::cout << "points before refinement: "<<nelements<<std::endl;
+    //std::cout << "Synapses: " << synapses[ID_query].size()<<std::endl;
 
-    // if there is no soma location, choose a synapse 
+    // if there is no soma location, choose a synapse
     bool source_voxel = false;
     for (map_numTochar::iterator it = segment[ID_query].begin(); it != segment[ID_query].end(); ++it) {
       if (it->second == 4) {
@@ -269,7 +270,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
     if (!source_voxel) {
       uoSet::iterator it2 = synapses[ID_query].begin();
-      // segments that are even count as sources 
+      // segments that are even count as sources
       segment[ID_query][*it2] = 2;
     }
 
@@ -383,7 +384,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
     }
 
     long nskeleton_points = wiring_diagram.size();
-    std::cout << "points after refinement: " << nskeleton_points << std::endl;
+    //std::cout << "points after refinement: " << nskeleton_points << std::endl;
 
     time_dijkstra += (double) (clock() - start_time_dijkstra) / CLOCKS_PER_SEC;
     start_time_write = clock();
@@ -450,7 +451,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
   {
     char output_filename[4096];
     sprintf(output_filename, "%s/running_times/%s/%s-refinement_times.pts", output_dir, prefix, prefix);
-    std::cout << "Writing time for block to : " << output_filename << std::endl;
+    //std::cout << "Writing time for block to : " << output_filename << std::endl;
     FILE * fptime = fopen (output_filename,"a");
     fprintf(fptime,"time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write \n");
     fprintf(fptime,"%8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, %8.2f, \n",time_total, time_read_IDstoProcess, time_read_Synapses, time_read_Skeleton, time_read_SomaeSurface, time_dijkstra, time_write);

@@ -218,7 +218,7 @@ public:
     volumesize[OR_Y] = volume_size[OR_Y];
     volumesize[OR_X] = volume_size[OR_X];
 
-    std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
+    //std::cout << "Volumesize set to: " << volumesize[OR_Z] << "," << volumesize[OR_Y] << "," << volumesize[OR_X] << "," << std::endl;
 
     block_ind[OR_Z]= block_ind_inp[OR_Z];
     block_ind[OR_Y] = block_ind_inp[OR_Y];
@@ -232,7 +232,7 @@ public:
     block_ind_max[OR_Y] = block_ind_end_inp[OR_Y];
     block_ind_max[OR_X] = block_ind_end_inp[OR_X];
 
-    std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
+    //std::cout << "Block indices set to: " << block_ind[OR_Z] << "," << block_ind[OR_Y] << "," << block_ind[OR_X] << "," << std::endl;
 
     prefix = prefix_inp;
 
@@ -267,7 +267,7 @@ public:
 
     long n_points = input_blocksize[OR_Z]*input_blocksize[OR_Y]*input_blocksize[OR_X];
 
-    std::cout << "n_points is: " << n_points << std::endl;
+    //std::cout << "n_points is: " << n_points << std::endl;
 
     long z_max =input_blocksize[OR_Z]-1;
     long y_max =input_blocksize[OR_Y]-1;
@@ -327,8 +327,8 @@ public:
 
     for (map_numToset::iterator itr = somae_surfacepoints.begin(); itr!=somae_surfacepoints.end(); ++itr){
       long label = itr->first;
-      std::cout << "Seg ID: " << label << std::endl;
-      std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
+      //std::cout << "Seg ID: " << label << std::endl;
+      //std::cout << "points: " << somae_surfacepoints[label].size() << std::endl;
       long p_iv_local;
       for (uoSet::iterator itr2 = somae_surfacepoints[label].begin(); itr2!=somae_surfacepoints[label].end(); ++itr2){
         p_iv_local = PadIndex(*itr2, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
@@ -353,7 +353,7 @@ public:
 
     long n_points = input_blocksize_dsp[OR_Z]*input_blocksize_dsp[OR_Y]*input_blocksize_dsp[OR_X];
 
-    std::cout << "n_points somae is: " << n_points << std::endl;
+    //std::cout << "n_points somae is: " << n_points << std::endl;
 
     for (long up_iv_local_dsp = 0; up_iv_local_dsp < n_points; up_iv_local_dsp++){
 
@@ -953,11 +953,11 @@ public:
         segment = Block.Pointclouds[segment_ID];
         borderpoints_segment = Block.borderpoints[segment_ID];
 
-        std::cout << "-----------------------------------" << std::endl;
-        std::cout << "Processing segment_ID " << segment_ID << std::endl;
+        //std::cout << "-----------------------------------" << std::endl;
+        //std::cout << "Processing segment_ID " << segment_ID << std::endl;
 
         initial_points_input = segment.size();
-        printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points_input);
+        //printf("segment_ID %ld initial points: %ld\n", segment_ID, initial_points_input);
 
         surface_voxels.first = NULL;
         surface_voxels.last = NULL;
@@ -971,7 +971,7 @@ public:
         // project the synapses on the surface (surface voxels must be indentified BEFORE
         Projectsynapses(Block);
 
-        // clear the list of surface voxels 
+        // clear the list of surface voxels
         while (surface_voxels.first != NULL) {
             // get the surface voxels
             ListElement *LE = (ListElement *) surface_voxels.first;
@@ -992,10 +992,10 @@ public:
           changed = ThinningIterationStep(Block);
           iteration++;
 
-          printf("  Iteration %d: %ld points removed\n", iteration, changed);
+          //printf("  Iteration %d: %ld points removed\n", iteration, changed);
         } while (changed);
 
-        printf("Needed %d iterations\n", iteration);
+        //printf("Needed %d iterations\n", iteration);
       }
 
       void CollectSurfaceVoxels(void)
@@ -1053,7 +1053,7 @@ public:
           }
         }
 
-        std::cout << "Initial Surface Voxels: " << n_surface_voxels << std::endl << std::flush;
+        //std::cout << "Initial Surface Voxels: " << n_surface_voxels << std::endl << std::flush;
 
       }
 
@@ -1081,7 +1081,7 @@ public:
             // do not remove voxel in the dirction of the outer facing surface
             if ((borderpoints_segment[OR_Y][1].find(index)!=borderpoints_segment[OR_Y][1].end()) && direction==0) continue;
             if ((borderpoints_segment[OR_Y][0].find(index)!=borderpoints_segment[OR_Y][0].end()) && direction==1) continue;
-            if ((borderpoints_segment[OR_Z][1].find(index)!=borderpoints_segment[OR_Z][1].end()) && direction==2) continue;            
+            if ((borderpoints_segment[OR_Z][1].find(index)!=borderpoints_segment[OR_Z][1].end()) && direction==2) continue;
             if ((borderpoints_segment[OR_Z][0].find(index)!=borderpoints_segment[OR_Z][0].end()) && direction==3) continue;
             if ((borderpoints_segment[OR_X][0].find(index)!=borderpoints_segment[OR_X][0].end()) && direction==4) continue;
             if ((borderpoints_segment[OR_X][1].find(index)!=borderpoints_segment[OR_X][1].end()) && direction==5) continue;
@@ -1241,9 +1241,9 @@ public:
         // characteristics
         WriteHeaderSegID(width_fp, total_points);
 
-        printf("Remaining voxels: %ld\n", num);
-        printf("Anchors: %ld\n", n_anchors_comp);
-        printf("Synapses: %ld\n", n_synapses);
+        //printf("Remaining voxels: %ld\n", num);
+        //printf("Anchors: %ld\n", n_anchors_comp);
+        //printf("Synapses: %ld\n", n_synapses);
 
         long index_local[num];
         long counter_it = 0;
@@ -1283,7 +1283,7 @@ public:
           long up_iv_global = IndexLocalToGlobal(up_iv_local, block_ind, input_blocksize, volumesize);
 
           if (fwrite(&up_iv_global, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-          
+
           long p_iv_local = PadIndex(up_iv_local, input_sheet_size_block, input_row_size_block, padded_sheet_size_block, padded_row_size_block);
           float width = widths[p_iv_local];
 
@@ -1333,7 +1333,7 @@ public:
         }
 
         if (fwrite(&checksum_outp, sizeof(long), 1, wfp) != 1) { fprintf(stderr, "Failed to write to %s\n", output_filename); exit(-1); }
-        
+
         // close the I/O files
         fclose(wfp);
         fclose(width_fp);
@@ -1375,7 +1375,7 @@ public:
       void Projectsynapses(DataBlock &Block)
       {
 
-        std::cout << "Projecting n synapses: " << Block.synapses_off[segment_ID].size() << std::endl;
+        //std::cout << "Projecting n synapses: " << Block.synapses_off[segment_ID].size() << std::endl;
 
         for (vec::iterator it = Block.synapses_off[segment_ID].begin(); it != Block.synapses_off[segment_ID].end(); ++it){
           long linear_index = *it;
@@ -1430,7 +1430,7 @@ public:
 
             if (min_distance>(resolution_min*30)){
               unable_to_project = 1;
-              std::cout << "Failed to find projection point, search distance too large" << std::endl;
+              //std::cout << "Failed to find projection point, search distance too large" << std::endl;
             }
 
           }
@@ -1676,7 +1676,7 @@ public:
         {
           char output_filename[4096];
           sprintf(output_filename, "%s/running_times/%s/%s-total_time_thinning.pts", output_dir, prefix, prefix);
-          std::cout << "Writing time for block to : " << output_filename << std::endl;
+          //std::cout << "Writing time for block to : " << output_filename << std::endl;
           FILE * fptime = fopen (output_filename,"a");
 
           fprintf(fptime,"bz,by,bx\n");

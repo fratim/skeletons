@@ -20,17 +20,30 @@ output_directories = [  'synapses_projected/',
 start_blocks = dataIO.StartBlocks(prefix)
 n_blocks = dataIO.NBlocks(prefix)
 
+
 # pass arguments
-if(len(sys.argv))!=4:
-    raise ValueError(" Scripts needs exactley 3 input arguments (bz by bx)")
+if(len(sys.argv)!=3):
+    raise ValueError(" Scripts needs exactley 2 inputs (bz output_file_step2_bz) ")
 else:
     bz = int(sys.argv[1])
-    by = int(sys.argv[2])
-    bx = int(sys.argv[3])
+    out_file_S1 = sys.argv[2]
 
-start_time_thinning = time.time()
+inp_file = open(out_file_S1)
+inp_text = inp_file.read()
+inp_file.close()
 
-output_folder = dataIO.OutputDirectory(prefix)
-wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
+if inp_text[0]!="0":
+    print(inp_text)
+    raise ValueError("Execution Stopped: Wrong Error Code (!=0)")
 
-print("total time thinning:" + str(time.time()-start_time_thinning))
+for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
+    for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
+
+    #start_time_thinning = time.time()
+
+    output_folder = dataIO.OutputDirectory(prefix)
+    wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
+
+    #print("total time thinning:" + str(time.time()-start_time_thinning))
+
+print("0")
