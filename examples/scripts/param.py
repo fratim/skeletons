@@ -1,5 +1,6 @@
 import math
 
+#
 # Header file for block processing, includes parameters and paths
 isCluster = True
 
