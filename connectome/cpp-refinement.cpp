@@ -428,7 +428,7 @@ void CppSkeletonRefinement(const char *prefix, float input_resolution[3], long i
 
       if (fwrite(&index_global_up, sizeof(long), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
       if (fwrite(&distance, sizeof(float), 1, dfp) != 1) { fprintf(stderr, "Failed to write to %s.\n", distance_filename); exit(-1); }
-      checksum_dis += voxel_index;
+      checksum_dis += index_global_up;
       checksum_dis += distance;
 
     }
