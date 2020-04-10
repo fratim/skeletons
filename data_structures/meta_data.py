@@ -6,7 +6,7 @@ from skeletons.utilities.constants import *
 class MetaData:
     def __init__(self, prefix):
         # open the meta data txt file
-        filename = 'meta/{}.meta'.format(prefix)
+        filename = 'skeletons/examples/meta/{}.meta'.format(prefix)
         with open(filename, 'r') as fd:
             lines = fd.readlines()
 

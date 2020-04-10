@@ -39,11 +39,11 @@ if inp_text[0]!="0":
 for by in range(start_blocks[1], start_blocks[1] + n_blocks[1]):
     for bx in range(start_blocks[2], start_blocks[2] + n_blocks[2]):
 
-    #start_time_thinning = time.time()
+        #start_time_thinning = time.time()
 
-    output_folder = dataIO.OutputDirectory(prefix)
-    wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
+        output_folder = dataIO.OutputDirectory(prefix)
+        wiring.GenerateSkeleton(prefix, output_folder, bz, by, bx)
 
-    #print("total time thinning:" + str(time.time()-start_time_thinning))
+        #print("total time thinning:" + str(time.time()-start_time_thinning))
 
 print("0")

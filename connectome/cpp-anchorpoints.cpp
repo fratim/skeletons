@@ -473,7 +473,7 @@ void ThinImage(PGMImage* img, std::vector<long> &iu_centers, std::vector<long> &
 
   FILE* fp = NULL;
 
-  fp = fopen( "../connectome/ronse_fpta.lut", "rb" );
+  fp = fopen( "skeletons/connectome/ronse_fpta.lut", "rb" );
 
   unsigned char* lut = NULL;
   lut = (unsigned char*) malloc ( 16777216 * sizeof(unsigned char) );

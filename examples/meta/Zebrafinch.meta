@@ -7,14 +7,14 @@
 # blocks start
 0x0x0
 # number of blocks
-2x2x16
+2x2x8
 # input_labels directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/2_discarded_filled_padded_1024x1024x128/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_mflow/2_discarded_filled_padded_1024x1024x128/
 # synapses directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/b_synapses_1024x1024x128/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_mflow/b_synapses_1024x1024x128/
 # somae directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/c_somae_dsp8_1024x1024x128/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_mflow/c_somae_dsp8_1024x1024x128/
 # output directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/thinning/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_mflow/thinning/
 # code directory
-/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_compBrian/Code/
+/n/pfister_lab2/Lab/tfranzmeyer/Data/1024x1024x128_mflow/Code/
