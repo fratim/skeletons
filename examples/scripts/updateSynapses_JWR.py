@@ -21,8 +21,8 @@ global_synapses_per_block = {}
 local_synapses_per_block = {}
 
 # go through all neuron ids
-for label in range(1, max_label):
-    # read all synapses
+for label in range(1, max_label+1):
+    # read all 
     synapse_filename = 'synapses_raw/'+str(prefix)+'/cell'+str(label)+'_t_0_z1_1.txt'
 
     if not os.path.exists(synapse_filename):
