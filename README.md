@@ -1,3 +1,5 @@
+The code of this experimental repositroy has mostly been merged into https://github.com/Rhoana/blockbased_synapseaware.
+
 This repository enables topological thinning of connectomics data, guarateeing a one-to-open correspondence of skeleton endpoints and synapses. 
 Input:
  1. Segmentation volume saved in blocks (h5 files)
